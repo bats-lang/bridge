@@ -1,3 +1,4 @@
 [package]
 name = "wasm.bats-packages.dev/bridge"
 kind = "lib"
+unsafe = true
