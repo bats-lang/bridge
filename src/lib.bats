@@ -238,6 +238,12 @@ fn _stash_set_int(slot: int, v: int): void =
 #pub fun listener_set
   (id: int, cb: ptr): void
 
+#pub fun listener_set_closure
+  (id: int, cb: (int) -<cloref1> int): void
+
+#pub fun listener_clear
+  (id: int): void
+
 #pub fun listener_get
   (id: int): ptr
 
@@ -489,6 +495,13 @@ implement prevent_default() = _ward_js_prevent_default()
 
 implement listener_set(id, cb) =
   $extfcall(void, "ward_listener_set", id, cb)
+
+implement listener_set_closure(id, cb) = let
+  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(cb) end
+in $extfcall(void, "ward_listener_set", id, cbp) end
+
+implement listener_clear(id) =
+  $extfcall(void, "ward_listener_set", id, the_null_ptr)
 
 implement listener_get(id) =
   $extfcall(ptr, "ward_listener_get", id)
