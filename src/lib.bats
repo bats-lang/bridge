@@ -6,6 +6,7 @@
 
 #use array as A
 #use promise as P
+#use result as R
 
 (* ============================================================
    C runtime -- stash, measure, listener tables + WASM exports
@@ -204,7 +205,7 @@ fn _stash_set_int(slot: int, v: int): void =
 (* --- DOM read --- *)
 
 #pub fun measure
-  (node_id: int): int
+  (node_id: int): $R.result(int)
 
 #pub fun get_measure_x(): int
 
@@ -220,7 +221,7 @@ fn _stash_set_int(slot: int, v: int): void =
 
 #pub fun query_selector
   {lb:agz}{n:pos}
-  (sel: !$A.borrow(byte, lb, n), sel_len: int n): int
+  (sel: !$A.borrow(byte, lb, n), sel_len: int n): $R.option(int)
 
 (* --- Event --- *)
 
@@ -251,11 +252,11 @@ fn _stash_set_int(slot: int, v: int): void =
 
 #pub fun get_url
   {l:agz}{n:pos}
-  (out: !$A.arr(byte, l, n), max_len: int n): int
+  (out: !$A.arr(byte, l, n), max_len: int n): $R.result(int)
 
 #pub fun get_hash
   {l:agz}{n:pos}
-  (out: !$A.arr(byte, l, n), max_len: int n): int
+  (out: !$A.arr(byte, l, n), max_len: int n): $R.result(int)
 
 #pub fun set_hash
   {lb:agz}{n:nat}
@@ -337,7 +338,7 @@ fn _stash_set_int(slot: int, v: int): void =
 #pub fun file_read
   {l:agz}{n:pos}
   (handle: int, file_offset: int,
-   out: !$A.arr(byte, l, n), len: int n): int
+   out: !$A.arr(byte, l, n), len: int n): $R.result(int)
 
 #pub fun file_close
   (handle: int): void
@@ -354,7 +355,7 @@ fn _stash_set_int(slot: int, v: int): void =
 #pub fun blob_read
   {l:agz}{n:pos}
   (handle: int, blob_offset: int,
-   out: !$A.arr(byte, l, n), len: int n): int
+   out: !$A.arr(byte, l, n), len: int n): $R.result(int)
 
 #pub fun blob_free
   (handle: int): void
@@ -467,7 +468,11 @@ implement set_image_src{ld}{nd}{lm}{nm}
 
 (* --- DOM read --- *)
 
-implement measure(node_id) = _bats_js_measure_node(node_id)
+implement measure(node_id) = let
+  val r = _bats_js_measure_node(node_id)
+in
+  if r >= 0 then $R.ok(r) else $R.err(r)
+end
 
 implement get_measure_x() = $extfcall(int, "_bridge_measure_get", 0)
 implement get_measure_y() = $extfcall(int, "_bridge_measure_get", 1)
@@ -476,10 +481,13 @@ implement get_measure_h() = $extfcall(int, "_bridge_measure_get", 3)
 implement get_measure_scroll_w() = $extfcall(int, "_bridge_measure_get", 4)
 implement get_measure_scroll_h() = $extfcall(int, "_bridge_measure_get", 5)
 
-implement query_selector{lb}{n}(sel, sel_len) =
-  _bats_js_query_selector(
+implement query_selector{lb}{n}(sel, sel_len) = let
+  val r = _bats_js_query_selector(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(sel) end,
     sel_len)
+in
+  if r >= 0 then $R.some(r) else $R.none()
+end
 
 (* --- Event --- *)
 
@@ -508,15 +516,21 @@ implement listener_get(id) =
 
 (* --- Navigation --- *)
 
-implement get_url{l}{n}(out, max_len) =
-  _bats_js_get_url(
+implement get_url{l}{n}(out, max_len) = let
+  val r = _bats_js_get_url(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
     max_len)
+in
+  if r >= 0 then $R.ok(r) else $R.err(r)
+end
 
-implement get_hash{l}{n}(out, max_len) =
-  _bats_js_get_url_hash(
+implement get_hash{l}{n}(out, max_len) = let
+  val r = _bats_js_get_url_hash(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
     max_len)
+in
+  if r >= 0 then $R.ok(r) else $R.err(r)
+end
 
 implement set_hash{lb}{n}(hash, hash_len) =
   _bats_js_set_url_hash(
@@ -597,9 +611,12 @@ implement file_name_len() = _stash_get_int(2)
 implement file_name{n}(len) =
   _bridge_recv(_stash_get_int(1), len)
 
-implement file_read{l}{n}(handle, file_offset, out, len) =
-  _bats_js_file_read(handle, file_offset, len,
+implement file_read{l}{n}(handle, file_offset, out, len) = let
+  val r = _bats_js_file_read(handle, file_offset, len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end)
+in
+  if r >= 0 then $R.ok(r) else $R.err(r)
+end
 
 implement file_close(handle) = _bats_js_file_close(handle)
 
@@ -612,9 +629,12 @@ implement decompress_req{lb}{n}(data, data_len, method, stash_id) =
 
 implement decompress_len() = _stash_get_int(0)
 
-implement blob_read{l}{n}(handle, blob_offset, out, len) =
-  _bats_js_blob_read(handle, blob_offset, len,
+implement blob_read{l}{n}(handle, blob_offset, out, len) = let
+  val r = _bats_js_blob_read(handle, blob_offset, len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end)
+in
+  if r >= 0 then $R.ok(r) else $R.err(r)
+end
 
 implement blob_free(handle) = _bats_js_blob_free(handle)
 
