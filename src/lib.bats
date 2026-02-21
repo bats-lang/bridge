@@ -736,7 +736,7 @@ static const char *_bridge_js_source(void) {
 " * @returns {{ exports, nodes, done }} — WASM exports, node registry,\n"
 " *   and a promise that resolves when WASM calls bats_exit\n"
 " */\n"
-"export async function loadWard(wasmBytes, root, opts) {\n"
+"export async function loadBats(wasmBytes, root, opts) {\n"
 "  const extraImports = (opts && opts.extraImports) || {};\n"
 "  const document = root.ownerDocument;\n"
 "  let instance = null;\n"
