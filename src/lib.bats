@@ -16,18 +16,18 @@ $UNSAFE begin
 /* Bridge int stash -- 4 slots for stash IDs and metadata */
 static int _bridge_stash_int[4] = {0};
 
-void ward_bridge_stash_set_int(int slot, int v) {
+void bats_bridge_stash_set_int(int slot, int v) {
   _bridge_stash_int[slot] = v;
 }
 
-int ward_bridge_stash_get_int(int slot) {
+int bats_bridge_stash_get_int(int slot) {
   return _bridge_stash_int[slot];
 }
 
 /* Measure stash -- 6 slots for x, y, w, h, scrollW, scrollH */
 static int _bridge_measure[6] = {0};
 
-void ward_measure_set(int slot, int v) {
+void bats_measure_set(int slot, int v) {
   _bridge_measure[slot] = v;
 }
 
@@ -39,11 +39,11 @@ static int _bridge_measure_get(int slot) {
 #define _BRIDGE_MAX_LISTENERS 128
 static void *_bridge_listener_table[_BRIDGE_MAX_LISTENERS] = {0};
 
-void ward_listener_set(int id, void *cb) {
+void bats_listener_set(int id, void *cb) {
   if (id >= 0 && id < _BRIDGE_MAX_LISTENERS) _bridge_listener_table[id] = cb;
 }
 
-void *ward_listener_get(int id) {
+void *bats_listener_get(int id) {
   if (id >= 0 && id < _BRIDGE_MAX_LISTENERS) return _bridge_listener_table[id];
   return (void*)0;
 }
@@ -58,108 +58,108 @@ end
    ============================================================ *)
 
 (* --- Timer --- *)
-extern fun _ward_set_timer
-  (delay_ms: int, resolver_id: int): void = "mac#ward_set_timer"
-extern fun _ward_exit
-  (): void = "mac#ward_exit"
+extern fun _bats_set_timer
+  (delay_ms: int, resolver_id: int): void = "mac#bats_set_timer"
+extern fun _bats_exit
+  (): void = "mac#bats_exit"
 
 (* --- DOM --- *)
-extern fun _ward_dom_flush
-  (buf: ptr, len: int): void = "mac#ward_dom_flush"
-extern fun _ward_js_set_image_src
+extern fun _bats_dom_flush
+  (buf: ptr, len: int): void = "mac#bats_dom_flush"
+extern fun _bats_js_set_image_src
   (node_id: int, data: ptr, data_len: int, mime: ptr, mime_len: int)
-  : void = "mac#ward_js_set_image_src"
+  : void = "mac#bats_js_set_image_src"
 
 (* --- DOM read --- *)
-extern fun _ward_js_measure_node
-  (node_id: int): int = "mac#ward_js_measure_node"
-extern fun _ward_js_query_selector
-  (selector: ptr, selector_len: int): int = "mac#ward_js_query_selector"
+extern fun _bats_js_measure_node
+  (node_id: int): int = "mac#bats_js_measure_node"
+extern fun _bats_js_query_selector
+  (selector: ptr, selector_len: int): int = "mac#bats_js_query_selector"
 
 (* --- Event --- *)
-extern fun _ward_js_add_event_listener
+extern fun _bats_js_add_event_listener
   (node_id: int, event_type: ptr, type_len: int, listener_id: int)
-  : void = "mac#ward_js_add_event_listener"
-extern fun _ward_js_remove_event_listener
-  (listener_id: int): void = "mac#ward_js_remove_event_listener"
-extern fun _ward_js_prevent_default
-  (): void = "mac#ward_js_prevent_default"
+  : void = "mac#bats_js_add_event_listener"
+extern fun _bats_js_remove_event_listener
+  (listener_id: int): void = "mac#bats_js_remove_event_listener"
+extern fun _bats_js_prevent_default
+  (): void = "mac#bats_js_prevent_default"
 
 (* --- Navigation --- *)
-extern fun _ward_js_get_url
-  (out: ptr, max_len: int): int = "mac#ward_js_get_url"
-extern fun _ward_js_get_url_hash
-  (out: ptr, max_len: int): int = "mac#ward_js_get_url_hash"
-extern fun _ward_js_set_url_hash
-  (hash: ptr, hash_len: int): void = "mac#ward_js_set_url_hash"
-extern fun _ward_js_replace_state
-  (url: ptr, url_len: int): void = "mac#ward_js_replace_state"
-extern fun _ward_js_push_state
-  (url: ptr, url_len: int): void = "mac#ward_js_push_state"
+extern fun _bats_js_get_url
+  (out: ptr, max_len: int): int = "mac#bats_js_get_url"
+extern fun _bats_js_get_url_hash
+  (out: ptr, max_len: int): int = "mac#bats_js_get_url_hash"
+extern fun _bats_js_set_url_hash
+  (hash: ptr, hash_len: int): void = "mac#bats_js_set_url_hash"
+extern fun _bats_js_replace_state
+  (url: ptr, url_len: int): void = "mac#bats_js_replace_state"
+extern fun _bats_js_push_state
+  (url: ptr, url_len: int): void = "mac#bats_js_push_state"
 
 (* --- Window --- *)
-extern fun _ward_js_focus_window
-  (): void = "mac#ward_js_focus_window"
-extern fun _ward_js_get_visibility_state
-  (): int = "mac#ward_js_get_visibility_state"
-extern fun _ward_js_log
-  (level: int, msg: ptr, msg_len: int): void = "mac#ward_js_log"
+extern fun _bats_js_focus_window
+  (): void = "mac#bats_js_focus_window"
+extern fun _bats_js_get_visibility_state
+  (): int = "mac#bats_js_get_visibility_state"
+extern fun _bats_js_log
+  (level: int, msg: ptr, msg_len: int): void = "mac#bats_js_log"
 
 (* --- IDB --- *)
-extern fun _ward_idb_js_put
+extern fun _bats_idb_js_put
   (key: ptr, key_len: int, val_data: ptr, val_len: int, resolver_id: int)
-  : void = "mac#ward_idb_js_put"
-extern fun _ward_idb_js_get
+  : void = "mac#bats_idb_js_put"
+extern fun _bats_idb_js_get
   (key: ptr, key_len: int, resolver_id: int)
-  : void = "mac#ward_idb_js_get"
-extern fun _ward_idb_js_delete
+  : void = "mac#bats_idb_js_get"
+extern fun _bats_idb_js_delete
   (key: ptr, key_len: int, resolver_id: int)
-  : void = "mac#ward_idb_js_delete"
+  : void = "mac#bats_idb_js_delete"
 
 (* --- Fetch --- *)
-extern fun _ward_js_fetch
-  (url: ptr, url_len: int, resolver_id: int): void = "mac#ward_js_fetch"
+extern fun _bats_js_fetch
+  (url: ptr, url_len: int, resolver_id: int): void = "mac#bats_js_fetch"
 
 (* --- Clipboard --- *)
-extern fun _ward_js_clipboard_write_text
+extern fun _bats_js_clipboard_write_text
   (text: ptr, text_len: int, resolver_id: int)
-  : void = "mac#ward_js_clipboard_write_text"
+  : void = "mac#bats_js_clipboard_write_text"
 
 (* --- File --- *)
-extern fun _ward_js_file_open
-  (input_node_id: int, resolver_id: int): void = "mac#ward_js_file_open"
-extern fun _ward_js_file_read
-  (handle: int, file_offset: int, len: int, out: ptr): int = "mac#ward_js_file_read"
-extern fun _ward_js_file_close
-  (handle: int): void = "mac#ward_js_file_close"
+extern fun _bats_js_file_open
+  (input_node_id: int, resolver_id: int): void = "mac#bats_js_file_open"
+extern fun _bats_js_file_read
+  (handle: int, file_offset: int, len: int, out: ptr): int = "mac#bats_js_file_read"
+extern fun _bats_js_file_close
+  (handle: int): void = "mac#bats_js_file_close"
 
 (* --- Decompress --- *)
-extern fun _ward_js_decompress
+extern fun _bats_js_decompress
   (data: ptr, data_len: int, method: int, resolver_id: int)
-  : void = "mac#ward_js_decompress"
-extern fun _ward_js_blob_read
-  (handle: int, blob_offset: int, len: int, out: ptr): int = "mac#ward_js_blob_read"
-extern fun _ward_js_blob_free
-  (handle: int): void = "mac#ward_js_blob_free"
+  : void = "mac#bats_js_decompress"
+extern fun _bats_js_blob_read
+  (handle: int, blob_offset: int, len: int, out: ptr): int = "mac#bats_js_blob_read"
+extern fun _bats_js_blob_free
+  (handle: int): void = "mac#bats_js_blob_free"
 
 (* --- Notify --- *)
-extern fun _ward_js_notification_request_permission
-  (resolver_id: int): void = "mac#ward_js_notification_request_permission"
-extern fun _ward_js_notification_show
-  (title: ptr, title_len: int): void = "mac#ward_js_notification_show"
-extern fun _ward_js_push_subscribe
+extern fun _bats_js_notification_request_permission
+  (resolver_id: int): void = "mac#bats_js_notification_request_permission"
+extern fun _bats_js_notification_show
+  (title: ptr, title_len: int): void = "mac#bats_js_notification_show"
+extern fun _bats_js_push_subscribe
   (vapid: ptr, vapid_len: int, resolver_id: int)
-  : void = "mac#ward_js_push_subscribe"
-extern fun _ward_js_push_get_subscription
-  (resolver_id: int): void = "mac#ward_js_push_get_subscription"
+  : void = "mac#bats_js_push_subscribe"
+extern fun _bats_js_push_get_subscription
+  (resolver_id: int): void = "mac#bats_js_push_get_subscription"
 
 (* --- XML --- *)
-extern fun _ward_js_parse_html
-  (html: ptr, len: int): int = "mac#ward_js_parse_html"
+extern fun _bats_js_parse_html
+  (html: ptr, len: int): int = "mac#bats_js_parse_html"
 
 (* --- Stash --- *)
-extern fun _ward_js_stash_read
-  (stash_id: int, dest: ptr, len: int): void = "mac#ward_js_stash_read"
+extern fun _bats_js_stash_read
+  (stash_id: int, dest: ptr, len: int): void = "mac#bats_js_stash_read"
 
 (* ============================================================
    Internal helper -- allocate + fill from JS stash
@@ -169,14 +169,14 @@ fun _bridge_recv{n:pos | n <= 1048576}
   (stash_id: int, len: int n): [l:agz] $A.arr(byte, l, n) = let
   val buf = $A.alloc<byte>(len)
   val p = $UNSAFE begin $UNSAFE.castvwtp1{ptr}(buf) end
-  val () = _ward_js_stash_read(stash_id, p, len)
+  val () = _bats_js_stash_read(stash_id, p, len)
 in buf end
 
 fn _stash_get_int(slot: int): int =
-  $extfcall(int, "ward_bridge_stash_get_int", slot)
+  $extfcall(int, "bats_bridge_stash_get_int", slot)
 
 fn _stash_set_int(slot: int, v: int): void =
-  $extfcall(void, "ward_bridge_stash_set_int", slot, v)
+  $extfcall(void, "bats_bridge_stash_set_int", slot, v)
 
 (* ============================================================
    Public API -- safe typed wrappers
@@ -405,35 +405,35 @@ fn _stash_set_int(slot: int, v: int): void =
 (* --- WASM exports -- called by JS host --- *)
 
 #pub fun on_timer_fire
-  (resolver_id: int): void = "ext#ward_timer_fire"
+  (resolver_id: int): void = "ext#bats_timer_fire"
 
 #pub fun on_event
-  (listener_id: int, payload_len: int): void = "ext#ward_on_event"
+  (listener_id: int, payload_len: int): void = "ext#bats_on_event"
 
 #pub fun on_fetch_complete
-  (resolver_id: int, status: int, body_len: int): void = "ext#ward_on_fetch_complete"
+  (resolver_id: int, status: int, body_len: int): void = "ext#bats_on_fetch_complete"
 
 #pub fun on_clipboard_complete
-  (resolver_id: int, success: int): void = "ext#ward_on_clipboard_complete"
+  (resolver_id: int, success: int): void = "ext#bats_on_clipboard_complete"
 
 #pub fun on_file_open
-  (resolver_id: int, handle: int, size: int): void = "ext#ward_on_file_open"
+  (resolver_id: int, handle: int, size: int): void = "ext#bats_on_file_open"
 
 #pub fun on_decompress_complete
   (resolver_id: int, handle: int, decompressed_len: int)
-  : void = "ext#ward_on_decompress_complete"
+  : void = "ext#bats_on_decompress_complete"
 
 #pub fun on_idb_fire
-  (resolver_id: int, status: int): void = "ext#ward_idb_fire"
+  (resolver_id: int, status: int): void = "ext#bats_idb_fire"
 
 #pub fun on_idb_fire_get
-  (resolver_id: int, data_len: int): void = "ext#ward_idb_fire_get"
+  (resolver_id: int, data_len: int): void = "ext#bats_idb_fire_get"
 
 #pub fun on_permission_result
-  (resolver_id: int, granted: int): void = "ext#ward_on_permission_result"
+  (resolver_id: int, granted: int): void = "ext#bats_on_permission_result"
 
 #pub fun on_push_subscribe
-  (resolver_id: int, json_len: int): void = "ext#ward_on_push_subscribe"
+  (resolver_id: int, json_len: int): void = "ext#bats_on_push_subscribe"
 
 (* ============================================================
    produce_bridge -- returns the complete JS bridge as a string
@@ -448,26 +448,26 @@ fn _stash_set_int(slot: int, v: int): void =
 (* --- Timer --- *)
 
 implement timer_set(delay_ms, stash_id) =
-  _ward_set_timer(delay_ms, stash_id)
+  _bats_set_timer(delay_ms, stash_id)
 
-implement exit() = _ward_exit()
+implement exit() = _bats_exit()
 
 (* --- DOM --- *)
 
 implement dom_flush{l}{n}{m}(buf, len) =
-  _ward_dom_flush(
+  _bats_dom_flush(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(buf) end,
     len)
 
 implement set_image_src{ld}{nd}{lm}{nm}
   (node_id, data, data_len, mime, mime_len) =
-  _ward_js_set_image_src(node_id,
+  _bats_js_set_image_src(node_id,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end, data_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(mime) end, mime_len)
 
 (* --- DOM read --- *)
 
-implement measure(node_id) = _ward_js_measure_node(node_id)
+implement measure(node_id) = _bats_js_measure_node(node_id)
 
 implement get_measure_x() = $extfcall(int, "_bridge_measure_get", 0)
 implement get_measure_y() = $extfcall(int, "_bridge_measure_get", 1)
@@ -477,70 +477,70 @@ implement get_measure_scroll_w() = $extfcall(int, "_bridge_measure_get", 4)
 implement get_measure_scroll_h() = $extfcall(int, "_bridge_measure_get", 5)
 
 implement query_selector{lb}{n}(sel, sel_len) =
-  _ward_js_query_selector(
+  _bats_js_query_selector(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(sel) end,
     sel_len)
 
 (* --- Event --- *)
 
 implement listen{lb}{n}(node_id, event_type, type_len, listener_id) =
-  _ward_js_add_event_listener(node_id,
+  _bats_js_add_event_listener(node_id,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(event_type) end,
     type_len, listener_id)
 
 implement unlisten(listener_id) =
-  _ward_js_remove_event_listener(listener_id)
+  _bats_js_remove_event_listener(listener_id)
 
-implement prevent_default() = _ward_js_prevent_default()
+implement prevent_default() = _bats_js_prevent_default()
 
 implement listener_set(id, cb) =
-  $extfcall(void, "ward_listener_set", id, cb)
+  $extfcall(void, "bats_listener_set", id, cb)
 
 implement listener_set_closure(id, cb) = let
   val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(cb) end
-in $extfcall(void, "ward_listener_set", id, cbp) end
+in $extfcall(void, "bats_listener_set", id, cbp) end
 
 implement listener_clear(id) =
-  $extfcall(void, "ward_listener_set", id, the_null_ptr)
+  $extfcall(void, "bats_listener_set", id, the_null_ptr)
 
 implement listener_get(id) =
-  $extfcall(ptr, "ward_listener_get", id)
+  $extfcall(ptr, "bats_listener_get", id)
 
 (* --- Navigation --- *)
 
 implement get_url{l}{n}(out, max_len) =
-  _ward_js_get_url(
+  _bats_js_get_url(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
     max_len)
 
 implement get_hash{l}{n}(out, max_len) =
-  _ward_js_get_url_hash(
+  _bats_js_get_url_hash(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
     max_len)
 
 implement set_hash{lb}{n}(hash, hash_len) =
-  _ward_js_set_url_hash(
+  _bats_js_set_url_hash(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(hash) end,
     hash_len)
 
 implement replace_state{lb}{n}(url, url_len) =
-  _ward_js_replace_state(
+  _bats_js_replace_state(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end,
     url_len)
 
 implement push_state{lb}{n}(url, url_len) =
-  _ward_js_push_state(
+  _bats_js_push_state(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end,
     url_len)
 
 (* --- Window --- *)
 
-implement focus() = _ward_js_focus_window()
+implement focus() = _bats_js_focus_window()
 
-implement get_visibility() = _ward_js_get_visibility_state()
+implement get_visibility() = _bats_js_get_visibility_state()
 
 implement log{lb}{n}(level, msg, msg_len) =
-  _ward_js_log(level,
+  _bats_js_log(level,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(msg) end,
     msg_len)
 
@@ -548,13 +548,13 @@ implement log{lb}{n}(level, msg, msg_len) =
 
 implement idb_put{lk}{nk}{lv}{nv}
   (key, key_len, val_data, val_len, stash_id) =
-  _ward_idb_js_put(
+  _bats_idb_js_put(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(val_data) end, val_len,
     stash_id)
 
 implement idb_get{lk}{nk}(key, key_len, stash_id) =
-  _ward_idb_js_get(
+  _bats_idb_js_get(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len,
     stash_id)
 
@@ -562,14 +562,14 @@ implement idb_get_result{n}(len) =
   _bridge_recv(_stash_get_int(1), len)
 
 implement idb_delete{lk}{nk}(key, key_len, stash_id) =
-  _ward_idb_js_delete(
+  _bats_idb_js_delete(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len,
     stash_id)
 
 (* --- Fetch --- *)
 
 implement fetch_req{lb}{n}(url, url_len, stash_id) =
-  _ward_js_fetch(
+  _bats_js_fetch(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end, url_len,
     stash_id)
 
@@ -581,14 +581,14 @@ implement fetch_body{n}(len) =
 (* --- Clipboard --- *)
 
 implement clipboard_write{lb}{n}(text, text_len, stash_id) =
-  _ward_js_clipboard_write_text(
+  _bats_js_clipboard_write_text(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(text) end, text_len,
     stash_id)
 
 (* --- File --- *)
 
 implement file_open(input_node_id, stash_id) =
-  _ward_js_file_open(input_node_id, stash_id)
+  _bats_js_file_open(input_node_id, stash_id)
 
 implement file_size() = _stash_get_int(0)
 
@@ -598,38 +598,38 @@ implement file_name{n}(len) =
   _bridge_recv(_stash_get_int(1), len)
 
 implement file_read{l}{n}(handle, file_offset, out, len) =
-  _ward_js_file_read(handle, file_offset, len,
+  _bats_js_file_read(handle, file_offset, len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end)
 
-implement file_close(handle) = _ward_js_file_close(handle)
+implement file_close(handle) = _bats_js_file_close(handle)
 
 (* --- Decompress --- *)
 
 implement decompress_req{lb}{n}(data, data_len, method, stash_id) =
-  _ward_js_decompress(
+  _bats_js_decompress(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end,
     data_len, method, stash_id)
 
 implement decompress_len() = _stash_get_int(0)
 
 implement blob_read{l}{n}(handle, blob_offset, out, len) =
-  _ward_js_blob_read(handle, blob_offset, len,
+  _bats_js_blob_read(handle, blob_offset, len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end)
 
-implement blob_free(handle) = _ward_js_blob_free(handle)
+implement blob_free(handle) = _bats_js_blob_free(handle)
 
 (* --- Notify --- *)
 
 implement notify_request(stash_id) =
-  _ward_js_notification_request_permission(stash_id)
+  _bats_js_notification_request_permission(stash_id)
 
 implement notify_show{lb}{n}(title, title_len) =
-  _ward_js_notification_show(
+  _bats_js_notification_show(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(title) end,
     title_len)
 
 implement notify_subscribe{lb}{n}(vapid, vapid_len, stash_id) =
-  _ward_js_push_subscribe(
+  _bats_js_push_subscribe(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(vapid) end,
     vapid_len, stash_id)
 
@@ -637,12 +637,12 @@ implement notify_result{n}(len) =
   _bridge_recv(_stash_get_int(1), len)
 
 implement notify_get_sub(stash_id) =
-  _ward_js_push_get_subscription(stash_id)
+  _bats_js_push_get_subscription(stash_id)
 
 (* --- XML --- *)
 
 implement xml_parse{lb}{n}(html, len) =
-  _ward_js_parse_html(
+  _bats_js_parse_html(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(html) end,
     len)
 
@@ -664,7 +664,7 @@ implement on_timer_fire(resolver_id) =
   $P.fire(resolver_id, 0)
 
 implement on_event(listener_id, payload_len) = let
-  val cbp = $extfcall(ptr, "ward_listener_get", listener_id)
+  val cbp = $extfcall(ptr, "bats_listener_get", listener_id)
 in
   if ptr_isnot_null(cbp) then let
     val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
@@ -719,8 +719,8 @@ $UNSAFE begin
 %{$
 static const char *_bridge_js_source(void) {
   return
-"// ward_bridge.mjs — Bridge between ward WASM and a DOM document\n"
-"// Parses the ward binary diff protocol and applies it to a standard DOM.\n"
+"// bats_bridge.mjs — Bridge between bats WASM and a DOM document\n"
+"// Parses the bats binary diff protocol and applies it to a standard DOM.\n"
 "// Works in any ES module environment (browser or Node.js).\n"
 "\n"
 "// Parse a little-endian i32 from a Uint8Array at offset\n"
@@ -729,12 +729,12 @@ static const char *_bridge_js_source(void) {
 "}\n"
 "\n"
 "/**\n"
-" * Load a ward WASM module and connect it to a DOM document.\n"
+" * Load a bats WASM module and connect it to a DOM document.\n"
 " *\n"
 " * @param {BufferSource} wasmBytes — compiled WASM bytes\n"
-" * @param {Element} root — root element for ward to render into (node_id 0)\n"
+" * @param {Element} root — root element for bats to render into (node_id 0)\n"
 " * @returns {{ exports, nodes, done }} — WASM exports, node registry,\n"
-" *   and a promise that resolves when WASM calls ward_exit\n"
+" *   and a promise that resolves when WASM calls bats_exit\n"
 " */\n"
 "export async function loadWard(wasmBytes, root, opts) {\n"
 "  const extraImports = (opts && opts.extraImports) || {};\n"
@@ -755,7 +755,7 @@ static const char *_bridge_js_source(void) {
 "    return new TextDecoder().decode(readBytes(ptr, len));\n"
 "  }\n"
 "\n"
-"  // JS-side data stash — WASM pulls data via ward_js_stash_read\n"
+"  // JS-side data stash — WASM pulls data via bats_js_stash_read\n"
 "  const dataStash = new Map();\n"
 "  let nextStashId = 0;\n"
 "\n"
@@ -765,7 +765,7 @@ static const char *_bridge_js_source(void) {
 "    return id;\n"
 "  }\n"
 "\n"
-"  function wardJsStashRead(stashId, destPtr, len) {\n"
+"  function batsJsStashRead(stashId, destPtr, len) {\n"
 "    const data = dataStash.get(stashId);\n"
 "    if (data) {\n"
 "      const copyLen = Math.min(len, data.length);\n"
@@ -794,7 +794,7 @@ static const char *_bridge_js_source(void) {
 "\n"
 "  // --- DOM flush ---\n"
 "\n"
-"  function wardDomFlush(bufPtr, len) {\n"
+"  function batsDomFlush(bufPtr, len) {\n"
 "    const mem = new Uint8Array(instance.exports.memory.buffer);\n"
 "    let pos = 0;\n"
 "\n"
@@ -855,14 +855,14 @@ static const char *_bridge_js_source(void) {
 "          break;\n"
 "        }\n"
 "        default:\n"
-"          throw new Error(`Unknown ward DOM op: ${op} at offset ${pos}`);\n"
+"          throw new Error(`Unknown bats DOM op: ${op} at offset ${pos}`);\n"
 "      }\n"
 "    }\n"
 "  }\n"
 "\n"
 "  // --- Image src (direct bridge call, not diff buffer) ---\n"
 "\n"
-"  function wardJsSetImageSrc(nodeId, dataPtr, dataLen, mimePtr, mimeLen) {\n"
+"  function batsJsSetImageSrc(nodeId, dataPtr, dataLen, mimePtr, mimeLen) {\n"
 "    const mime = readString(mimePtr, mimeLen);\n"
 "    const bytes = readBytes(dataPtr, dataLen);\n"
 "    const oldUrl = blobUrls.get(nodeId);\n"
@@ -876,9 +876,9 @@ static const char *_bridge_js_source(void) {
 "\n"
 "  // --- Timer ---\n"
 "\n"
-"  function wardSetTimer(delayMs, resolverId) {\n"
+"  function batsSetTimer(delayMs, resolverId) {\n"
 "    setTimeout(() => {\n"
-"      instance.exports.ward_timer_fire(resolverId);\n"
+"      instance.exports.bats_timer_fire(resolverId);\n"
 "    }, delayMs);\n"
 "  }\n"
 "\n"
@@ -888,7 +888,7 @@ static const char *_bridge_js_source(void) {
 "  function openDB() {\n"
 "    if (!dbPromise) {\n"
 "      dbPromise = new Promise((resolve, reject) => {\n"
-"        const req = indexedDB.open('ward', 1);\n"
+"        const req = indexedDB.open('bats', 1);\n"
 "        req.onupgradeneeded = () => {\n"
 "          req.result.createObjectStore('kv');\n"
 "        };\n"
@@ -899,22 +899,22 @@ static const char *_bridge_js_source(void) {
 "    return dbPromise;\n"
 "  }\n"
 "\n"
-"  function wardIdbPut(keyPtr, keyLen, valPtr, valLen, resolverId) {\n"
+"  function batsIdbPut(keyPtr, keyLen, valPtr, valLen, resolverId) {\n"
 "    const key = readString(keyPtr, keyLen);\n"
 "    const val = readBytes(valPtr, valLen);\n"
 "    openDB().then(db => {\n"
 "      const tx = db.transaction('kv', 'readwrite');\n"
 "      tx.objectStore('kv').put(val, key);\n"
 "      tx.oncomplete = () => {\n"
-"        instance.exports.ward_idb_fire(resolverId, 0);\n"
+"        instance.exports.bats_idb_fire(resolverId, 0);\n"
 "      };\n"
 "      tx.onerror = () => {\n"
-"        instance.exports.ward_idb_fire(resolverId, -1);\n"
+"        instance.exports.bats_idb_fire(resolverId, -1);\n"
 "      };\n"
 "    });\n"
 "  }\n"
 "\n"
-"  function wardIdbGet(keyPtr, keyLen, resolverId) {\n"
+"  function batsIdbGet(keyPtr, keyLen, resolverId) {\n"
 "    const key = readString(keyPtr, keyLen);\n"
 "    openDB().then(db => {\n"
 "      const tx = db.transaction('kv', 'readonly');\n"
@@ -922,51 +922,51 @@ static const char *_bridge_js_source(void) {
 "      req.onsuccess = () => {\n"
 "        const result = req.result;\n"
 "        if (result === undefined) {\n"
-"          instance.exports.ward_idb_fire_get(resolverId, 0);\n"
+"          instance.exports.bats_idb_fire_get(resolverId, 0);\n"
 "        } else {\n"
 "          const data = new Uint8Array(result);\n"
 "          const stashId = stashData(data);\n"
-"          instance.exports.ward_bridge_stash_set_int(1, stashId);\n"
-"          instance.exports.ward_idb_fire_get(resolverId, data.length);\n"
+"          instance.exports.bats_bridge_stash_set_int(1, stashId);\n"
+"          instance.exports.bats_idb_fire_get(resolverId, data.length);\n"
 "        }\n"
 "      };\n"
 "      req.onerror = () => {\n"
-"        instance.exports.ward_idb_fire_get(resolverId, 0);\n"
+"        instance.exports.bats_idb_fire_get(resolverId, 0);\n"
 "      };\n"
 "    });\n"
 "  }\n"
 "\n"
-"  function wardIdbDelete(keyPtr, keyLen, resolverId) {\n"
+"  function batsIdbDelete(keyPtr, keyLen, resolverId) {\n"
 "    const key = readString(keyPtr, keyLen);\n"
 "    openDB().then(db => {\n"
 "      const tx = db.transaction('kv', 'readwrite');\n"
 "      tx.objectStore('kv').delete(key);\n"
 "      tx.oncomplete = () => {\n"
-"        instance.exports.ward_idb_fire(resolverId, 0);\n"
+"        instance.exports.bats_idb_fire(resolverId, 0);\n"
 "      };\n"
 "      tx.onerror = () => {\n"
-"        instance.exports.ward_idb_fire(resolverId, -1);\n"
+"        instance.exports.bats_idb_fire(resolverId, -1);\n"
 "      };\n"
 "    });\n"
 "  }\n"
 "\n"
 "  // --- Window ---\n"
 "\n"
-"  function wardJsFocusWindow() {\n"
+"  function batsJsFocusWindow() {\n"
 "    try { root.ownerDocument.defaultView.focus(); } catch(e) {}\n"
 "  }\n"
 "\n"
-"  function wardJsGetVisibilityState() {\n"
+"  function batsJsGetVisibilityState() {\n"
 "    try {\n"
 "      return document.visibilityState === 'hidden' ? 1 : 0;\n"
 "    } catch(e) { return 0; }\n"
 "  }\n"
 "\n"
-"  function wardJsLog(level, msgPtr, msgLen) {\n"
+"  function batsJsLog(level, msgPtr, msgLen) {\n"
 "    const msg = readString(msgPtr, msgLen);\n"
 "    const labels = ['debug', 'info', 'warn', 'error'];\n"
 "    const label = labels[level] || 'log';\n"
-"    console.log(`[ward:${label}] ${msg}`);\n"
+"    console.log(`[bats:${label}] ${msg}`);\n"
 "  }\n"
 "\n"
 "  // --- Navigation ---\n"
@@ -978,35 +978,35 @@ static const char *_bridge_js_source(void) {
 "    return len;\n"
 "  }\n"
 "\n"
-"  function wardJsGetUrl(outPtr, maxLen) {\n"
+"  function batsJsGetUrl(outPtr, maxLen) {\n"
 "    try {\n"
 "      const win = root.ownerDocument.defaultView;\n"
 "      return writeStringToWasm(win.location.href, outPtr, maxLen);\n"
 "    } catch(e) { return 0; }\n"
 "  }\n"
 "\n"
-"  function wardJsGetUrlHash(outPtr, maxLen) {\n"
+"  function batsJsGetUrlHash(outPtr, maxLen) {\n"
 "    try {\n"
 "      const win = root.ownerDocument.defaultView;\n"
 "      return writeStringToWasm(win.location.hash, outPtr, maxLen);\n"
 "    } catch(e) { return 0; }\n"
 "  }\n"
 "\n"
-"  function wardJsSetUrlHash(hashPtr, hashLen) {\n"
+"  function batsJsSetUrlHash(hashPtr, hashLen) {\n"
 "    try {\n"
 "      const win = root.ownerDocument.defaultView;\n"
 "      win.location.hash = readString(hashPtr, hashLen);\n"
 "    } catch(e) {}\n"
 "  }\n"
 "\n"
-"  function wardJsReplaceState(urlPtr, urlLen) {\n"
+"  function batsJsReplaceState(urlPtr, urlLen) {\n"
 "    try {\n"
 "      const win = root.ownerDocument.defaultView;\n"
 "      win.history.replaceState(null, '', readString(urlPtr, urlLen));\n"
 "    } catch(e) {}\n"
 "  }\n"
 "\n"
-"  function wardJsPushState(urlPtr, urlLen) {\n"
+"  function batsJsPushState(urlPtr, urlLen) {\n"
 "    try {\n"
 "      const win = root.ownerDocument.defaultView;\n"
 "      win.history.pushState(null, '', readString(urlPtr, urlLen));\n"
@@ -1015,25 +1015,25 @@ static const char *_bridge_js_source(void) {
 "\n"
 "  // --- DOM read ---\n"
 "\n"
-"  function wardJsMeasureNode(nodeId) {\n"
+"  function batsJsMeasureNode(nodeId) {\n"
 "    const el = nodes.get(nodeId);\n"
 "    if (el && typeof el.getBoundingClientRect === 'function') {\n"
 "      const rect = el.getBoundingClientRect();\n"
-"      instance.exports.ward_measure_set(0, Math.round(rect.x));\n"
-"      instance.exports.ward_measure_set(1, Math.round(rect.y));\n"
-"      instance.exports.ward_measure_set(2, Math.round(rect.width));\n"
-"      instance.exports.ward_measure_set(3, Math.round(rect.height));\n"
-"      instance.exports.ward_measure_set(4, el.scrollWidth || 0);\n"
-"      instance.exports.ward_measure_set(5, el.scrollHeight || 0);\n"
+"      instance.exports.bats_measure_set(0, Math.round(rect.x));\n"
+"      instance.exports.bats_measure_set(1, Math.round(rect.y));\n"
+"      instance.exports.bats_measure_set(2, Math.round(rect.width));\n"
+"      instance.exports.bats_measure_set(3, Math.round(rect.height));\n"
+"      instance.exports.bats_measure_set(4, el.scrollWidth || 0);\n"
+"      instance.exports.bats_measure_set(5, el.scrollHeight || 0);\n"
 "      return 1;\n"
 "    }\n"
 "    for (let i = 0; i < 6; i++) {\n"
-"      instance.exports.ward_measure_set(i, 0);\n"
+"      instance.exports.bats_measure_set(i, 0);\n"
 "    }\n"
 "    return 0;\n"
 "  }\n"
 "\n"
-"  function wardJsQuerySelector(selectorPtr, selectorLen) {\n"
+"  function batsJsQuerySelector(selectorPtr, selectorLen) {\n"
 "    const selector = readString(selectorPtr, selectorLen);\n"
 "    try {\n"
 "      const el = document.querySelector(selector);\n"
@@ -1130,7 +1130,7 @@ static const char *_bridge_js_source(void) {
 "    return null;\n"
 "  }\n"
 "\n"
-"  function wardJsAddEventListener(nodeId, eventTypePtr, typeLen, listenerId) {\n"
+"  function batsJsAddEventListener(nodeId, eventTypePtr, typeLen, listenerId) {\n"
 "    const node = nodes.get(nodeId);\n"
 "    if (!node) return;\n"
 "    const eventType = readString(eventTypePtr, typeLen);\n"
@@ -1139,16 +1139,16 @@ static const char *_bridge_js_source(void) {
 "      const payload = encodeEventPayload(event, eventType);\n"
 "      if (payload) {\n"
 "        const stashId = stashData(payload);\n"
-"        instance.exports.ward_bridge_stash_set_int(1, stashId);\n"
+"        instance.exports.bats_bridge_stash_set_int(1, stashId);\n"
 "      }\n"
-"      instance.exports.ward_on_event(listenerId, payload ? payload.length : 0);\n"
+"      instance.exports.bats_on_event(listenerId, payload ? payload.length : 0);\n"
 "      currentEvent = null;\n"
 "    };\n"
 "    listenerMap.set(listenerId, { node, eventType, handler });\n"
 "    node.addEventListener(eventType, handler);\n"
 "  }\n"
 "\n"
-"  function wardJsRemoveEventListener(listenerId) {\n"
+"  function batsJsRemoveEventListener(listenerId) {\n"
 "    const entry = listenerMap.get(listenerId);\n"
 "    if (entry) {\n"
 "      entry.node.removeEventListener(entry.eventType, entry.handler);\n"
@@ -1156,42 +1156,42 @@ static const char *_bridge_js_source(void) {
 "    }\n"
 "  }\n"
 "\n"
-"  function wardJsPreventDefault() {\n"
+"  function batsJsPreventDefault() {\n"
 "    if (currentEvent) currentEvent.preventDefault();\n"
 "  }\n"
 "\n"
 "  // --- Fetch ---\n"
 "\n"
-"  function wardJsFetch(urlPtr, urlLen, resolverId) {\n"
+"  function batsJsFetch(urlPtr, urlLen, resolverId) {\n"
 "    const url = readString(urlPtr, urlLen);\n"
 "    fetch(url).then(async (response) => {\n"
 "      const body = new Uint8Array(await response.arrayBuffer());\n"
 "      if (body.length > 0) {\n"
 "        const stashId = stashData(body);\n"
-"        instance.exports.ward_bridge_stash_set_int(1, stashId);\n"
+"        instance.exports.bats_bridge_stash_set_int(1, stashId);\n"
 "      }\n"
-"      instance.exports.ward_on_fetch_complete(resolverId, response.status, body.length);\n"
+"      instance.exports.bats_on_fetch_complete(resolverId, response.status, body.length);\n"
 "    }).catch(() => {\n"
-"      instance.exports.ward_on_fetch_complete(resolverId, 0, 0);\n"
+"      instance.exports.bats_on_fetch_complete(resolverId, 0, 0);\n"
 "    });\n"
 "  }\n"
 "\n"
 "  // --- Clipboard ---\n"
 "\n"
-"  function wardJsClipboardWriteText(textPtr, textLen, resolverId) {\n"
+"  function batsJsClipboardWriteText(textPtr, textLen, resolverId) {\n"
 "    const text = readString(textPtr, textLen);\n"
 "    try {\n"
 "      const win = root.ownerDocument.defaultView;\n"
 "      if (win && win.navigator && win.navigator.clipboard) {\n"
 "        win.navigator.clipboard.writeText(text).then(\n"
-"          () => { instance.exports.ward_on_clipboard_complete(resolverId, 1); },\n"
-"          () => { instance.exports.ward_on_clipboard_complete(resolverId, 0); }\n"
+"          () => { instance.exports.bats_on_clipboard_complete(resolverId, 1); },\n"
+"          () => { instance.exports.bats_on_clipboard_complete(resolverId, 0); }\n"
 "        );\n"
 "      } else {\n"
-"        instance.exports.ward_on_clipboard_complete(resolverId, 0);\n"
+"        instance.exports.bats_on_clipboard_complete(resolverId, 0);\n"
 "      }\n"
 "    } catch(e) {\n"
-"      instance.exports.ward_on_clipboard_complete(resolverId, 0);\n"
+"      instance.exports.bats_on_clipboard_complete(resolverId, 0);\n"
 "    }\n"
 "  }\n"
 "\n"
@@ -1200,11 +1200,11 @@ static const char *_bridge_js_source(void) {
 "  const fileCache = new Map();\n"
 "  let nextFileHandle = 1;\n"
 "\n"
-"  function wardJsFileOpen(inputNodeId, resolverId) {\n"
+"  function batsJsFileOpen(inputNodeId, resolverId) {\n"
 "    const el = nodes.get(inputNodeId);\n"
 "    if (!el || !el.files || !el.files[0]) {\n"
-"      instance.exports.ward_bridge_stash_set_int(2, 0);\n"
-"      instance.exports.ward_on_file_open(resolverId, 0, 0);\n"
+"      instance.exports.bats_bridge_stash_set_int(2, 0);\n"
+"      instance.exports.bats_on_file_open(resolverId, 0, 0);\n"
 "      return;\n"
 "    }\n"
 "    const file = el.files[0];\n"
@@ -1215,18 +1215,18 @@ static const char *_bridge_js_source(void) {
 "      fileCache.set(handle, data);\n"
 "      const nameBytes = new TextEncoder().encode(file.name);\n"
 "      const nameStashId = stashData(nameBytes);\n"
-"      instance.exports.ward_bridge_stash_set_int(1, nameStashId);\n"
-"      instance.exports.ward_bridge_stash_set_int(2, nameBytes.length);\n"
-"      instance.exports.ward_on_file_open(resolverId, handle, data.length);\n"
+"      instance.exports.bats_bridge_stash_set_int(1, nameStashId);\n"
+"      instance.exports.bats_bridge_stash_set_int(2, nameBytes.length);\n"
+"      instance.exports.bats_on_file_open(resolverId, handle, data.length);\n"
 "    };\n"
 "    reader.onerror = () => {\n"
-"      instance.exports.ward_bridge_stash_set_int(2, 0);\n"
-"      instance.exports.ward_on_file_open(resolverId, 0, 0);\n"
+"      instance.exports.bats_bridge_stash_set_int(2, 0);\n"
+"      instance.exports.bats_on_file_open(resolverId, 0, 0);\n"
 "    };\n"
 "    reader.readAsArrayBuffer(file);\n"
 "  }\n"
 "\n"
-"  function wardJsFileRead(handle, fileOffset, len, outPtr) {\n"
+"  function batsJsFileRead(handle, fileOffset, len, outPtr) {\n"
 "    const data = fileCache.get(handle);\n"
 "    if (!data) return 0;\n"
 "    const available = Math.max(0, data.length - fileOffset);\n"
@@ -1238,7 +1238,7 @@ static const char *_bridge_js_source(void) {
 "    return copyLen;\n"
 "  }\n"
 "\n"
-"  function wardJsFileClose(handle) {\n"
+"  function batsJsFileClose(handle) {\n"
 "    fileCache.delete(handle);\n"
 "  }\n"
 "\n"
@@ -1247,12 +1247,12 @@ static const char *_bridge_js_source(void) {
 "  const blobCache = new Map();\n"
 "  let nextBlobHandle = 1;\n"
 "\n"
-"  function wardJsDecompress(dataPtr, dataLen, method, resolverId) {\n"
+"  function batsJsDecompress(dataPtr, dataLen, method, resolverId) {\n"
 "    const compressed = readBytes(dataPtr, dataLen);\n"
 "    const formats = ['gzip', 'deflate', 'deflate-raw'];\n"
 "    const format = formats[method];\n"
 "    if (!format || typeof DecompressionStream === 'undefined') {\n"
-"      instance.exports.ward_on_decompress_complete(resolverId, 0, 0);\n"
+"      instance.exports.bats_on_decompress_complete(resolverId, 0, 0);\n"
 "      return;\n"
 "    }\n"
 "    const ds = new DecompressionStream(format);\n"
@@ -1272,17 +1272,17 @@ static const char *_bridge_js_source(void) {
 "          for (const c of chunks) { result.set(c, off); off += c.length; }\n"
 "          const handle = nextBlobHandle++;\n"
 "          blobCache.set(handle, result);\n"
-"          instance.exports.ward_on_decompress_complete(resolverId, handle, result.length);\n"
+"          instance.exports.bats_on_decompress_complete(resolverId, handle, result.length);\n"
 "        } else {\n"
 "          pump();\n"
 "        }\n"
 "      }).catch(() => {\n"
-"        instance.exports.ward_on_decompress_complete(resolverId, 0, 0);\n"
+"        instance.exports.bats_on_decompress_complete(resolverId, 0, 0);\n"
 "      });\n"
 "    })();\n"
 "  }\n"
 "\n"
-"  function wardJsBlobRead(handle, blobOffset, len, outPtr) {\n"
+"  function batsJsBlobRead(handle, blobOffset, len, outPtr) {\n"
 "    const data = blobCache.get(handle);\n"
 "    if (!data) return 0;\n"
 "    const available = Math.max(0, data.length - blobOffset);\n"
@@ -1294,31 +1294,31 @@ static const char *_bridge_js_source(void) {
 "    return copyLen;\n"
 "  }\n"
 "\n"
-"  function wardJsBlobFree(handle) {\n"
+"  function batsJsBlobFree(handle) {\n"
 "    blobCache.delete(handle);\n"
 "  }\n"
 "\n"
 "  // --- Notification/Push ---\n"
 "\n"
-"  function wardJsNotificationRequestPermission(resolverId) {\n"
+"  function batsJsNotificationRequestPermission(resolverId) {\n"
 "    if (typeof Notification === 'undefined') {\n"
-"      instance.exports.ward_on_permission_result(resolverId, 0);\n"
+"      instance.exports.bats_on_permission_result(resolverId, 0);\n"
 "      return;\n"
 "    }\n"
 "    Notification.requestPermission().then((perm) => {\n"
-"      instance.exports.ward_on_permission_result(resolverId, perm === 'granted' ? 1 : 0);\n"
+"      instance.exports.bats_on_permission_result(resolverId, perm === 'granted' ? 1 : 0);\n"
 "    }).catch(() => {\n"
-"      instance.exports.ward_on_permission_result(resolverId, 0);\n"
+"      instance.exports.bats_on_permission_result(resolverId, 0);\n"
 "    });\n"
 "  }\n"
 "\n"
-"  function wardJsNotificationShow(titlePtr, titleLen) {\n"
+"  function batsJsNotificationShow(titlePtr, titleLen) {\n"
 "    if (typeof Notification === 'undefined') return;\n"
 "    const title = readString(titlePtr, titleLen);\n"
 "    try { new Notification(title); } catch(e) {}\n"
 "  }\n"
 "\n"
-"  function wardJsPushSubscribe(vapidPtr, vapidLen, resolverId) {\n"
+"  function batsJsPushSubscribe(vapidPtr, vapidLen, resolverId) {\n"
 "    try {\n"
 "      const vapidBytes = readBytes(vapidPtr, vapidLen);\n"
 "      navigator.serviceWorker.ready.then((reg) => {\n"
@@ -1330,35 +1330,35 @@ static const char *_bridge_js_source(void) {
 "        const json = JSON.stringify(sub.toJSON());\n"
 "        const jsonBytes = new TextEncoder().encode(json);\n"
 "        const stashId = stashData(jsonBytes);\n"
-"        instance.exports.ward_bridge_stash_set_int(1, stashId);\n"
-"        instance.exports.ward_on_push_subscribe(resolverId, jsonBytes.length);\n"
+"        instance.exports.bats_bridge_stash_set_int(1, stashId);\n"
+"        instance.exports.bats_on_push_subscribe(resolverId, jsonBytes.length);\n"
 "      }).catch(() => {\n"
-"        instance.exports.ward_on_push_subscribe(resolverId, 0);\n"
+"        instance.exports.bats_on_push_subscribe(resolverId, 0);\n"
 "      });\n"
 "    } catch(e) {\n"
-"      instance.exports.ward_on_push_subscribe(resolverId, 0);\n"
+"      instance.exports.bats_on_push_subscribe(resolverId, 0);\n"
 "    }\n"
 "  }\n"
 "\n"
-"  function wardJsPushGetSubscription(resolverId) {\n"
+"  function batsJsPushGetSubscription(resolverId) {\n"
 "    try {\n"
 "      navigator.serviceWorker.ready.then((reg) => {\n"
 "        return reg.pushManager.getSubscription();\n"
 "      }).then((sub) => {\n"
 "        if (!sub) {\n"
-"          instance.exports.ward_on_push_subscribe(resolverId, 0);\n"
+"          instance.exports.bats_on_push_subscribe(resolverId, 0);\n"
 "          return;\n"
 "        }\n"
 "        const json = JSON.stringify(sub.toJSON());\n"
 "        const jsonBytes = new TextEncoder().encode(json);\n"
 "        const stashId = stashData(jsonBytes);\n"
-"        instance.exports.ward_bridge_stash_set_int(1, stashId);\n"
-"        instance.exports.ward_on_push_subscribe(resolverId, jsonBytes.length);\n"
+"        instance.exports.bats_bridge_stash_set_int(1, stashId);\n"
+"        instance.exports.bats_on_push_subscribe(resolverId, jsonBytes.length);\n"
 "      }).catch(() => {\n"
-"        instance.exports.ward_on_push_subscribe(resolverId, 0);\n"
+"        instance.exports.bats_on_push_subscribe(resolverId, 0);\n"
 "      });\n"
 "    } catch(e) {\n"
-"      instance.exports.ward_on_push_subscribe(resolverId, 0);\n"
+"      instance.exports.bats_on_push_subscribe(resolverId, 0);\n"
 "    }\n"
 "  }\n"
 "\n"
@@ -1369,7 +1369,7 @@ static const char *_bridge_js_source(void) {
 "    'script', 'iframe', 'object', 'embed', 'form', 'input', 'link', 'meta'\n"
 "  ]);\n"
 "\n"
-"  function wardJsParseHtml(htmlPtr, htmlLen) {\n"
+"  function batsJsParseHtml(htmlPtr, htmlLen) {\n"
 "    const html = readString(htmlPtr, htmlLen);\n"
 "    let doc;\n"
 "    try {\n"
@@ -1460,65 +1460,65 @@ static const char *_bridge_js_source(void) {
 "      off += chunk.length;\n"
 "    }\n"
 "    const stashId = stashData(combined);\n"
-"    instance.exports.ward_bridge_stash_set_int(1, stashId);\n"
+"    instance.exports.bats_bridge_stash_set_int(1, stashId);\n"
 "    return totalLen;\n"
 "  }\n"
 "\n"
 "  const imports = {\n"
 "    env: {\n"
 "      ...extraImports,\n"
-"      ward_dom_flush: wardDomFlush,\n"
-"      ward_js_set_image_src: wardJsSetImageSrc,\n"
-"      ward_set_timer: wardSetTimer,\n"
-"      ward_exit: () => { resolveDone(); },\n"
+"      bats_dom_flush: batsDomFlush,\n"
+"      bats_js_set_image_src: batsJsSetImageSrc,\n"
+"      bats_set_timer: batsSetTimer,\n"
+"      bats_exit: () => { resolveDone(); },\n"
 "      // IDB\n"
-"      ward_idb_js_put: wardIdbPut,\n"
-"      ward_idb_js_get: wardIdbGet,\n"
-"      ward_idb_js_delete: wardIdbDelete,\n"
+"      bats_idb_js_put: batsIdbPut,\n"
+"      bats_idb_js_get: batsIdbGet,\n"
+"      bats_idb_js_delete: batsIdbDelete,\n"
 "      // Window\n"
-"      ward_js_focus_window: wardJsFocusWindow,\n"
-"      ward_js_get_visibility_state: wardJsGetVisibilityState,\n"
-"      ward_js_log: wardJsLog,\n"
+"      bats_js_focus_window: batsJsFocusWindow,\n"
+"      bats_js_get_visibility_state: batsJsGetVisibilityState,\n"
+"      bats_js_log: batsJsLog,\n"
 "      // Navigation\n"
-"      ward_js_get_url: wardJsGetUrl,\n"
-"      ward_js_get_url_hash: wardJsGetUrlHash,\n"
-"      ward_js_set_url_hash: wardJsSetUrlHash,\n"
-"      ward_js_replace_state: wardJsReplaceState,\n"
-"      ward_js_push_state: wardJsPushState,\n"
+"      bats_js_get_url: batsJsGetUrl,\n"
+"      bats_js_get_url_hash: batsJsGetUrlHash,\n"
+"      bats_js_set_url_hash: batsJsSetUrlHash,\n"
+"      bats_js_replace_state: batsJsReplaceState,\n"
+"      bats_js_push_state: batsJsPushState,\n"
 "      // DOM read\n"
-"      ward_js_measure_node: wardJsMeasureNode,\n"
-"      ward_js_query_selector: wardJsQuerySelector,\n"
+"      bats_js_measure_node: batsJsMeasureNode,\n"
+"      bats_js_query_selector: batsJsQuerySelector,\n"
 "      // Event listener\n"
-"      ward_js_add_event_listener: wardJsAddEventListener,\n"
-"      ward_js_remove_event_listener: wardJsRemoveEventListener,\n"
-"      ward_js_prevent_default: wardJsPreventDefault,\n"
+"      bats_js_add_event_listener: batsJsAddEventListener,\n"
+"      bats_js_remove_event_listener: batsJsRemoveEventListener,\n"
+"      bats_js_prevent_default: batsJsPreventDefault,\n"
 "      // Fetch\n"
-"      ward_js_fetch: wardJsFetch,\n"
+"      bats_js_fetch: batsJsFetch,\n"
 "      // Clipboard\n"
-"      ward_js_clipboard_write_text: wardJsClipboardWriteText,\n"
+"      bats_js_clipboard_write_text: batsJsClipboardWriteText,\n"
 "      // File\n"
-"      ward_js_file_open: wardJsFileOpen,\n"
-"      ward_js_file_read: wardJsFileRead,\n"
-"      ward_js_file_close: wardJsFileClose,\n"
+"      bats_js_file_open: batsJsFileOpen,\n"
+"      bats_js_file_read: batsJsFileRead,\n"
+"      bats_js_file_close: batsJsFileClose,\n"
 "      // Decompress\n"
-"      ward_js_decompress: wardJsDecompress,\n"
-"      ward_js_blob_read: wardJsBlobRead,\n"
-"      ward_js_blob_free: wardJsBlobFree,\n"
+"      bats_js_decompress: batsJsDecompress,\n"
+"      bats_js_blob_read: batsJsBlobRead,\n"
+"      bats_js_blob_free: batsJsBlobFree,\n"
 "      // Notification/Push\n"
-"      ward_js_notification_request_permission: wardJsNotificationRequestPermission,\n"
-"      ward_js_notification_show: wardJsNotificationShow,\n"
-"      ward_js_push_subscribe: wardJsPushSubscribe,\n"
-"      ward_js_push_get_subscription: wardJsPushGetSubscription,\n"
+"      bats_js_notification_request_permission: batsJsNotificationRequestPermission,\n"
+"      bats_js_notification_show: batsJsNotificationShow,\n"
+"      bats_js_push_subscribe: batsJsPushSubscribe,\n"
+"      bats_js_push_get_subscription: batsJsPushGetSubscription,\n"
 "      // HTML parsing\n"
-"      ward_js_parse_html: wardJsParseHtml,\n"
+"      bats_js_parse_html: batsJsParseHtml,\n"
 "      // Data stash\n"
-"      ward_js_stash_read: wardJsStashRead,\n"
+"      bats_js_stash_read: batsJsStashRead,\n"
 "    },\n"
 "  };\n"
 "\n"
 "  const result = await WebAssembly.instantiate(wasmBytes, imports);\n"
 "  instance = result.instance;\n"
-"  instance.exports.ward_node_init(0);\n"
+"  instance.exports.bats_node_init(0);\n"
 "\n"
 "  return { exports: instance.exports, nodes, done };\n"
 "}\n"
