@@ -192,8 +192,8 @@ fn _stash_set_int(slot: int, v: int): void =
 (* --- DOM --- *)
 
 #pub fun dom_flush
-  {l:agz}{n:nat}
-  (buf: !$A.arr(byte, l, n), len: int n): void
+  {l:agz}{n:nat}{m:nat | m <= n}
+  (buf: !$A.arr(byte, l, n), len: int m): void
 
 #pub fun set_image_src
   {ld:agz}{nd:pos}{lm:agz}{nm:pos}
@@ -448,7 +448,7 @@ implement exit() = _ward_exit()
 
 (* --- DOM --- *)
 
-implement dom_flush{l}{n}(buf, len) =
+implement dom_flush{l}{n}{m}(buf, len) =
   _ward_dom_flush(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(buf) end,
     len)
