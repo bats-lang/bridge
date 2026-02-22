@@ -205,7 +205,7 @@ fn _stash_set_int(slot: int, v: int): void =
 (* --- DOM read --- *)
 
 #pub fun measure
-  (node_id: int): $R.result(int)
+  (node_id: int): $R.result(int, int)
 
 #pub fun get_measure_x(): int
 
@@ -252,11 +252,11 @@ fn _stash_set_int(slot: int, v: int): void =
 
 #pub fun get_url
   {l:agz}{n:pos}
-  (out: !$A.arr(byte, l, n), max_len: int n): $R.result(int)
+  (out: !$A.arr(byte, l, n), max_len: int n): $R.result(int, int)
 
 #pub fun get_hash
   {l:agz}{n:pos}
-  (out: !$A.arr(byte, l, n), max_len: int n): $R.result(int)
+  (out: !$A.arr(byte, l, n), max_len: int n): $R.result(int, int)
 
 #pub fun set_hash
   {lb:agz}{n:nat}
@@ -338,7 +338,7 @@ fn _stash_set_int(slot: int, v: int): void =
 #pub fun file_read
   {l:agz}{n:pos}
   (handle: int, file_offset: int,
-   out: !$A.arr(byte, l, n), len: int n): $R.result(int)
+   out: !$A.arr(byte, l, n), len: int n): $R.result(int, int)
 
 #pub fun file_close
   (handle: int): void
@@ -355,7 +355,7 @@ fn _stash_set_int(slot: int, v: int): void =
 #pub fun blob_read
   {l:agz}{n:pos}
   (handle: int, blob_offset: int,
-   out: !$A.arr(byte, l, n), len: int n): $R.result(int)
+   out: !$A.arr(byte, l, n), len: int n): $R.result(int, int)
 
 #pub fun blob_free
   (handle: int): void
