@@ -14,6 +14,8 @@
 
 $UNSAFE begin
 %{#
+#ifndef _BRIDGE_RUNTIME_DEFINED
+#define _BRIDGE_RUNTIME_DEFINED
 /* Bridge int stash -- 4 slots for stash IDs and metadata */
 static int _bridge_stash_int[4] = {0};
 
@@ -51,6 +53,7 @@ void *bats_listener_get(int id) {
 
 /* JS-side data stash read import */
 static void _bridge_stash_read(int stash_id, void *dest, int len);
+#endif
 %}
 end
 
