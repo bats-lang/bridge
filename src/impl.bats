@@ -7,7 +7,135 @@
 #use result as R
 
 staload "./lib.sats"
-staload _ = "./lib.dats"
+
+(* ============================================================
+   Internal -- extern WASM imports (all mac# declarations)
+   ============================================================ *)
+
+(* --- Timer --- *)
+extern fun _bats_set_timer
+  (delay_ms: int, resolver_id: int): void = "mac#bats_set_timer"
+extern fun _bats_exit
+  (): void = "mac#bats_exit"
+
+(* --- DOM --- *)
+extern fun _bats_dom_flush
+  (buf: ptr, len: int): void = "mac#bats_dom_flush"
+extern fun _bats_js_set_image_src
+  (node_id: int, data: ptr, data_len: int, mime: ptr, mime_len: int)
+  : void = "mac#bats_js_set_image_src"
+
+(* --- DOM read --- *)
+extern fun _bats_js_measure_node
+  (node_id: int): int = "mac#bats_js_measure_node"
+extern fun _bats_js_query_selector
+  (selector: ptr, selector_len: int): int = "mac#bats_js_query_selector"
+
+(* --- Event --- *)
+extern fun _bats_js_add_event_listener
+  (node_id: int, event_type: ptr, type_len: int, listener_id: int)
+  : void = "mac#bats_js_add_event_listener"
+extern fun _bats_js_remove_event_listener
+  (listener_id: int): void = "mac#bats_js_remove_event_listener"
+extern fun _bats_js_prevent_default
+  (): void = "mac#bats_js_prevent_default"
+
+(* --- Navigation --- *)
+extern fun _bats_js_get_url
+  (out: ptr, max_len: int): int = "mac#bats_js_get_url"
+extern fun _bats_js_get_url_hash
+  (out: ptr, max_len: int): int = "mac#bats_js_get_url_hash"
+extern fun _bats_js_set_url_hash
+  (hash: ptr, hash_len: int): void = "mac#bats_js_set_url_hash"
+extern fun _bats_js_replace_state
+  (url: ptr, url_len: int): void = "mac#bats_js_replace_state"
+extern fun _bats_js_push_state
+  (url: ptr, url_len: int): void = "mac#bats_js_push_state"
+
+(* --- Window --- *)
+extern fun _bats_js_focus_window
+  (): void = "mac#bats_js_focus_window"
+extern fun _bats_js_get_visibility_state
+  (): int = "mac#bats_js_get_visibility_state"
+extern fun _bats_js_log
+  (level: int, msg: ptr, msg_len: int): void = "mac#bats_js_log"
+
+(* --- IDB --- *)
+extern fun _bats_idb_js_put
+  (key: ptr, key_len: int, val_data: ptr, val_len: int, resolver_id: int)
+  : void = "mac#bats_idb_js_put"
+extern fun _bats_idb_js_get
+  (key: ptr, key_len: int, resolver_id: int)
+  : void = "mac#bats_idb_js_get"
+extern fun _bats_idb_js_delete
+  (key: ptr, key_len: int, resolver_id: int)
+  : void = "mac#bats_idb_js_delete"
+
+(* --- Fetch --- *)
+extern fun _bats_js_fetch
+  (url: ptr, url_len: int, resolver_id: int): void = "mac#bats_js_fetch"
+
+(* --- Clipboard --- *)
+extern fun _bats_js_clipboard_write_text
+  (text: ptr, text_len: int, resolver_id: int)
+  : void = "mac#bats_js_clipboard_write_text"
+
+(* --- File --- *)
+extern fun _bats_js_file_open
+  (input_node_id: int, resolver_id: int): void = "mac#bats_js_file_open"
+extern fun _bats_js_file_read
+  (handle: int, file_offset: int, len: int, out: ptr): int = "mac#bats_js_file_read"
+extern fun _bats_js_file_close
+  (handle: int): void = "mac#bats_js_file_close"
+
+(* --- Decompress --- *)
+extern fun _bats_js_decompress
+  (data: ptr, data_len: int, method: int, resolver_id: int)
+  : void = "mac#bats_js_decompress"
+extern fun _bats_js_blob_read
+  (handle: int, blob_offset: int, len: int, out: ptr): int = "mac#bats_js_blob_read"
+extern fun _bats_js_blob_free
+  (handle: int): void = "mac#bats_js_blob_free"
+
+(* --- Notify --- *)
+extern fun _bats_js_notification_request_permission
+  (resolver_id: int): void = "mac#bats_js_notification_request_permission"
+extern fun _bats_js_notification_show
+  (title: ptr, title_len: int): void = "mac#bats_js_notification_show"
+extern fun _bats_js_push_subscribe
+  (vapid: ptr, vapid_len: int, resolver_id: int)
+  : void = "mac#bats_js_push_subscribe"
+extern fun _bats_js_push_get_subscription
+  (resolver_id: int): void = "mac#bats_js_push_get_subscription"
+
+(* --- XML --- *)
+extern fun _bats_js_parse_html
+  (html: ptr, len: int): int = "mac#bats_js_parse_html"
+
+(* --- Stash --- *)
+extern fun _bats_js_stash_read
+  (stash_id: int, dest: ptr, len: int): void = "mac#bats_js_stash_read"
+
+(* ============================================================
+   Internal helper -- allocate + fill from JS stash
+   ============================================================ *)
+
+fun _bridge_recv{n:pos | n <= 1048576}
+  (stash_id: int, len: int n): [l:agz] $A.arr(byte, l, n) = let
+  val buf = $A.alloc<byte>(len)
+  val p = $UNSAFE begin $UNSAFE.castvwtp1{ptr}(buf) end
+  val () = _bats_js_stash_read(stash_id, p, len)
+in buf end
+
+fn _stash_get_int(slot: int): int =
+  $extfcall(int, "bats_bridge_stash_get_int", slot)
+
+fn _stash_set_int(slot: int, v: int): void =
+  $extfcall(void, "bats_bridge_stash_set_int", slot, v)
+
+(* ============================================================
+   Implementations
+   ============================================================ *)
 
 (* --- Timer --- *)
 
