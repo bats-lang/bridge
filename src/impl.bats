@@ -7,6 +7,7 @@
 #use result as R
 
 staload "./lib.sats"
+staload _ = "./lib.dats"
 
 (* --- Timer --- *)
 
