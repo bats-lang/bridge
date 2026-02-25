@@ -5,6 +5,7 @@
 #include "share/atspre_staload.hats"
 
 #use array as A
+#use builder as B
 #use promise as P
 #use result as R
 
@@ -318,4 +319,4 @@ end
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge(): string
+#pub fun produce_bridge(b: !$B.builder): void
