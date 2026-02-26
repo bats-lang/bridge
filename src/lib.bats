@@ -14,6 +14,7 @@
    C runtime -- stash, measure, listener tables + WASM exports
    ============================================================ *)
 
+#target wasm begin
 $UNSAFE begin
 %{#
 #ifndef _BRIDGE_RUNTIME_DEFINED
@@ -58,6 +59,7 @@ static void _bridge_stash_read(int stash_id, void *dest, int len);
 #endif
 %}
 end
+end (* #target wasm *)
 
 (* ============================================================
    Public API -- safe typed wrappers
@@ -1154,6 +1156,8 @@ staload "./lib.sats"
    Internal -- extern WASM imports (all mac# declarations)
    ============================================================ *)
 
+#target wasm begin
+
 (* --- Timer --- *)
 extern fun _bats_set_timer
   (delay_ms: int, resolver_id: int): void = "mac#bats_set_timer"
@@ -1552,3 +1556,5 @@ implement on_permission_result(resolver_id, granted) =
 
 implement on_push_subscribe(resolver_id, json_len) =
   $P.fire(resolver_id, json_len)
+
+end
