@@ -2,3 +2,10 @@
 name = "wasm.bats-packages.dev/bridge"
 kind = "lib"
 unsafe = true
+
+[dependencies]
+"array" = ""
+"arith" = ""
+"builder" = ""
+"promise" = ""
+"result" = ""
