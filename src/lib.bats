@@ -328,15 +328,11 @@ end (* #target wasm *)
 fun bput_loop {sn:nat}{fuel:nat} .<fuel>.
   (b: !$B.builder, s: string sn, slen: int sn, i: int, fuel: int fuel): void =
   if fuel <= 0 then ()
-  else let val ii = g1ofg0(i) in
-    if ii >= 0 then
-      if ii < slen then let
-        val c = char2int0(string_get_at(s, ii))
-        val () = $B.put_byte(b, c)
-      in bput_loop(b, s, slen, i + 1, fuel - 1) end
-      else ()
-    else ()
-  end
+  else let
+    val ii = $AR.checked_idx(i, slen)
+    val c = char2int0(string_get_at(s, ii))
+    val () = $B.put_byte(b, c)
+  in bput_loop(b, s, slen, i + 1, fuel - 1) end
 
 fn bput {sn:nat} (b: !$B.builder, s: string sn): void = let
   val slen_sz = string1_length(s)
