@@ -11,18 +11,14 @@
 
 #pub fun emit_js_all(b: !$B.builder): void
 
-fun bput_loop {sn:nat}{fuel:nat} .<fuel>.
-  (b: !$B.builder, s: string sn, slen: int sn, i: int, fuel: int fuel): void =
+fun bput_loop {sn:nat}{i:nat | i <= sn}{fuel:nat} .<fuel>.
+  (b: !$B.builder, s: string sn, slen: int sn, i: int i, fuel: int fuel): void =
   if fuel <= 0 then ()
-  else let val ii = g1ofg0(i) in
-    if ii >= 0 then
-      if ii < slen then let
-        val c = char2int0(string_get_at(s, ii))
-        val () = $B.put_byte(b, c)
-      in bput_loop(b, s, slen, i + 1, fuel - 1) end
-      else ()
-    else ()
-  end
+  else if i >= slen then ()
+  else let
+    val c = char2int0(string_get_at(s, i))
+    val () = $B.put_byte(b, c)
+  in bput_loop(b, s, slen, i + 1, fuel - 1) end
 
 fn bput {sn:nat} (b: !$B.builder, s: string sn): void = let
   val slen_sz = string1_length(s)
@@ -1236,6 +1232,20 @@ fn emit_js_loadwasm_close(b: !$B.builder): void = let
   val () = bput(b, "  const result = await WebAssembly.instantiate(wasmBytes, imports);\n")
   val () = bput(b, "  instance = result.instance;\n")
   val () = bput(b, "  instance.exports.bats_node_init(0);\n")
+  val () = bput(b, "\n")
+  val () = bput(b, "  // Listen for browser back/forward navigation\n")
+  val () = bput(b, "  const win = root.ownerDocument.defaultView;\n")
+  val () = bput(b, "  if (win) {\n")
+  val () = bput(b, "    win.addEventListener('popstate', () => {\n")
+  val () = bput(b, "      try {\n")
+  val () = bput(b, "        const url = win.location.pathname + win.location.search + win.location.hash;\n")
+  val () = bput(b, "        const encoded = new TextEncoder().encode(url);\n")
+  val () = bput(b, "        const stashId = stashData(encoded);\n")
+  val () = bput(b, "        instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
+  val () = bput(b, "        instance.exports.bats_on_popstate(encoded.length);\n")
+  val () = bput(b, "      } catch(e) {}\n")
+  val () = bput(b, "    });\n")
+  val () = bput(b, "  }\n")
   val () = bput(b, "\n")
   val () = bput(b, "  return { exports: instance.exports, nodes, done };\n")
   val () = bput(b, "}\n")

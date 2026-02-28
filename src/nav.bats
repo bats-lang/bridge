@@ -29,6 +29,12 @@
   {lb:agz}{n:nat}
   (url: !$A.borrow(byte, lb, n), url_len: int n): void
 
+#pub fun on_popstate
+  (url_len: int): void = "ext#bats_on_popstate"
+
+#pub fun set_popstate_callback
+  (cb: (int) -<cloref1> int): void
+
 (* ============================================================
    WASM implementation
    ============================================================ *)
@@ -76,5 +82,19 @@ implement push_state{lb}{n}(url, url_len) =
   _bats_js_push_state(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end,
     url_len)
+
+implement set_popstate_callback(cb) = let
+  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(cb) end
+in $extfcall(void, "bats_listener_set", 999999, cbp) end
+
+implement on_popstate(url_len) = let
+  val cbp = $extfcall(ptr, "bats_listener_get", 999999)
+in
+  if ptr_isnot_null(cbp) then let
+    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
+    val _ = cb(url_len)
+  in () end
+  else ()
+end
 
 end (* #target wasm *)
