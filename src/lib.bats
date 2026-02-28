@@ -318,6 +318,14 @@ end (* #target wasm *)
 #pub fun on_push_subscribe
   (resolver_id: int, json_len: int): void = "ext#bats_on_push_subscribe"
 
+#pub fun on_popstate
+  (url_len: int): void = "ext#bats_on_popstate"
+
+(* Register a callback for browser back/forward navigation.
+   Callback receives URL length. Use stash_read to get the URL bytes. *)
+#pub fun set_popstate_callback
+  (cb: (int) -<cloref1> int): void
+
 (* ============================================================
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
@@ -1141,6 +1149,20 @@ implement produce_bridge(b) = let
   val () = bput(b, "  instance = result.instance;\n")
   val () = bput(b, "  instance.exports.bats_node_init(0);\n")
   val () = bput(b, "\n")
+  val () = bput(b, "  // Listen for browser back/forward navigation\n")
+  val () = bput(b, "  const win = root.ownerDocument.defaultView;\n")
+  val () = bput(b, "  if (win) {\n")
+  val () = bput(b, "    win.addEventListener('popstate', () => {\n")
+  val () = bput(b, "      try {\n")
+  val () = bput(b, "        const url = win.location.pathname + win.location.search + win.location.hash;\n")
+  val () = bput(b, "        const encoded = new TextEncoder().encode(url);\n")
+  val () = bput(b, "        const stashId = stashData(encoded);\n")
+  val () = bput(b, "        instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
+  val () = bput(b, "        instance.exports.bats_on_popstate(encoded.length);\n")
+  val () = bput(b, "      } catch(e) {}\n")
+  val () = bput(b, "    });\n")
+  val () = bput(b, "  }\n")
+  val () = bput(b, "\n")
   val () = bput(b, "  return { exports: instance.exports, nodes, done };\n")
   val () = bput(b, "}\n")
 in end
@@ -1552,5 +1574,18 @@ implement on_permission_result(resolver_id, granted) =
 
 implement on_push_subscribe(resolver_id, json_len) =
   $P.fire(resolver_id, json_len)
+
+implement set_popstate_callback(cb) =
+  listener_set_closure(999999, cb)
+
+implement on_popstate(url_len) = let
+  val cbp = $extfcall(ptr, "bats_listener_get", 999999)
+in
+  if ptr_isnot_null(cbp) then let
+    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
+    val _ = cb(url_len)
+  in () end
+  else ()
+end
 
 end
