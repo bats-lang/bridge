@@ -11,7 +11,9 @@
    ============================================================ *)
 
 #pub fun file_open
-  (input_node_id: int): $P.promise(int, $P.Pending)
+  {li:agz}{ni:pos}
+  (input_node_id: !$A.borrow(byte, li, ni), id_len: int ni)
+  : $P.promise(int, $P.Pending)
 
 #pub fun file_size(): int
 
@@ -41,16 +43,17 @@
 $UNSAFE begin
 
 extern fun _bats_js_file_open
-  (input_node_id: int, resolver_id: int): void = "mac#bats_js_file_open"
+  (id: ptr, id_len: int, resolver_id: int): void = "mac#bats_js_file_open"
 extern fun _bats_js_file_read
   (handle: int, file_offset: int, len: int, out: ptr): int = "mac#bats_js_file_read"
 extern fun _bats_js_file_close
   (handle: int): void = "mac#bats_js_file_close"
 
-implement file_open(input_node_id) = let
+implement file_open{li}{ni}(input_node_id, id_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
-  val () = _bats_js_file_open(input_node_id, id)
+  val () = _bats_js_file_open(
+    $UNSAFE.castvwtp1{ptr}(input_node_id), id_len, id)
 in p end
 
 implement file_size() = stash_get_int(0)
