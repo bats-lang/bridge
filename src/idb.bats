@@ -38,6 +38,8 @@
   {n:pos | n <= 1048576}
   (len: int n): [l:agz] $A.arr(byte, l, n)
 
+#pub fun idb_delete_database(): void
+
 #pub fun on_idb_fire
   (resolver_id: int, status: int): void = "ext#bats_idb_fire"
 
@@ -107,5 +109,10 @@ implement on_idb_fire(resolver_id, status) =
 
 implement on_idb_fire_get(resolver_id, data_len) =
   $P.fire(resolver_id, data_len)
+
+extern fun _bats_js_idb_delete_database
+  (): void = "mac#bats_js_idb_delete_database"
+
+implement idb_delete_database() = _bats_js_idb_delete_database()
 
 end (* #target wasm *)

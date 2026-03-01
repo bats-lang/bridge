@@ -12,6 +12,8 @@
   {l:agz}{n:nat}{m:nat | m <= n}
   (buf: !$A.arr(byte, l, n), len: int m): void
 
+#pub fun click_node(node_id: int): void
+
 #pub fun set_image_src
   {ld:agz}{nd:pos}{lm:agz}{nm:pos}
   (node_id: int,
@@ -40,5 +42,10 @@ implement set_image_src{ld}{nd}{lm}{nm}
   _bats_js_set_image_src(node_id,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end, data_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(mime) end, mime_len)
+
+extern fun _bats_js_click_node
+  (node_id: int): void = "mac#bats_js_click_node"
+
+implement click_node(node_id) = _bats_js_click_node(node_id)
 
 end (* #target wasm *)

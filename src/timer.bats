@@ -11,6 +11,8 @@
 #pub fun timer_set
   (delay_ms: int): $P.promise(int, $P.Pending)
 
+#pub fun get_time_ms(): int
+
 #pub fun exit(): void
 
 #pub fun on_timer_fire
@@ -24,6 +26,8 @@
 
 extern fun _bats_set_timer
   (delay_ms: int, resolver_id: int): void = "mac#bats_set_timer"
+extern fun _bats_get_time_ms
+  (): int = "mac#bats_get_time_ms"
 extern fun _bats_exit
   (): void = "mac#bats_exit"
 
@@ -32,6 +36,8 @@ implement timer_set(delay_ms) = let
   val id = $P.stash(r)
   val () = _bats_set_timer(delay_ms, id)
 in p end
+
+implement get_time_ms() = _bats_get_time_ms()
 
 implement exit() = _bats_exit()
 
