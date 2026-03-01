@@ -51,6 +51,10 @@
 
 #pub fun get_selection_range(): void
 
+(* Read form input .value into WASM memory. Returns byte length. *)
+#pub fun read_input_value
+  (node_id: int, max_len: int): int
+
 (* ============================================================
    WASM implementation
    ============================================================ *)
@@ -118,5 +122,11 @@ implement get_selection_rect() =
 
 implement get_selection_range() =
   _bats_js_get_selection_range()
+
+extern fun _bats_js_read_input_value
+  (node_id: int, dest: ptr, max_len: int): int = "mac#bats_js_read_input_value"
+
+implement read_input_value(node_id, max_len) =
+  _bats_js_read_input_value(node_id, the_null_ptr, max_len)
 
 end (* #target wasm *)

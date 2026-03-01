@@ -29,6 +29,8 @@
   {lb:agz}{n:nat}
   (url: !$A.borrow(byte, lb, n), url_len: int n): void
 
+#pub fun reload(): void
+
 #pub fun on_popstate
   (url_len: int): void = "ext#bats_on_popstate"
 
@@ -82,6 +84,11 @@ implement push_state{lb}{n}(url, url_len) =
   _bats_js_push_state(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end,
     url_len)
+
+extern fun _bats_js_reload
+  (): void = "mac#bats_js_reload"
+
+implement reload() = _bats_js_reload()
 
 implement set_popstate_callback(cb) = let
   val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(cb) end
