@@ -39,6 +39,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_notification_request_permission
   (resolver_id: int): void = "mac#bats_js_notification_request_permission"
@@ -58,14 +59,14 @@ in p end
 
 implement notify_show{lb}{n}(title, title_len) =
   _bats_js_notification_show(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(title) end,
+    $UNSAFE.castvwtp1{ptr}(title),
     title_len)
 
 implement notify_push_subscribe{lb}{n}(vapid, vapid_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_js_push_subscribe(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(vapid) end,
+    $UNSAFE.castvwtp1{ptr}(vapid),
     vapid_len, id)
 in p end
 
@@ -84,4 +85,5 @@ implement on_permission_result(resolver_id, granted) =
 implement on_push_subscribe(resolver_id, json_len) =
   $P.fire(resolver_id, json_len)
 
+end (* $UNSAFE *)
 end (* #target wasm *)

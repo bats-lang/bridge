@@ -38,6 +38,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_add_event_listener
   (node_id: int, event_type: ptr, type_len: int, listener_id: int)
@@ -52,18 +53,18 @@ extern fun _bats_js_prevent_default
 
 implement listen{lb}{n}
   (node_id, event_type, type_len, listener_id, callback) = let
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val cbp = $UNSAFE.castvwtp0{ptr}(callback)
   val () = $extfcall(void, "bats_listener_set", listener_id, cbp)
 in _bats_js_add_event_listener(node_id,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(event_type) end,
+    $UNSAFE.castvwtp1{ptr}(event_type),
     type_len, listener_id) end
 
 implement listen_document{lb}{n}
   (event_type, type_len, listener_id, callback) = let
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val cbp = $UNSAFE.castvwtp0{ptr}(callback)
   val () = $extfcall(void, "bats_listener_set", listener_id, cbp)
 in _bats_js_add_document_listener(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(event_type) end,
+    $UNSAFE.castvwtp1{ptr}(event_type),
     type_len, listener_id) end
 
 implement unlisten(listener_id) = let
@@ -80,10 +81,11 @@ implement on_event(listener_id, payload_len) = let
   val cbp = $extfcall(ptr, "bats_listener_get", listener_id)
 in
   if ptr_isnot_null(cbp) then let
-    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
+    val cb = $UNSAFE.cast{(int) -<cloref1> int}(cbp)
     val _ = cb(payload_len)
   in () end
   else ()
 end
 
+end (* $UNSAFE *)
 end (* #target wasm *)

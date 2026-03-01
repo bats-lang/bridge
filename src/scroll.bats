@@ -23,6 +23,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_scroll_to
   (node_id: int, x: int, y: int): void = "mac#bats_js_scroll_to"
@@ -45,4 +46,5 @@ implement set_scroll_top(node_id, value) =
 implement set_scroll_left(node_id, value) =
   _bats_js_set_scroll_left(node_id, value)
 
+end (* $UNSAFE *)
 end (* #target wasm *)

@@ -32,6 +32,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_create_blob_url
   (data: ptr, data_len: int, mime: ptr, mime_len: int): int
@@ -44,21 +45,22 @@ extern fun _bats_js_download_blob
 
 implement create_blob_url{ld}{nd}{lm}{nm}(data, data_len, mime, mime_len) =
   _bats_js_create_blob_url(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end, data_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(mime) end, mime_len)
+    $UNSAFE.castvwtp1{ptr}(data), data_len,
+    $UNSAFE.castvwtp1{ptr}(mime), mime_len)
 
 implement create_blob_url_get{n}(len) =
   stash_read(stash_get_int(1), len)
 
 implement revoke_blob_url{lb}{n}(url, url_len) =
   _bats_js_revoke_blob_url(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end, url_len)
+    $UNSAFE.castvwtp1{ptr}(url), url_len)
 
 implement download_blob{ld}{nd}{lm}{nm}{ln}{nn}
   (data, data_len, mime, mime_len, name, name_len) =
   _bats_js_download_blob(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end, data_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(mime) end, mime_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(name) end, name_len)
+    $UNSAFE.castvwtp1{ptr}(data), data_len,
+    $UNSAFE.castvwtp1{ptr}(mime), mime_len,
+    $UNSAFE.castvwtp1{ptr}(name), name_len)
 
+end (* $UNSAFE *)
 end (* #target wasm *)

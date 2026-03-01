@@ -34,6 +34,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_decompress
   (data: ptr, data_len: int, method: int, resolver_id: int)
@@ -47,7 +48,7 @@ implement decompress{lb}{n}(data, data_len, method) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_js_decompress(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end,
+    $UNSAFE.castvwtp1{ptr}(data),
     data_len, method, id)
 in p end
 
@@ -55,7 +56,7 @@ implement decompress_len() = stash_get_int(0)
 
 implement blob_read{l}{n}(handle, blob_offset, out, len) = let
   val r = _bats_js_blob_read(handle, blob_offset, len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end)
+    $UNSAFE.castvwtp1{ptr}(out))
 in
   if r >= 0 then $R.ok(r) else $R.err(r)
 end
@@ -66,4 +67,5 @@ implement on_decompress_complete(resolver_id, handle, decompressed_len) = let
   val () = stash_set_int(0, decompressed_len)
 in $P.fire(resolver_id, handle) end
 
+end (* $UNSAFE *)
 end (* #target wasm *)

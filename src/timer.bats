@@ -23,6 +23,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_set_timer
   (delay_ms: int, resolver_id: int): void = "mac#bats_set_timer"
@@ -44,4 +45,5 @@ implement exit() = _bats_exit()
 implement on_timer_fire(resolver_id) =
   $P.fire(resolver_id, 0)
 
+end (* $UNSAFE *)
 end (* #target wasm *)
