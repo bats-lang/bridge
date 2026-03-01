@@ -18,6 +18,10 @@
 #pub fun stash_get_int
   (slot: int): int
 
+(* Get root element's HTML id as stashed string. Returns byte length.
+   Read the string with stash_read(stash_get_int(1), len). *)
+#pub fun get_root_node(): int
+
 (* ============================================================
    WASM implementation
    ============================================================ *)
@@ -47,6 +51,11 @@ implement stash_read{n}(stash_id, len) =
 implement stash_set_int(slot, v0) = _stash_set_int(slot, v0)
 
 implement stash_get_int(slot) = _stash_get_int(slot)
+
+extern fun _bats_js_get_root_node
+  (): int = "mac#bats_js_get_root_node"
+
+implement get_root_node() = _bats_js_get_root_node()
 
 end (* $UNSAFE *)
 end (* #target wasm *)

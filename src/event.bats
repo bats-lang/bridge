@@ -9,8 +9,8 @@
    ============================================================ *)
 
 #pub fun listen
-  {lb:agz}{n:pos}
-  (node_id: int,
+  {li:agz}{ni:pos}{lb:agz}{n:pos}
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    event_type: !$A.borrow(byte, lb, n), type_len: int n,
    listener_id: int,
    callback: (int) -<cloref1> int): void
@@ -41,7 +41,7 @@
 $UNSAFE begin
 
 extern fun _bats_js_add_event_listener
-  (node_id: int, event_type: ptr, type_len: int, listener_id: int)
+  (id: ptr, id_len: int, event_type: ptr, type_len: int, listener_id: int)
   : void = "mac#bats_js_add_event_listener"
 extern fun _bats_js_add_document_listener
   (event_type: ptr, type_len: int, listener_id: int)
@@ -51,11 +51,12 @@ extern fun _bats_js_remove_event_listener
 extern fun _bats_js_prevent_default
   (): void = "mac#bats_js_prevent_default"
 
-implement listen{lb}{n}
-  (node_id, event_type, type_len, listener_id, callback) = let
+implement listen{li}{ni}{lb}{n}
+  (node_id, id_len, event_type, type_len, listener_id, callback) = let
   val cbp = $UNSAFE.castvwtp0{ptr}(callback)
   val () = $extfcall(void, "bats_listener_set", listener_id, cbp)
-in _bats_js_add_event_listener(node_id,
+in _bats_js_add_event_listener(
+    $UNSAFE.castvwtp1{ptr}(node_id), id_len,
     $UNSAFE.castvwtp1{ptr}(event_type),
     type_len, listener_id) end
 

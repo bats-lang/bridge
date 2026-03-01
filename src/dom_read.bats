@@ -10,7 +10,8 @@
    ============================================================ *)
 
 #pub fun measure
-  (node_id: int): $R.result(int, int)
+  {li:agz}{ni:pos}
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni): $R.result(int, int)
 
 #pub fun get_measure_x(): int
 
@@ -32,14 +33,17 @@
   (x: int, y: int): int
 
 #pub fun read_text_content
-  (node_id: int): int
+  {li:agz}{ni:pos}
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni): int
 
 #pub fun read_text_content_get
   {n:pos | n <= 1048576}
   (len: int n): [l:agz] $A.arr(byte, l, n)
 
 #pub fun measure_text_offset
-  (node_id: int, offset: int): int
+  {li:agz}{ni:pos}
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
+   offset: int): int
 
 #pub fun get_selection_text(): int
 
@@ -53,7 +57,9 @@
 
 (* Read form input .value into WASM memory. Returns byte length. *)
 #pub fun read_input_value
-  (node_id: int, max_len: int): int
+  {li:agz}{ni:pos}
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
+   max_len: int): int
 
 (* ============================================================
    WASM implementation
@@ -63,15 +69,15 @@
 $UNSAFE begin
 
 extern fun _bats_js_measure_node
-  (node_id: int): int = "mac#bats_js_measure_node"
+  (id: ptr, id_len: int): int = "mac#bats_js_measure_node"
 extern fun _bats_js_query_selector
   (selector: ptr, selector_len: int): int = "mac#bats_js_query_selector"
 extern fun _bats_js_caret_position_from_point
   (x: int, y: int): int = "mac#bats_js_caret_position_from_point"
 extern fun _bats_js_read_text_content
-  (node_id: int): int = "mac#bats_js_read_text_content"
+  (id: ptr, id_len: int): int = "mac#bats_js_read_text_content"
 extern fun _bats_js_measure_text_offset
-  (node_id: int, offset: int): int = "mac#bats_js_measure_text_offset"
+  (id: ptr, id_len: int, offset: int): int = "mac#bats_js_measure_text_offset"
 extern fun _bats_js_get_selection_text
   (): int = "mac#bats_js_get_selection_text"
 extern fun _bats_js_get_selection_rect
@@ -79,8 +85,9 @@ extern fun _bats_js_get_selection_rect
 extern fun _bats_js_get_selection_range
   (): void = "mac#bats_js_get_selection_range"
 
-implement measure(node_id) = let
-  val r = _bats_js_measure_node(node_id)
+implement measure{li}{ni}(node_id, id_len) = let
+  val r = _bats_js_measure_node(
+    $UNSAFE.castvwtp1{ptr}(node_id), id_len)
 in
   if r >= 0 then $R.ok(r) else $R.err(r)
 end
@@ -103,14 +110,16 @@ end
 implement caret_position_from_point(x, y) =
   _bats_js_caret_position_from_point(x, y)
 
-implement read_text_content(node_id) =
-  _bats_js_read_text_content(node_id)
+implement read_text_content{li}{ni}(node_id, id_len) =
+  _bats_js_read_text_content(
+    $UNSAFE.castvwtp1{ptr}(node_id), id_len)
 
 implement read_text_content_get{n}(len) =
   stash_read(stash_get_int(1), len)
 
-implement measure_text_offset(node_id, offset) =
-  _bats_js_measure_text_offset(node_id, offset)
+implement measure_text_offset{li}{ni}(node_id, id_len, offset) =
+  _bats_js_measure_text_offset(
+    $UNSAFE.castvwtp1{ptr}(node_id), id_len, offset)
 
 implement get_selection_text() =
   _bats_js_get_selection_text()
@@ -125,10 +134,11 @@ implement get_selection_range() =
   _bats_js_get_selection_range()
 
 extern fun _bats_js_read_input_value
-  (node_id: int, dest: ptr, max_len: int): int = "mac#bats_js_read_input_value"
+  (id: ptr, id_len: int, dest: ptr, max_len: int): int = "mac#bats_js_read_input_value"
 
-implement read_input_value(node_id, max_len) =
-  _bats_js_read_input_value(node_id, the_null_ptr, max_len)
+implement read_input_value{li}{ni}(node_id, id_len, max_len) =
+  _bats_js_read_input_value(
+    $UNSAFE.castvwtp1{ptr}(node_id), id_len, the_null_ptr, max_len)
 
 end (* $UNSAFE *)
 end (* #target wasm *)
