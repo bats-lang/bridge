@@ -21,6 +21,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_focus_window
   (): void = "mac#bats_js_focus_window"
@@ -35,7 +36,8 @@ implement get_visibility() = _bats_js_get_visibility_state()
 
 implement log{lb}{n}(level, msg, msg_len) =
   _bats_js_log(level,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(msg) end,
+    $UNSAFE.castvwtp1{ptr}(msg),
     msg_len)
 
+end (* $UNSAFE *)
 end (* #target wasm *)

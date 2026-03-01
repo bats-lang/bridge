@@ -25,6 +25,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_match_media
   (query: ptr, query_len: int): int = "mac#bats_js_match_media"
@@ -34,23 +35,24 @@ extern fun _bats_js_listen_media
 
 implement match_media{lb}{n}(query, query_len) =
   _bats_js_match_media(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(query) end, query_len)
+    $UNSAFE.castvwtp1{ptr}(query), query_len)
 
 implement listen_media{lb}{n}(query, query_len, listener_id, callback) = let
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val cbp = $UNSAFE.castvwtp0{ptr}(callback)
   val () = $extfcall(void, "bats_listener_set", listener_id, cbp)
 in _bats_js_listen_media(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(query) end, query_len,
+    $UNSAFE.castvwtp1{ptr}(query), query_len,
     listener_id) end
 
 implement on_media_change(listener_id, matches) = let
   val cbp = $extfcall(ptr, "bats_listener_get", listener_id)
 in
   if ptr_isnot_null(cbp) then let
-    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
+    val cb = $UNSAFE.cast{(int) -<cloref1> int}(cbp)
     val _ = cb(matches)
   in () end
   else ()
 end
 
+end (* $UNSAFE *)
 end (* #target wasm *)

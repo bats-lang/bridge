@@ -42,6 +42,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_get_url
   (out: ptr, max_len: int): int = "mac#bats_js_get_url"
@@ -56,7 +57,7 @@ extern fun _bats_js_push_state
 
 implement get_url{l}{n}(out, max_len) = let
   val r = _bats_js_get_url(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
+    $UNSAFE.castvwtp1{ptr}(out),
     max_len)
 in
   if r >= 0 then $R.ok(r) else $R.err(r)
@@ -64,7 +65,7 @@ end
 
 implement get_hash{l}{n}(out, max_len) = let
   val r = _bats_js_get_url_hash(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
+    $UNSAFE.castvwtp1{ptr}(out),
     max_len)
 in
   if r >= 0 then $R.ok(r) else $R.err(r)
@@ -72,17 +73,17 @@ end
 
 implement set_hash{lb}{n}(hash, hash_len) =
   _bats_js_set_url_hash(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(hash) end,
+    $UNSAFE.castvwtp1{ptr}(hash),
     hash_len)
 
 implement replace_state{lb}{n}(url, url_len) =
   _bats_js_replace_state(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end,
+    $UNSAFE.castvwtp1{ptr}(url),
     url_len)
 
 implement push_state{lb}{n}(url, url_len) =
   _bats_js_push_state(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end,
+    $UNSAFE.castvwtp1{ptr}(url),
     url_len)
 
 extern fun _bats_js_reload
@@ -91,17 +92,18 @@ extern fun _bats_js_reload
 implement reload() = _bats_js_reload()
 
 implement set_popstate_callback(cb) = let
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(cb) end
+  val cbp = $UNSAFE.castvwtp0{ptr}(cb)
 in $extfcall(void, "bats_listener_set", 999999, cbp) end
 
 implement on_popstate(url_len) = let
   val cbp = $extfcall(ptr, "bats_listener_get", 999999)
 in
   if ptr_isnot_null(cbp) then let
-    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
+    val cb = $UNSAFE.cast{(int) -<cloref1> int}(cbp)
     val _ = cb(url_len)
   in () end
   else ()
 end
 
+end (* $UNSAFE *)
 end (* #target wasm *)

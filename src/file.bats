@@ -38,6 +38,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_file_open
   (input_node_id: int, resolver_id: int): void = "mac#bats_js_file_open"
@@ -61,7 +62,7 @@ implement file_name{n}(len) =
 
 implement file_read{l}{n}(handle, file_offset, out, len) = let
   val r = _bats_js_file_read(handle, file_offset, len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end)
+    $UNSAFE.castvwtp1{ptr}(out))
 in
   if r >= 0 then $R.ok(r) else $R.err(r)
 end
@@ -72,4 +73,5 @@ implement on_file_open(resolver_id, handle, size) = let
   val () = stash_set_int(0, size)
 in $P.fire(resolver_id, handle) end
 
+end (* $UNSAFE *)
 end (* #target wasm *)

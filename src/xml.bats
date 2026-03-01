@@ -21,16 +21,18 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_parse_html
   (html: ptr, len: int): int = "mac#bats_js_parse_html"
 
 implement xml_parse{lb}{n}(html, len) =
   _bats_js_parse_html(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(html) end,
+    $UNSAFE.castvwtp1{ptr}(html),
     len)
 
 implement xml_result{n}(len) =
   stash_read(stash_get_int(1), len)
 
+end (* $UNSAFE *)
 end (* #target wasm *)

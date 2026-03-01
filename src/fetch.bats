@@ -29,6 +29,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_fetch
   (url: ptr, url_len: int, resolver_id: int): void = "mac#bats_js_fetch"
@@ -37,7 +38,7 @@ implement fetch{lb}{n}(url, url_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_js_fetch(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end, url_len,
+    $UNSAFE.castvwtp1{ptr}(url), url_len,
     id)
 in p end
 
@@ -51,4 +52,5 @@ implement on_fetch_complete(resolver_id, status, body_len) = let
   val () = stash_set_int(0, body_len)
 in $P.fire(resolver_id, status) end
 
+end (* $UNSAFE *)
 end (* #target wasm *)

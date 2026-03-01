@@ -25,6 +25,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_dom_flush
   (buf: ptr, len: int): void = "mac#bats_dom_flush"
@@ -34,18 +35,19 @@ extern fun _bats_js_set_image_src
 
 implement dom_flush{l}{n}{m}(buf, len) =
   _bats_dom_flush(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(buf) end,
+    $UNSAFE.castvwtp1{ptr}(buf),
     len)
 
 implement set_image_src{ld}{nd}{lm}{nm}
   (node_id, data, data_len, mime, mime_len) =
   _bats_js_set_image_src(node_id,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end, data_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(mime) end, mime_len)
+    $UNSAFE.castvwtp1{ptr}(data), data_len,
+    $UNSAFE.castvwtp1{ptr}(mime), mime_len)
 
 extern fun _bats_js_click_node
   (node_id: int): void = "mac#bats_js_click_node"
 
 implement click_node(node_id) = _bats_js_click_node(node_id)
 
+end (* $UNSAFE *)
 end (* #target wasm *)

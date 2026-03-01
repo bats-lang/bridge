@@ -51,6 +51,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_idb_js_put
   (key: ptr, key_len: int, val_data: ptr, val_len: int, resolver_id: int)
@@ -69,8 +70,8 @@ implement idb_put{lk}{nk}{lv}{nv}(key, key_len, val_data, val_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_idb_js_put(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(val_data) end, val_len,
+    $UNSAFE.castvwtp1{ptr}(key), key_len,
+    $UNSAFE.castvwtp1{ptr}(val_data), val_len,
     id)
 in p end
 
@@ -78,7 +79,7 @@ implement idb_get{lk}{nk}(key, key_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_idb_js_get(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len,
+    $UNSAFE.castvwtp1{ptr}(key), key_len,
     id)
 in p end
 
@@ -89,7 +90,7 @@ implement idb_delete{lk}{nk}(key, key_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_idb_js_delete(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len,
+    $UNSAFE.castvwtp1{ptr}(key), key_len,
     id)
 in p end
 
@@ -97,7 +98,7 @@ implement idb_list_keys{lb}{n}(prefix, prefix_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_idb_js_list_keys(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(prefix) end, prefix_len,
+    $UNSAFE.castvwtp1{ptr}(prefix), prefix_len,
     id)
 in p end
 
@@ -115,4 +116,5 @@ extern fun _bats_js_idb_delete_database
 
 implement idb_delete_database() = _bats_js_idb_delete_database()
 
+end (* $UNSAFE *)
 end (* #target wasm *)

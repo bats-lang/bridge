@@ -60,6 +60,7 @@
    ============================================================ *)
 
 #target wasm begin
+$UNSAFE begin
 
 extern fun _bats_js_measure_node
   (node_id: int): int = "mac#bats_js_measure_node"
@@ -93,7 +94,7 @@ implement get_measure_scroll_h() = $extfcall(int, "bats_bridge_measure_get", 5)
 
 implement query_selector{lb}{n}(sel, sel_len) = let
   val r = _bats_js_query_selector(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(sel) end,
+    $UNSAFE.castvwtp1{ptr}(sel),
     sel_len)
 in
   if r >= 0 then $R.some(r) else $R.none()
@@ -129,4 +130,5 @@ extern fun _bats_js_read_input_value
 implement read_input_value(node_id, max_len) =
   _bats_js_read_input_value(node_id, the_null_ptr, max_len)
 
+end (* $UNSAFE *)
 end (* #target wasm *)
