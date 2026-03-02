@@ -41,19 +41,19 @@
 
 #target wasm begin
 $UNSAFE begin
-
 extern fun _bats_js_file_open
   (id: ptr, id_len: int, resolver_id: int): void = "mac#bats_js_file_open"
 extern fun _bats_js_file_read
   (handle: int, file_offset: int, len: int, out: ptr): int = "mac#bats_js_file_read"
 extern fun _bats_js_file_close
   (handle: int): void = "mac#bats_js_file_close"
+end
 
 implement file_open{li}{ni}(input_node_id, id_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_js_file_open(
-    $UNSAFE.castvwtp1{ptr}(input_node_id), id_len, id)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(input_node_id) end, id_len, id)
 in p end
 
 implement file_size() = stash_get_int(0)
@@ -65,7 +65,7 @@ implement file_name{n}(len) =
 
 implement file_read{l}{n}(handle, file_offset, out, len) = let
   val r = _bats_js_file_read(handle, file_offset, len,
-    $UNSAFE.castvwtp1{ptr}(out))
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end)
 in
   if r >= 0 then $R.ok(r) else $R.err(r)
 end
@@ -76,5 +76,4 @@ implement on_file_open(resolver_id, handle, size) = let
   val () = stash_set_int(0, size)
 in $P.fire(resolver_id, handle) end
 
-end (* $UNSAFE *)
 end (* #target wasm *)

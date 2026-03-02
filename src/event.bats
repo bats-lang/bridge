@@ -39,7 +39,6 @@
 
 #target wasm begin
 $UNSAFE begin
-
 extern fun _bats_js_add_event_listener
   (id: ptr, id_len: int, event_type: ptr, type_len: int, listener_id: int)
   : void = "mac#bats_js_add_event_listener"
@@ -50,43 +49,43 @@ extern fun _bats_js_remove_event_listener
   (listener_id: int): void = "mac#bats_js_remove_event_listener"
 extern fun _bats_js_prevent_default
   (): void = "mac#bats_js_prevent_default"
+end
 
 implement listen{li}{ni}{lb}{n}
   (node_id, id_len, event_type, type_len, listener_id, callback) = let
-  val cbp = $UNSAFE.castvwtp0{ptr}(callback)
-  val () = $extfcall(void, "bats_listener_set", listener_id, cbp)
+  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
 in _bats_js_add_event_listener(
-    $UNSAFE.castvwtp1{ptr}(node_id), id_len,
-    $UNSAFE.castvwtp1{ptr}(event_type),
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(event_type) end,
     type_len, listener_id) end
 
 implement listen_document{lb}{n}
   (event_type, type_len, listener_id, callback) = let
-  val cbp = $UNSAFE.castvwtp0{ptr}(callback)
-  val () = $extfcall(void, "bats_listener_set", listener_id, cbp)
+  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
 in _bats_js_add_document_listener(
-    $UNSAFE.castvwtp1{ptr}(event_type),
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(event_type) end,
     type_len, listener_id) end
 
 implement unlisten(listener_id) = let
-  val () = $extfcall(void, "bats_listener_set", listener_id, the_null_ptr)
+  val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, the_null_ptr) end
 in _bats_js_remove_event_listener(listener_id) end
 
 implement prevent_default() = _bats_js_prevent_default()
 
 implement get_payload{n}(len) = let
-  val sid = $extfcall(int, "bats_bridge_stash_get_int", 1)
+  val sid = $UNSAFE begin $extfcall(int, "bats_bridge_stash_get_int", 1) end
 in stash_read(sid, len) end
 
 implement on_event(listener_id, payload_len) = let
-  val cbp = $extfcall(ptr, "bats_listener_get", listener_id)
+  val cbp = $UNSAFE begin $extfcall(ptr, "bats_listener_get", listener_id) end
 in
   if ptr_isnot_null(cbp) then let
-    val cb = $UNSAFE.cast{(int) -<cloref1> int}(cbp)
+    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
     val _ = cb(payload_len)
   in () end
   else ()
 end
 
-end (* $UNSAFE *)
 end (* #target wasm *)

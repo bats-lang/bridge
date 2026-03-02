@@ -67,7 +67,6 @@
 
 #target wasm begin
 $UNSAFE begin
-
 extern fun _bats_js_measure_node
   (id: ptr, id_len: int): int = "mac#bats_js_measure_node"
 extern fun _bats_js_query_selector
@@ -84,24 +83,27 @@ extern fun _bats_js_get_selection_rect
   (): void = "mac#bats_js_get_selection_rect"
 extern fun _bats_js_get_selection_range
   (): void = "mac#bats_js_get_selection_range"
+extern fun _bats_js_read_input_value
+  (id: ptr, id_len: int, dest: ptr, max_len: int): int = "mac#bats_js_read_input_value"
+end
 
 implement measure{li}{ni}(node_id, id_len) = let
   val r = _bats_js_measure_node(
-    $UNSAFE.castvwtp1{ptr}(node_id), id_len)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len)
 in
   if r >= 0 then $R.ok(r) else $R.err(r)
 end
 
-implement get_measure_x() = $extfcall(int, "bats_bridge_measure_get", 0)
-implement get_measure_y() = $extfcall(int, "bats_bridge_measure_get", 1)
-implement get_measure_w() = $extfcall(int, "bats_bridge_measure_get", 2)
-implement get_measure_h() = $extfcall(int, "bats_bridge_measure_get", 3)
-implement get_measure_scroll_w() = $extfcall(int, "bats_bridge_measure_get", 4)
-implement get_measure_scroll_h() = $extfcall(int, "bats_bridge_measure_get", 5)
+implement get_measure_x() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 0) end
+implement get_measure_y() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 1) end
+implement get_measure_w() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 2) end
+implement get_measure_h() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 3) end
+implement get_measure_scroll_w() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 4) end
+implement get_measure_scroll_h() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 5) end
 
 implement query_selector{lb}{n}(sel, sel_len) = let
   val r = _bats_js_query_selector(
-    $UNSAFE.castvwtp1{ptr}(sel),
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(sel) end,
     sel_len)
 in
   if r >= 0 then $R.some(r) else $R.none()
@@ -112,14 +114,14 @@ implement caret_position_from_point(x, y) =
 
 implement read_text_content{li}{ni}(node_id, id_len) =
   _bats_js_read_text_content(
-    $UNSAFE.castvwtp1{ptr}(node_id), id_len)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len)
 
 implement read_text_content_get{n}(len) =
   stash_read(stash_get_int(1), len)
 
 implement measure_text_offset{li}{ni}(node_id, id_len, offset) =
   _bats_js_measure_text_offset(
-    $UNSAFE.castvwtp1{ptr}(node_id), id_len, offset)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, offset)
 
 implement get_selection_text() =
   _bats_js_get_selection_text()
@@ -133,12 +135,8 @@ implement get_selection_rect() =
 implement get_selection_range() =
   _bats_js_get_selection_range()
 
-extern fun _bats_js_read_input_value
-  (id: ptr, id_len: int, dest: ptr, max_len: int): int = "mac#bats_js_read_input_value"
-
 implement read_input_value{li}{ni}(node_id, id_len, max_len) =
   _bats_js_read_input_value(
-    $UNSAFE.castvwtp1{ptr}(node_id), id_len, the_null_ptr, max_len)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, the_null_ptr, max_len)
 
-end (* $UNSAFE *)
 end (* #target wasm *)
