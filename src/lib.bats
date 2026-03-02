@@ -10,6 +10,8 @@
 #use promise as P
 #use result as R
 
+staload "./js_emitter.bats"
+
 (* ============================================================
    C runtime -- stash, measure, listener tables + WASM exports
    ============================================================ *)
