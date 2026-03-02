@@ -1190,8 +1190,7 @@ in end
 
 fn emit_js_imports(b: !$B.builder): void = let
   val () = bput(b, "\n")
-  val () = bput(b, "  const imports = {\n")
-  val () = bput(b, "    env: {\n")
+  val () = bput(b, "  const envObj = {\n")
   val () = bput(b, "      ...extraImports,\n")
   val () = bput(b, "      bats_dom_flush: batsDomFlush,\n")
   val () = bput(b, "      bats_js_set_image_src: batsJsSetImageSrc,\n")
@@ -1272,8 +1271,8 @@ fn emit_js_imports(b: !$B.builder): void = let
   val () = bput(b, "        instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
   val () = bput(b, "        return bytes.length;\n")
   val () = bput(b, "      },\n")
-  val () = bput(b, "    },\n")
   val () = bput(b, "  };\n")
+  val () = bput(b, "  const imports = { env: new Proxy(envObj, { get: (t, p) => p in t ? t[p] : () => 0 }) };\n")
 in end
 
 fn emit_js_loadwasm_close(b: !$B.builder): void = let
