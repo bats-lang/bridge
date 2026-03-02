@@ -9,8 +9,8 @@
    ============================================================ *)
 
 #pub fun stash_read
-  {n:pos | n <= 1048576}
-  (stash_id: int, len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int, int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun stash_set_int
   (slot: int, v: int): void

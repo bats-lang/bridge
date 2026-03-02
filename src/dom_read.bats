@@ -37,8 +37,8 @@
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni): int
 
 #pub fun read_text_content_get
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun measure_text_offset
   {li:agz}{ni:pos}
@@ -48,8 +48,8 @@
 #pub fun get_selection_text(): int
 
 #pub fun get_selection_text_get
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun get_selection_rect(): void
 

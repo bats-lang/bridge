@@ -10,16 +10,15 @@
    ============================================================ *)
 
 #pub fun clipboard_write
-  {lb:agz}{n:nat}
-  (text: !$A.borrow(byte, lb, n), text_len: int n)
-  : $P.promise_pending(int)
+  : {lb:agz}{n:nat}
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(int)
 
 #pub fun clipboard_read
-  (): $P.promise_pending(int)
+  : () -> $P.promise_pending(int)
 
 #pub fun clipboard_read_result
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun on_clipboard_complete
   (resolver_id: int, success: int): void = "ext#bats_on_clipboard_complete"

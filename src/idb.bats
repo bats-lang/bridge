@@ -10,33 +10,29 @@
    ============================================================ *)
 
 #pub fun idb_put
-  {lk:agz}{nk:pos}{lv:agz}{nv:nat}
-  (key: !$A.borrow(byte, lk, nk), key_len: int nk,
-   val_data: !$A.borrow(byte, lv, nv), val_len: int nv)
-  : $P.promise_pending(int)
+  : {lk:agz}{nk:pos}{lv:agz}{nv:nat}
+  (!$A.borrow(byte, lk, nk), int nk,
+   !$A.borrow(byte, lv, nv), int nv) -> $P.promise_pending(int)
 
 #pub fun idb_get
-  {lk:agz}{nk:pos}
-  (key: !$A.borrow(byte, lk, nk), key_len: int nk)
-  : $P.promise_pending(int)
+  : {lk:agz}{nk:pos}
+  (!$A.borrow(byte, lk, nk), int nk) -> $P.promise_pending(int)
 
 #pub fun idb_get_result
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun idb_delete
-  {lk:agz}{nk:pos}
-  (key: !$A.borrow(byte, lk, nk), key_len: int nk)
-  : $P.promise_pending(int)
+  : {lk:agz}{nk:pos}
+  (!$A.borrow(byte, lk, nk), int nk) -> $P.promise_pending(int)
 
 #pub fun idb_list_keys
-  {lb:agz}{n:nat}
-  (prefix: !$A.borrow(byte, lb, n), prefix_len: int n)
-  : $P.promise_pending(int)
+  : {lb:agz}{n:nat}
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(int)
 
 #pub fun idb_list_keys_result
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun idb_delete_database(): void
 
