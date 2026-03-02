@@ -12,10 +12,10 @@
 #pub fun clipboard_write
   {lb:agz}{n:nat}
   (text: !$A.borrow(byte, lb, n), text_len: int n)
-  : $P.promise(int, $P.Pending)
+  : $P.promise_pending(int)
 
 #pub fun clipboard_read
-  (): $P.promise(int, $P.Pending)
+  (): $P.promise_pending(int)
 
 #pub fun clipboard_read_result
   {n:pos | n <= 1048576}

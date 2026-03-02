@@ -13,12 +13,12 @@
   {lk:agz}{nk:pos}{lv:agz}{nv:nat}
   (key: !$A.borrow(byte, lk, nk), key_len: int nk,
    val_data: !$A.borrow(byte, lv, nv), val_len: int nv)
-  : $P.promise(int, $P.Pending)
+  : $P.promise_pending(int)
 
 #pub fun idb_get
   {lk:agz}{nk:pos}
   (key: !$A.borrow(byte, lk, nk), key_len: int nk)
-  : $P.promise(int, $P.Pending)
+  : $P.promise_pending(int)
 
 #pub fun idb_get_result
   {n:pos | n <= 1048576}
@@ -27,12 +27,12 @@
 #pub fun idb_delete
   {lk:agz}{nk:pos}
   (key: !$A.borrow(byte, lk, nk), key_len: int nk)
-  : $P.promise(int, $P.Pending)
+  : $P.promise_pending(int)
 
 #pub fun idb_list_keys
   {lb:agz}{n:nat}
   (prefix: !$A.borrow(byte, lb, n), prefix_len: int n)
-  : $P.promise(int, $P.Pending)
+  : $P.promise_pending(int)
 
 #pub fun idb_list_keys_result
   {n:pos | n <= 1048576}
