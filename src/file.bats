@@ -11,17 +11,16 @@
    ============================================================ *)
 
 #pub fun file_open
-  {li:agz}{ni:pos}
-  (input_node_id: !$A.borrow(byte, li, ni), id_len: int ni)
-  : $P.promise_pending(int)
+  : {li:agz}{ni:pos}
+  (!$A.borrow(byte, li, ni), int ni) -> $P.promise_pending(int)
 
 #pub fun file_size(): int
 
 #pub fun file_name_len(): int
 
 #pub fun file_name
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun file_read
   {l:agz}{n:pos}

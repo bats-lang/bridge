@@ -11,9 +11,9 @@
    ============================================================ *)
 
 #pub fun decompress
-  {lb:agz}{n:pos}
-  (data: !$A.borrow(byte, lb, n), data_len: int n,
-   method: int): $P.promise_pending(int)
+  : {lb:agz}{n:pos}
+  (!$A.borrow(byte, lb, n), int n,
+   int) -> $P.promise_pending(int)
 
 #pub fun decompress_len(): int
 

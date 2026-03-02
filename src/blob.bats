@@ -14,8 +14,8 @@
    mime: !$A.borrow(byte, lm, nm), mime_len: int nm): int
 
 #pub fun create_blob_url_get
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun revoke_blob_url
   {lb:agz}{n:pos}

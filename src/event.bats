@@ -27,8 +27,8 @@
 #pub fun prevent_default(): void
 
 #pub fun get_payload
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun on_event
   (listener_id: int, payload_len: int): void = "ext#bats_on_event"

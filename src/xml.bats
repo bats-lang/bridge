@@ -13,8 +13,8 @@
   (html: !$A.borrow(byte, lb, n), len: int n): int
 
 #pub fun xml_result
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 (* ============================================================
    WASM implementation

@@ -10,15 +10,14 @@
    ============================================================ *)
 
 #pub fun fetch
-  {lb:agz}{n:pos}
-  (url: !$A.borrow(byte, lb, n), url_len: int n)
-  : $P.promise_pending(int)
+  : {lb:agz}{n:pos}
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(int)
 
 #pub fun get_body_len(): int
 
 #pub fun get_body
-  {n:pos | n <= 1048576}
-  (len: int n): [l:agz] $A.arr(byte, l, n)
+  : {n:pos | n <= 1048576}
+  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun on_fetch_complete
   (resolver_id: int, status: int, body_len: int)
