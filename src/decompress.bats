@@ -13,7 +13,7 @@
 #pub fun decompress
   {lb:agz}{n:pos}
   (data: !$A.borrow(byte, lb, n), data_len: int n,
-   method: int): $P.promise(int, $P.Pending)
+   method: int): $P.promise_pending(int)
 
 #pub fun decompress_len(): int
 

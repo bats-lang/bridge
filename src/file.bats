@@ -13,7 +13,7 @@
 #pub fun file_open
   {li:agz}{ni:pos}
   (input_node_id: !$A.borrow(byte, li, ni), id_len: int ni)
-  : $P.promise(int, $P.Pending)
+  : $P.promise_pending(int)
 
 #pub fun file_size(): int
 

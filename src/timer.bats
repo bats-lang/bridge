@@ -9,7 +9,7 @@
    ============================================================ *)
 
 #pub fun timer_set
-  (delay_ms: int): $P.promise(int, $P.Pending)
+  (delay_ms: int): $P.promise_pending(int)
 
 #pub fun get_time_ms(): int
 

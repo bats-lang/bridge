@@ -12,7 +12,7 @@
 #pub fun fetch
   {lb:agz}{n:pos}
   (url: !$A.borrow(byte, lb, n), url_len: int n)
-  : $P.promise(int, $P.Pending)
+  : $P.promise_pending(int)
 
 #pub fun get_body_len(): int
 

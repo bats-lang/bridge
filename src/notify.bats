@@ -10,7 +10,7 @@
    ============================================================ *)
 
 #pub fun notify_request_permission
-  (): $P.promise(int, $P.Pending)
+  (): $P.promise_pending(int)
 
 #pub fun notify_show
   {lb:agz}{n:pos}
@@ -19,14 +19,14 @@
 #pub fun notify_push_subscribe
   {lb:agz}{n:pos}
   (vapid: !$A.borrow(byte, lb, n), vapid_len: int n)
-  : $P.promise(int, $P.Pending)
+  : $P.promise_pending(int)
 
 #pub fun notify_push_get_result
   {n:pos | n <= 1048576}
   (len: int n): [l:agz] $A.arr(byte, l, n)
 
 #pub fun notify_push_get_subscription
-  (): $P.promise(int, $P.Pending)
+  (): $P.promise_pending(int)
 
 #pub fun on_permission_result
   (resolver_id: int, granted: int): void = "ext#bats_on_permission_result"
