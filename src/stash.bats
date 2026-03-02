@@ -28,22 +28,24 @@
 
 #target wasm begin
 $UNSAFE begin
-
 extern fun _bats_js_stash_read
   (stash_id: int, dest: ptr, len: int): void = "mac#bats_js_stash_read"
+extern fun _bats_js_get_root_node
+  (): int = "mac#bats_js_get_root_node"
+end
 
 fun _bridge_recv{n:pos | n <= 1048576}
   (stash_id: int, len: int n): [l:agz] $A.arr(byte, l, n) = let
   val buf = $A.alloc<byte>(len)
-  val p = $UNSAFE.castvwtp1{ptr}(buf)
+  val p = $UNSAFE begin $UNSAFE.castvwtp1{ptr}(buf) end
   val () = _bats_js_stash_read(stash_id, p, len)
 in buf end
 
 fn _stash_get_int(slot: int): int =
-  $extfcall(int, "bats_bridge_stash_get_int", slot)
+  $UNSAFE begin $extfcall(int, "bats_bridge_stash_get_int", slot) end
 
 fn _stash_set_int(slot: int, v: int): void =
-  $extfcall(void, "bats_bridge_stash_set_int", slot, v)
+  $UNSAFE begin $extfcall(void, "bats_bridge_stash_set_int", slot, v) end
 
 implement stash_read{n}(stash_id, len) =
   _bridge_recv(stash_id, len)
@@ -52,10 +54,6 @@ implement stash_set_int(slot, v0) = _stash_set_int(slot, v0)
 
 implement stash_get_int(slot) = _stash_get_int(slot)
 
-extern fun _bats_js_get_root_node
-  (): int = "mac#bats_js_get_root_node"
-
 implement get_root_node() = _bats_js_get_root_node()
 
-end (* $UNSAFE *)
 end (* #target wasm *)
