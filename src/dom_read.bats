@@ -1,6 +1,7 @@
 (* dom_read -- DOM measurement, query, text content, selection for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./stash.bats"
 
 #use array as A
 #use result as R

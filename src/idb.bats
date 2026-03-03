@@ -1,6 +1,7 @@
 (* idb -- IndexedDB key-value storage for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./stash.bats"
 
 #use array as A
 #use promise as P

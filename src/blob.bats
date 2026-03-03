@@ -1,6 +1,7 @@
 (* blob -- blob URL creation, revocation, download for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./stash.bats"
 
 #use array as A
 
