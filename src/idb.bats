@@ -59,7 +59,7 @@ extern fun _bats_idb_js_delete
   (key: ptr, key_len: int, resolver_id: int)
   : void = "mac#bats_idb_js_delete"
 extern fun _bats_idb_js_list_keys
-  (prefix: ptr, prefix_len: int, resolver_id: int)
+  (pfx: ptr, pfx_len: int, resolver_id: int)
   : void = "mac#bats_idb_js_list_keys"
 extern fun _bats_js_idb_delete_database
   (): void = "mac#bats_js_idb_delete_database"
@@ -93,11 +93,11 @@ implement idb_delete{lk}{nk}(key, key_len) = let
     id)
 in p end
 
-implement idb_list_keys{lb}{n}(prefix, prefix_len) = let
+implement idb_list_keys{lb}{n}(prefix, pfx_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_idb_js_list_keys(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(prefix) end, prefix_len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(prefix) end, pfx_len,
     id)
 in p end
 
