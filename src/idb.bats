@@ -93,11 +93,11 @@ implement idb_delete{lk}{nk}(key, key_len) = let
     id)
 in p end
 
-implement idb_list_keys{lb}{n}(prefix, pfx_len) = let
+implement idb_list_keys{lb}{n}(pfx, pfx_len) = let
   val @(p, r) = $P.create<int>()
   val id = $P.stash(r)
   val () = _bats_idb_js_list_keys(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(prefix) end, pfx_len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(pfx) end, pfx_len,
     id)
 in p end
 
