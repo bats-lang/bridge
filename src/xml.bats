@@ -1,6 +1,7 @@
 (* xml -- HTML/XML parsing for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./stash.bats"
 
 #use array as A
 

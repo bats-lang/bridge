@@ -1,6 +1,7 @@
 (* event -- DOM event listener management for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./stash.bats"
 
 #use array as A
 

@@ -1,6 +1,7 @@
 (* fetch -- network fetch with promise-based async for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./stash.bats"
 
 #use array as A
 #use promise as P
