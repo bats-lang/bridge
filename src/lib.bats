@@ -11,23 +11,6 @@
 #use result as R
 
 staload "./js_emitter.bats"
-staload "./blob.bats"
-staload "./clipboard.bats"
-staload "./decompress.bats"
-staload "./dom.bats"
-staload "./dom_read.bats"
-staload "./event.bats"
-staload "./fetch.bats"
-staload "./file.bats"
-staload "./idb.bats"
-staload "./media.bats"
-staload "./nav.bats"
-staload "./notify.bats"
-staload "./scroll.bats"
-staload "./stash.bats"
-staload "./timer.bats"
-staload "./window.bats"
-staload "./xml.bats"
 
 (* ============================================================
    C runtime -- stash, measure, listener tables + WASM exports
