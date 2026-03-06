@@ -64,13 +64,13 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge(b: !$B.builder): void
+#pub fun produce_bridge(b: !$B.builder0): void
 
 #pub fun produce_bridge_app {nw:nat}{nr:nat}
-  (b: !$B.builder, wasm_name: string nw, root_id: string nr): void
+  (b: !$B.builder0, wasm_name: string nw, root_id: string nr): void
 
 #pub fun produce_service_worker {nw:nat}
-  (b: !$B.builder, wasm_name: string nw): void
+  (b: !$B.builder0, wasm_name: string nw): void
 
 implement produce_bridge(b) = emit_js_all(b)
 
