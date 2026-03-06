@@ -9,18 +9,18 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all(b: !$B.builder): void
+#pub fun emit_js_all(b: !$B.builder0): void
 
 fun bput_loop {sn:nat}{i:nat | i <= sn}{fuel:nat} .<fuel>.
-  (b: !$B.builder, s: string sn, slen: int sn, i: int i, fuel: int fuel): void =
+  (b: !$B.builder0, s: string sn, slen: int sn, i: int i, fuel: int fuel): void =
   if fuel <= 0 then ()
   else if i >= slen then ()
   else let
     val c = char2int0(string_get_at(s, i))
-    val () = $B.put_byte(b, c)
+    val () = $B.put_byte_safe(b, c)
   in bput_loop(b, s, slen, i + 1, fuel - 1) end
 
-fn bput {sn:nat} (b: !$B.builder, s: string sn): void = let
+fn bput {sn:nat} (b: !$B.builder0, s: string sn): void = let
   val slen_sz = string1_length(s)
   val slen = g1u2i(slen_sz)
 in bput_loop(b, s, slen, 0, slen + 1) end
@@ -29,7 +29,7 @@ in bput_loop(b, s, slen, 0, slen + 1) end
    Per-concept JS emitters
    ============================================================ *)
 
-fn emit_js_header(b: !$B.builder): void = let
+fn emit_js_header(b: !$B.builder0): void = let
   val () = bput(b, "// bats_bridge.mjs — Bridge between bats WASM and a DOM document\n")
   val () = bput(b, "// Parses the bats binary diff protocol and applies it to a standard DOM.\n")
   val () = bput(b, "// Works in any ES module environment (browser or Node.js).\n")
@@ -44,7 +44,7 @@ fn emit_js_header(b: !$B.builder): void = let
   val () = bput(b, "}\n")
 in end
 
-fn emit_js_loadwasm_open(b: !$B.builder): void = let
+fn emit_js_loadwasm_open(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "/**\n")
   val () = bput(b, " * Load a bats WASM module and connect it to a DOM document.\n")
@@ -103,7 +103,7 @@ fn emit_js_loadwasm_open(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_dom(b: !$B.builder): void = let
+fn emit_js_dom(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- DOM helpers ---\n")
   val () = bput(b, "\n")
@@ -311,7 +311,7 @@ fn emit_js_dom(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_timer(b: !$B.builder): void = let
+fn emit_js_timer(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Timer ---\n")
   val () = bput(b, "\n")
@@ -322,7 +322,7 @@ fn emit_js_timer(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_idb(b: !$B.builder): void = let
+fn emit_js_idb(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- IndexedDB ---\n")
   val () = bput(b, "\n")
@@ -422,7 +422,7 @@ fn emit_js_idb(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_window(b: !$B.builder): void = let
+fn emit_js_window(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Window ---\n")
   val () = bput(b, "\n")
@@ -444,7 +444,7 @@ fn emit_js_window(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_nav(b: !$B.builder): void = let
+fn emit_js_nav(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Navigation ---\n")
   val () = bput(b, "\n")
@@ -484,7 +484,7 @@ fn emit_js_nav(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_dom_read(b: !$B.builder): void = let
+fn emit_js_dom_read(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- DOM read ---\n")
   val () = bput(b, "\n")
@@ -647,7 +647,7 @@ fn emit_js_dom_read(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_event(b: !$B.builder): void = let
+fn emit_js_event(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Event listener ---\n")
   val () = bput(b, "\n")
@@ -764,7 +764,7 @@ fn emit_js_event(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_fetch(b: !$B.builder): void = let
+fn emit_js_fetch(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Fetch ---\n")
   val () = bput(b, "\n")
@@ -783,7 +783,7 @@ fn emit_js_fetch(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_clipboard(b: !$B.builder): void = let
+fn emit_js_clipboard(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Clipboard ---\n")
   val () = bput(b, "\n")
@@ -829,7 +829,7 @@ fn emit_js_clipboard(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_file(b: !$B.builder): void = let
+fn emit_js_file(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- File ---\n")
   val () = bput(b, "\n")
@@ -880,7 +880,7 @@ fn emit_js_file(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_decompress(b: !$B.builder): void = let
+fn emit_js_decompress(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Decompress ---\n")
   val () = bput(b, "\n")
@@ -939,7 +939,7 @@ fn emit_js_decompress(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_notify(b: !$B.builder): void = let
+fn emit_js_notify(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Notification/Push ---\n")
   val () = bput(b, "\n")
@@ -1006,7 +1006,7 @@ fn emit_js_notify(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_xml(b: !$B.builder): void = let
+fn emit_js_xml(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- HTML parsing ---\n")
   val () = bput(b, "\n")
@@ -1101,7 +1101,7 @@ fn emit_js_xml(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_blob(b: !$B.builder): void = let
+fn emit_js_blob(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Blob URLs ---\n")
   val () = bput(b, "\n")
@@ -1135,7 +1135,7 @@ fn emit_js_blob(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_media(b: !$B.builder): void = let
+fn emit_js_media(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Media queries ---\n")
   val () = bput(b, "\n")
@@ -1159,7 +1159,7 @@ fn emit_js_media(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_scroll(b: !$B.builder): void = let
+fn emit_js_scroll(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  // --- Scroll ---\n")
   val () = bput(b, "\n")
@@ -1188,7 +1188,7 @@ fn emit_js_scroll(b: !$B.builder): void = let
   val () = bput(b, "  }\n")
 in end
 
-fn emit_js_imports(b: !$B.builder): void = let
+fn emit_js_imports(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  const envObj = {\n")
   val () = bput(b, "      ...extraImports,\n")
@@ -1275,7 +1275,7 @@ fn emit_js_imports(b: !$B.builder): void = let
   val () = bput(b, "  const imports = { env: new Proxy(envObj, { get: (t, p) => p in t ? t[p] : () => 0 }) };\n")
 in end
 
-fn emit_js_loadwasm_close(b: !$B.builder): void = let
+fn emit_js_loadwasm_close(b: !$B.builder0): void = let
   val () = bput(b, "\n")
   val () = bput(b, "  const result = await WebAssembly.instantiate(wasmBytes, imports);\n")
   val () = bput(b, "  instance = result.instance;\n")
