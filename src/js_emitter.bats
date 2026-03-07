@@ -9,8 +9,8 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 45400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 45400] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 46000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46000] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -1310,45 +1310,80 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-implement emit_js_all(b) = let
-  macdef refold(b) = let val+ @$B.Builder(_, _pp) = ,(b); val _ = _pp; prval () = fold@(,(b)) in end
+fn _emit_1 {n:nat | n + 12000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12000] $B.builder(m)): void = let
   val () = emit_js_header(b)
-  val () = refold(b)
   val () = emit_js_loadwasm_open(b)
-  val () = refold(b)
   val () = emit_js_dom(b)
-  val () = refold(b)
+in end
+
+fn _emit_2 {n:nat | n + 4300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4300] $B.builder(m)): void = let
   val () = emit_js_timer(b)
-  val () = refold(b)
   val () = emit_js_idb(b)
-  val () = refold(b)
   val () = emit_js_window(b)
-  val () = refold(b)
+in end
+
+fn _emit_3 {n:nat | n + 6600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6600] $B.builder(m)): void = let
   val () = emit_js_nav(b)
-  val () = refold(b)
   val () = emit_js_dom_read(b)
-  val () = refold(b)
+in end
+
+fn _emit_4 {n:nat | n + 5100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5100] $B.builder(m)): void = let
   val () = emit_js_event(b)
-  val () = refold(b)
   val () = emit_js_fetch(b)
-  val () = refold(b)
+in end
+
+fn _emit_5 {n:nat | n + 3300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3300] $B.builder(m)): void = let
   val () = emit_js_clipboard(b)
-  val () = refold(b)
   val () = emit_js_file(b)
-  val () = refold(b)
+in end
+
+fn _emit_6 {n:nat | n + 4400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
   val () = emit_js_decompress(b)
-  val () = refold(b)
   val () = emit_js_notify(b)
-  val () = refold(b)
+in end
+
+fn _emit_7 {n:nat | n + 4200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4200] $B.builder(m)): void = let
   val () = emit_js_xml(b)
-  val () = refold(b)
   val () = emit_js_blob(b)
-  val () = refold(b)
+in end
+
+fn _emit_8 {n:nat | n + 1500 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1500] $B.builder(m)): void = let
   val () = emit_js_media(b)
-  val () = refold(b)
   val () = emit_js_scroll(b)
-  val () = refold(b)
+in end
+
+fn _emit_9 {n:nat | n + 4500 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4500] $B.builder(m)): void = let
   val () = emit_js_imports(b)
-  val () = refold(b)
   val () = emit_js_loadwasm_close(b)
+in end
+
+fn _emit_first_half {n:nat | n + 28000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28000] $B.builder(m)): void = let
+  val () = _emit_1(b)
+  val () = _emit_2(b)
+  val () = _emit_3(b)
+  val () = _emit_4(b)
+in end
+
+fn _emit_second_half {n:nat | n + 17900 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 17900] $B.builder(m)): void = let
+  val () = _emit_5(b)
+  val () = _emit_6(b)
+  val () = _emit_7(b)
+  val () = _emit_8(b)
+  val () = _emit_9(b)
+in end
+
+implement emit_js_all(b) = let
+  val () = _emit_first_half(b)
+  val () = _emit_second_half(b)
 in end

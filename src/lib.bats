@@ -64,11 +64,11 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge {n:nat | n + 45400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 45400] $B.builder(m)): void
+#pub fun produce_bridge {n:nat | n + 46000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46000] $B.builder(m)): void
 
-#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 46000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46000] $B.builder(m),
+#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 46700 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46700] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
 #pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 1000 <= $B.BUILDER_CAP}
@@ -77,9 +77,9 @@ end (* #target wasm *)
 
 implement produce_bridge(b) = emit_js_all(b)
 
-implement produce_bridge_app (b, wasm_name, root_id) = let
-  val () = emit_js_all(b)
-  val+ @$B.Builder(_, _pa) = b; val _ = _pa; prval () = fold@(b)
+fn _produce_app_tail {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 700 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 700] $B.builder(m),
+   wasm_name: string nw, root_id: string nr): void = let
   val () = $B.bput(b, "\nconst root = document.getElementById('")
   val () = $B.bput(b, root_id)
   val () = $B.bput(b, "');\n")
@@ -91,6 +91,11 @@ implement produce_bridge_app (b, wasm_name, root_id) = let
   val () = $B.bput(b, "if ('serviceWorker' in navigator) {\n")
   val () = $B.bput(b, "  navigator.serviceWorker.register('service-worker.js');\n")
   val () = $B.bput(b, "}\n")
+in end
+
+implement produce_bridge_app (b, wasm_name, root_id) = let
+  val () = emit_js_all(b)
+  val () = _produce_app_tail(b, wasm_name, root_id)
 in end
 
 implement produce_service_worker (b, wasm_name) = let
