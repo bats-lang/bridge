@@ -28,6 +28,10 @@
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern int bats_bridge_stash_get_int(int slot);
+extern void bats_bridge_stash_set_int(int slot, int v);
+%}
 extern fun _bats_js_stash_read
   (stash_id: int, dest: ptr, len: int): void = "mac#bats_js_stash_read"
 extern fun _bats_js_get_root_node

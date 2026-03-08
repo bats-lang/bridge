@@ -40,6 +40,11 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_listener_set(int id, void *cb);
+extern void *bats_listener_get(int id);
+extern int bats_bridge_stash_get_int(int slot);
+%}
 extern fun _bats_js_add_event_listener
   (id: ptr, id_len: int, event_type: ptr, type_len: int, listener_id: int)
   : void = "mac#bats_js_add_event_listener"

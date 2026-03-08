@@ -26,6 +26,10 @@
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_listener_set(int id, void *cb);
+extern void *bats_listener_get(int id);
+%}
 extern fun _bats_js_match_media
   (query: ptr, query_len: int): int = "mac#bats_js_match_media"
 extern fun _bats_js_listen_media
