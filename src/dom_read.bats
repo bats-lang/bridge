@@ -68,6 +68,9 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern int bats_bridge_measure_get(int slot);
+%}
 extern fun _bats_js_measure_node
   (id: ptr, id_len: int): int = "mac#bats_js_measure_node"
 extern fun _bats_js_query_selector

@@ -18,9 +18,7 @@ staload "./js_emitter.bats"
 
 #target wasm begin
 $UNSAFE begin
-%{#
-#ifndef _BRIDGE_RUNTIME_DEFINED
-#define _BRIDGE_RUNTIME_DEFINED
+%{$
 /* Bridge int stash -- 4 slots for stash IDs and metadata */
 static int _bridge_stash_int[4] = {0};
 
@@ -55,7 +53,6 @@ void *bats_listener_get(int id) {
   if (id >= 0 && id < _BRIDGE_MAX_LISTENERS) return _bridge_listener_table[id];
   return (void*)0;
 }
-#endif
 %}
 end
 end (* #target wasm *)

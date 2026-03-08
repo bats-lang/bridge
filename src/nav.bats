@@ -43,6 +43,10 @@
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_listener_set(int id, void *cb);
+extern void *bats_listener_get(int id);
+%}
 extern fun _bats_js_get_url
   (out: ptr, max_len: int): int = "mac#bats_js_get_url"
 extern fun _bats_js_get_url_hash
