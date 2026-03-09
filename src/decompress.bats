@@ -11,10 +11,10 @@ staload "./stash.bats"
    Public API
    ============================================================ *)
 
-#pub fun decompress
-  : {lb:agz}{n:pos}
-  (!$A.borrow(byte, lb, n), int n,
-   int) -> $P.promise_pending(int)
+#pub fun decompress_req
+  {lb:agz}{n:pos}
+  (data: !$A.borrow(byte, lb, n), data_len: int n,
+   method: int, resolver_id: int): void
 
 #pub fun decompress_len(): int
 
@@ -45,13 +45,10 @@ extern fun _bats_js_blob_free
   (handle: int): void = "mac#bats_js_blob_free"
 end
 
-implement decompress{lb}{n}(data, data_len, method) = let
-  val @(p, r) = $P.create<int>()
-  val id = $P.stash(r)
-  val () = _bats_js_decompress(
+implement decompress_req{lb}{n}(data, data_len, method, resolver_id) =
+  _bats_js_decompress(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end,
-    data_len, method, id)
-in p end
+    data_len, method, resolver_id)
 
 implement decompress_len() = stash_get_int(0)
 
