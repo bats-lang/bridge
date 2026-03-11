@@ -53,13 +53,13 @@ extern int bats_js_get_root_node(void);
 
 #ifndef _BATS_BYTES_TO_STRING_DEFINED
 #define _BATS_BYTES_TO_STRING_DEFINED
-#include <stdlib.h>
-#include <string.h>
+extern void* ATS_MALLOC(int);
 static char* _bats_borrow_to_string(void* base, int off, int len, int max) {
   char* s;
-  if (off < 0 || len <= 0 || off + len > max) { s = (char*)malloc(1); s[0] = '\0'; return s; }
-  s = (char*)malloc(len + 1);
-  memcpy(s, (char*)base + off, len);
+  int i;
+  if (off < 0 || len <= 0 || off + len > max) { s = (char*)ATS_MALLOC(1); s[0] = '\0'; return s; }
+  s = (char*)ATS_MALLOC(len + 1);
+  for (i = 0; i < len; i++) s[i] = ((char*)base)[off + i];
   s[len] = '\0';
   return s;
 }
