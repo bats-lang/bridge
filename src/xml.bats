@@ -23,7 +23,9 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
-
+%{
+extern int bats_js_parse_html(void*, int);
+%}
 extern fun _bats_js_parse_html
   (html: ptr, len: int): int = "mac#bats_js_parse_html"
 

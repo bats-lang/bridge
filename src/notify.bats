@@ -40,6 +40,12 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_js_notification_request_permission(int);
+extern void bats_js_notification_show(void*, int);
+extern void bats_js_push_subscribe(void*, int, int);
+extern void bats_js_push_get_subscription(int);
+%}
 extern fun _bats_js_notification_request_permission
   (resolver_id: int): void = "mac#bats_js_notification_request_permission"
 extern fun _bats_js_notification_show

@@ -44,6 +44,10 @@ $UNSAFE begin
 extern void bats_listener_set(int id, void *cb);
 extern void *bats_listener_get(int id);
 extern int bats_bridge_stash_get_int(int slot);
+extern void bats_js_add_event_listener(void*, int, void*, int, int);
+extern void bats_js_add_document_listener(void*, int, int);
+extern void bats_js_remove_event_listener(int);
+extern void bats_js_prevent_default(void);
 %}
 extern fun _bats_js_add_event_listener
   (id: ptr, id_len: int, event_type: ptr, type_len: int, listener_id: int)

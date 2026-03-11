@@ -34,7 +34,11 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
-
+%{
+extern int bats_js_create_blob_url(void*, int, void*, int);
+extern void bats_js_revoke_blob_url(void*, int);
+extern void bats_js_download_blob(void*, int, void*, int, void*, int);
+%}
 extern fun _bats_js_create_blob_url
   (data: ptr, data_len: int, mime: ptr, mime_len: int): int
   = "mac#bats_js_create_blob_url"

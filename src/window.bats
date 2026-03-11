@@ -22,7 +22,11 @@
 
 #target wasm begin
 $UNSAFE begin
-
+%{
+extern void bats_js_focus_window(void);
+extern int bats_js_get_visibility_state(void);
+extern void bats_js_log(int, void*, int);
+%}
 extern fun _bats_js_focus_window
   (): void = "mac#bats_js_focus_window"
 extern fun _bats_js_get_visibility_state

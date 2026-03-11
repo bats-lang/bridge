@@ -46,6 +46,12 @@ $UNSAFE begin
 %{
 extern void bats_listener_set(int id, void *cb);
 extern void *bats_listener_get(int id);
+extern int bats_js_get_url(void*, int);
+extern int bats_js_get_url_hash(void*, int);
+extern void bats_js_set_url_hash(void*, int);
+extern void bats_js_replace_state(void*, int);
+extern void bats_js_push_state(void*, int);
+extern void bats_js_reload(void);
 %}
 extern fun _bats_js_get_url
   (out: ptr, max_len: int): int = "mac#bats_js_get_url"

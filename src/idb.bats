@@ -49,6 +49,13 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_idb_js_put(void*, int, void*, int, int);
+extern void bats_idb_js_get(void*, int, int);
+extern void bats_idb_js_delete(void*, int, int);
+extern void bats_idb_js_list_keys(void*, int, int);
+extern void bats_js_idb_delete_database(void);
+%}
 extern fun _bats_idb_js_put
   (key: ptr, key_len: int, val_data: ptr, val_len: int, resolver_id: int)
   : void = "mac#bats_idb_js_put"
