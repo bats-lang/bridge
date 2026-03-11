@@ -53,7 +53,6 @@ extern int bats_js_get_root_node(void);
 
 #ifndef _BATS_BYTES_TO_STRING_DEFINED
 #define _BATS_BYTES_TO_STRING_DEFINED
-extern void* ATS_MALLOC(int);
 static char* _bats_borrow_to_string(void* base, int off, int len, int max) {
   char* s;
   int i;
