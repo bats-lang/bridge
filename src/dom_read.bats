@@ -70,6 +70,15 @@ staload "./stash.bats"
 $UNSAFE begin
 %{
 extern int bats_bridge_measure_get(int slot);
+extern int bats_js_measure_node(void*, int);
+extern int bats_js_query_selector(void*, int);
+extern int bats_js_caret_position_from_point(int, int);
+extern int bats_js_read_text_content(void*, int);
+extern int bats_js_measure_text_offset(void*, int, int);
+extern int bats_js_get_selection_text(void);
+extern void bats_js_get_selection_rect(void);
+extern void bats_js_get_selection_range(void);
+extern int bats_js_read_input_value(void*, int, void*, int);
 %}
 extern fun _bats_js_measure_node
   (id: ptr, id_len: int): int = "mac#bats_js_measure_node"

@@ -34,7 +34,12 @@
 
 #target wasm begin
 $UNSAFE begin
-
+%{
+extern void bats_js_scroll_to(void*, int, int, int);
+extern void bats_js_scroll_into_view(void*, int, int);
+extern void bats_js_set_scroll_top(void*, int, int);
+extern void bats_js_set_scroll_left(void*, int, int);
+%}
 extern fun _bats_js_scroll_to
   (id: ptr, id_len: int, x: int, y: int): void = "mac#bats_js_scroll_to"
 extern fun _bats_js_scroll_into_view

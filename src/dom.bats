@@ -28,7 +28,11 @@
 
 #target wasm begin
 $UNSAFE begin
-
+%{
+extern void bats_dom_flush(void*, int);
+extern void bats_js_set_image_src(void*, int, void*, int, void*, int);
+extern void bats_js_click_node(void*, int);
+%}
 extern fun _bats_dom_flush
   (buf: ptr, len: int): void = "mac#bats_dom_flush"
 extern fun _bats_js_set_image_src

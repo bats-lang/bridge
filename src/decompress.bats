@@ -36,6 +36,11 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_js_decompress(void*, int, int, int);
+extern int bats_js_blob_read(int, int, int, void*);
+extern void bats_js_blob_free(int);
+%}
 extern fun _bats_js_decompress
   (data: ptr, data_len: int, method: int, resolver_id: int)
   : void = "mac#bats_js_decompress"

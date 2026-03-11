@@ -24,6 +24,11 @@
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_set_timer(int, int);
+extern int bats_get_time_ms(void);
+extern void bats_exit(void);
+%}
 extern fun _bats_set_timer
   (delay_ms: int, resolver_id: int): void = "mac#bats_set_timer"
 extern fun _bats_get_time_ms

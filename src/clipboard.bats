@@ -33,6 +33,10 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_js_clipboard_write_text(void*, int, int);
+extern void bats_js_clipboard_read_text(int);
+%}
 extern fun _bats_js_clipboard_write_text
   (text: ptr, text_len: int, resolver_id: int)
   : void = "mac#bats_js_clipboard_write_text"

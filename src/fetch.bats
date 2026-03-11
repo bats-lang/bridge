@@ -30,6 +30,9 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_js_fetch(void*, int, int);
+%}
 extern fun _bats_js_fetch
   (url: ptr, url_len: int, resolver_id: int): void = "mac#bats_js_fetch"
 end

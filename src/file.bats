@@ -41,6 +41,11 @@ staload "./stash.bats"
 
 #target wasm begin
 $UNSAFE begin
+%{
+extern void bats_js_file_open(void*, int, int);
+extern int bats_js_file_read(int, int, int, void*);
+extern void bats_js_file_close(int);
+%}
 extern fun _bats_js_file_open
   (id: ptr, id_len: int, resolver_id: int): void = "mac#bats_js_file_open"
 extern fun _bats_js_file_read
