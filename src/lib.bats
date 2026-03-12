@@ -78,11 +78,11 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge {n:nat | n + 46000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46000] $B.builder(m)): void
+#pub fun produce_bridge {n:nat | n + 46200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46200] $B.builder(m)): void
 
-#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 46700 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46700] $B.builder(m),
+#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 46900 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46900] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
 #pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 1000 <= $B.BUILDER_CAP}
