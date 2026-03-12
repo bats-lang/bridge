@@ -9,8 +9,8 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 46000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46000] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 46200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46200] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -887,8 +887,8 @@ fn emit_js_file {n:nat | n + 1700 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_decompress {n:nat | n + 2000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2000] $B.builder(m)): void = let
+fn emit_js_decompress {n:nat | n + 2200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2200] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Decompress ---\n")
   val () = $B.bput(b,"\n")
@@ -1356,8 +1356,8 @@ fn _emit_5 {n:nat | n + 3300 <= $B.BUILDER_CAP}
   val () = emit_js_file(b)
 in end
 
-fn _emit_6 {n:nat | n + 4400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
+fn _emit_6 {n:nat | n + 4600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4600] $B.builder(m)): void = let
   val () = emit_js_decompress(b)
   val () = emit_js_notify(b)
 in end
@@ -1388,8 +1388,8 @@ fn _emit_first_half {n:nat | n + 28000 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 17900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 17900] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 18100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18100] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
