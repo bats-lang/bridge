@@ -36,26 +36,30 @@ staload "./xml.bats"
 #target wasm begin
 $UNSAFE begin
 %{$
-/* Bridge int stash -- 4 slots for stash IDs and metadata */
-static int _bridge_stash_int[4] = {0};
+/* Bridge int stash -- 32 slots for stash IDs and metadata */
+#define _BRIDGE_STASH_INT_SLOTS 32
+static int _bridge_stash_int[_BRIDGE_STASH_INT_SLOTS] = {0};
 
 void bats_bridge_stash_set_int(int slot, int v) {
-  _bridge_stash_int[slot] = v;
+  if (slot >= 0 && slot < _BRIDGE_STASH_INT_SLOTS) _bridge_stash_int[slot] = v;
 }
 
 int bats_bridge_stash_get_int(int slot) {
-  return _bridge_stash_int[slot];
+  if (slot >= 0 && slot < _BRIDGE_STASH_INT_SLOTS) return _bridge_stash_int[slot];
+  return 0;
 }
 
 /* Measure stash -- 6 slots for x, y, w, h, scrollW, scrollH */
-static int _bridge_measure[6] = {0};
+#define _BRIDGE_MEASURE_SLOTS 6
+static int _bridge_measure[_BRIDGE_MEASURE_SLOTS] = {0};
 
 void bats_measure_set(int slot, int v) {
-  _bridge_measure[slot] = v;
+  if (slot >= 0 && slot < _BRIDGE_MEASURE_SLOTS) _bridge_measure[slot] = v;
 }
 
 int bats_bridge_measure_get(int slot) {
-  return _bridge_measure[slot];
+  if (slot >= 0 && slot < _BRIDGE_MEASURE_SLOTS) return _bridge_measure[slot];
+  return 0;
 }
 
 /* Listener table -- max 128 */
@@ -78,11 +82,11 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge {n:nat | n + 46200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46200] $B.builder(m)): void
+#pub fun produce_bridge {n:nat | n + 46400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46400] $B.builder(m)): void
 
-#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 46900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46900] $B.builder(m),
+#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 47100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 47100] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
 #pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 1000 <= $B.BUILDER_CAP}

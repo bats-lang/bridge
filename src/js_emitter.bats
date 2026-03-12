@@ -9,8 +9,8 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 46200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46200] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 46400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46400] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -92,8 +92,8 @@ fn emit_js_loadwasm_open {n:nat | n + 2000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom {n:nat | n + 9000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9000] $B.builder(m)): void = let
+fn emit_js_dom {n:nat | n + 9200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9200] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM helpers ---\n")
   val () = $B.bput(b,"\n")
@@ -182,6 +182,7 @@ fn emit_js_dom {n:nat | n + 9000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"          pos = dataStart + 2 + htmlLen;\n")
   val () = $B.bput(b,"          break;\n")
   val () = $B.bput(b,"        }\n")
+  val () = $B.bput(b,"        case 7:{const nL=mem[bufPtr+dataStart];const n=_dec.decode(mem.slice(bufPtr+dataStart+1,bufPtr+dataStart+1+nL));const e=getEl(nid.s);if(e)e.removeAttribute(n);pos=dataStart+1+nL;break;}\n")
   (* Canvas opcodes 64-84 — all use dataStart for params, nid.s for element *)
   val () = $B.bput(b,"        case 64: { // CANVAS_FILL_RECT\n")
   val () = $B.bput(b,"          const x=readI32(mem,bufPtr+dataStart),y=readI32(mem,bufPtr+dataStart+4),w=readI32(mem,bufPtr+dataStart+8),h=readI32(mem,bufPtr+dataStart+12);\n")
@@ -1324,8 +1325,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 12000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12000] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 12200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12200] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_loadwasm_open(b)
   val () = emit_js_dom(b)
@@ -1380,8 +1381,8 @@ fn _emit_9 {n:nat | n + 4500 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 28000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28000] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 28200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28200] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
