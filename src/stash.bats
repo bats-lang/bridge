@@ -13,10 +13,12 @@
   (int, int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun stash_set_int
-  (slot: int, v: int): void
+  {s:nat | s < 32}
+  (slot: int s, v: int): void
 
 #pub fun stash_get_int
-  (slot: int): int
+  {s:nat | s < 32}
+  (slot: int s): int
 
 (* Get root element's HTML id as stashed string. Returns byte length.
    Read the string with stash_read(stash_get_int(1), len). *)
@@ -27,11 +29,13 @@
    The caller must unstash with the same type that was stashed. *)
 #pub fun{a:vt@ype}
 stash_linear
-  (slot: int, x: a): void
+  {s:nat | s < 8}
+  (slot: int s, x: a): void
 
 #pub fun{a:vt@ype}
 unstash_linear
-  (slot: int): a
+  {s:nat | s < 8}
+  (slot: int s): a
 
 (* Convert bytes from a borrow to a persistent string.
    Copies len bytes starting at off. The result is null-terminated. *)
@@ -95,18 +99,18 @@ fun _bridge_recv{n:pos | n <= 1048576}
   val () = _bats_js_stash_read(stash_id, p, len)
 in buf end
 
-fn _stash_get_int(slot: int): int =
+fn _stash_get_int{s:nat | s < 32}(slot: int s): int =
   $UNSAFE begin $extfcall(int, "bats_bridge_stash_get_int", slot) end
 
-fn _stash_set_int(slot: int, v: int): void =
+fn _stash_set_int{s:nat | s < 32}(slot: int s, v: int): void =
   $UNSAFE begin $extfcall(void, "bats_bridge_stash_set_int", slot, v) end
 
 implement stash_read{n}(stash_id, len) =
   _bridge_recv(stash_id, len)
 
-implement stash_set_int(slot, v0) = _stash_set_int(slot, v0)
+implement stash_set_int{s}(slot, v0) = _stash_set_int(slot, v0)
 
-implement stash_get_int(slot) = _stash_get_int(slot)
+implement stash_get_int{s}(slot) = _stash_get_int(slot)
 
 implement get_root_node() = _bats_js_get_root_node()
 
