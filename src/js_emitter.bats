@@ -9,8 +9,8 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 46400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46400] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 46800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46800] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -836,8 +836,8 @@ fn emit_js_clipboard {n:nat | n + 1600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_file {n:nat | n + 1700 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1700] $B.builder(m)): void = let
+fn emit_js_file {n:nat | n + 2100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2100] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- File ---\n")
   val () = $B.bput(b,"\n")
@@ -885,6 +885,15 @@ fn emit_js_file {n:nat | n + 1700 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsFileClose(handle) {\n")
   val () = $B.bput(b,"    fileCache.delete(handle);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsFileStore(dataPtr, dataLen) {\n")
+  val () = $B.bput(b,"    const src = new Uint8Array(instance.exports.memory.buffer, dataPtr, dataLen);\n")
+  val () = $B.bput(b,"    const copy = new Uint8Array(dataLen);\n")
+  val () = $B.bput(b,"    copy.set(src);\n")
+  val () = $B.bput(b,"    const handle = nextFileHandle++;\n")
+  val () = $B.bput(b,"    fileCache.set(handle, copy);\n")
+  val () = $B.bput(b,"    return handle;\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -1208,8 +1217,8 @@ fn emit_js_scroll {n:nat | n + 800 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 3700 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3700] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 3800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3800] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1260,6 +1269,7 @@ fn emit_js_imports {n:nat | n + 3700 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_file_open: batsJsFileOpen,\n")
   val () = $B.bput(b,"      bats_js_file_read: batsJsFileRead,\n")
   val () = $B.bput(b,"      bats_js_file_close: batsJsFileClose,\n")
+  val () = $B.bput(b,"      bats_js_file_store: batsJsFileStore,\n")
   val () = $B.bput(b,"      // Decompress\n")
   val () = $B.bput(b,"      bats_js_decompress: batsJsDecompress,\n")
   val () = $B.bput(b,"      bats_js_blob_read: batsJsBlobRead,\n")
@@ -1351,8 +1361,8 @@ fn _emit_4 {n:nat | n + 5100 <= $B.BUILDER_CAP}
   val () = emit_js_fetch(b)
 in end
 
-fn _emit_5 {n:nat | n + 3300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3300] $B.builder(m)): void = let
+fn _emit_5 {n:nat | n + 3700 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3700] $B.builder(m)): void = let
   val () = emit_js_clipboard(b)
   val () = emit_js_file(b)
 in end
@@ -1375,8 +1385,8 @@ fn _emit_8 {n:nat | n + 1500 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_9 {n:nat | n + 4500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4500] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 4600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4600] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_loadwasm_close(b)
 in end
@@ -1389,8 +1399,8 @@ fn _emit_first_half {n:nat | n + 28200 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 18100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18100] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 18600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18600] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
