@@ -31,6 +31,10 @@ staload "./stash.bats"
 #pub fun file_close
   (handle: int): void
 
+#pub fun file_store
+  {l:agz}{n:pos}
+  (!$A.borrow(byte, l, n), int n): int
+
 #pub fun on_file_open
   (resolver_id: int, handle: int, size: int)
   : void = "ext#bats_on_file_open"
@@ -45,6 +49,7 @@ $UNSAFE begin
 extern void bats_js_file_open(void*, int, int);
 extern int bats_js_file_read(int, int, int, void*);
 extern void bats_js_file_close(int);
+extern int bats_js_file_store(void*, int);
 %}
 extern fun _bats_js_file_open
   (id: ptr, id_len: int, resolver_id: int): void = "mac#bats_js_file_open"
@@ -52,6 +57,8 @@ extern fun _bats_js_file_read
   (handle: int, file_offset: int, len: int, out: ptr): int = "mac#bats_js_file_read"
 extern fun _bats_js_file_close
   (handle: int): void = "mac#bats_js_file_close"
+extern fun _bats_js_file_store
+  (data: ptr, len: int): int = "mac#bats_js_file_store"
 end
 
 implement file_open{li}{ni}(input_node_id, id_len) = let
@@ -76,6 +83,10 @@ in
 end
 
 implement file_close(handle) = _bats_js_file_close(handle)
+
+implement file_store{l}{n}(data, len) =
+  _bats_js_file_store(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end, len)
 
 implement on_file_open(resolver_id, handle, size) = let
   val () = stash_set_int(0, size)
