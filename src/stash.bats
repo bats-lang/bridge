@@ -71,7 +71,7 @@ extern fun _bats_stash_get_ptr
   (slot: int): ptr = "mac#_bats_stash_get_ptr"
 end
 
-fun _bridge_recv{n:pos | n <= 1048576}
+fn _bridge_recv{n:pos | n <= 1048576}
   (stash_id: int, len: int n): [l:agz] $A.arr(byte, l, n) = let
   val buf = $A.alloc<byte>(len)
   val p = $UNSAFE begin $UNSAFE.castvwtp1{ptr}(buf) end
