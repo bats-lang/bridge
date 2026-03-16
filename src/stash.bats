@@ -37,12 +37,6 @@ unstash_linear
   {s:nat | s < 8}
   (slot: int s): a
 
-(* Convert bytes from a borrow to a persistent string.
-   Copies len bytes starting at off. The result is null-terminated. *)
-#pub fun borrow_to_string
-  {l:agz}{n:pos}
-  (bv: !$A.borrow(byte, l, n), off: int, len: int, max: int n): string
-
 (* ============================================================
    WASM implementation
    ============================================================ *)
@@ -54,19 +48,6 @@ extern int bats_bridge_stash_get_int(int slot);
 extern void bats_bridge_stash_set_int(int slot, int v);
 extern void bats_js_stash_read(int, void*, int);
 extern int bats_js_get_root_node(void);
-
-#ifndef _BATS_BYTES_TO_STRING_DEFINED
-#define _BATS_BYTES_TO_STRING_DEFINED
-static char* _bats_borrow_to_string(void* base, int off, int len, int max) {
-  char* s;
-  int i;
-  if (off < 0 || len <= 0 || off + len > max) { s = (char*)ATS_MALLOC(1); s[0] = '\0'; return s; }
-  s = (char*)ATS_MALLOC(len + 1);
-  for (i = 0; i < len; i++) s[i] = ((char*)base)[off + i];
-  s[len] = '\0';
-  return s;
-}
-#endif
 
 #ifndef _BATS_STASH_PTR_DEFINED
 #define _BATS_STASH_PTR_DEFINED
@@ -88,8 +69,6 @@ extern fun _bats_stash_set_ptr
   (slot: int, p: ptr): void = "mac#_bats_stash_set_ptr"
 extern fun _bats_stash_get_ptr
   (slot: int): ptr = "mac#_bats_stash_get_ptr"
-extern fun _bats_borrow_to_string
-  (base: ptr, off: int, len: int, max: int): string = "mac#_bats_borrow_to_string"
 end
 
 fun _bridge_recv{n:pos | n <= 1048576}
@@ -123,9 +102,5 @@ implement{a}
 unstash_linear(slot) = let
   val p = _bats_stash_get_ptr(slot)
 in $UNSAFE begin $UNSAFE.castvwtp0{a}(p) end end
-
-implement borrow_to_string{l}{n}(bv, off, len, max) = let
-  val p = $UNSAFE begin $UNSAFE.castvwtp1{ptr}(bv) end
-in _bats_borrow_to_string(p, off, len, max) end
 
 end (* #target wasm *)
