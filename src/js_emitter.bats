@@ -1303,6 +1303,7 @@ fn emit_js_loadwasm_close {n:nat | n + 800 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const result = await WebAssembly.instantiate(wasmBytes, imports);\n")
   val () = $B.bput(b,"  instance = result.instance;\n")
+  val () = $B.bput(b,"  root.innerHTML = '';\n")
   val () = $B.bput(b,"  instance.exports.mainats_0_void();\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Listen for browser back/forward navigation\n")
