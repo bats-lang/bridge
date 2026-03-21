@@ -117,11 +117,11 @@ implement produce_bridge_app (b, wasm_name, root_id) = let
 in end
 
 implement produce_service_worker (b, wasm_name) = let
-  val () = $B.bput(b, "const CACHE = 'bats-pwa-v1';\n")
+  val () = $B.bput(b, "const CACHE = 'bats-pwa-v2';\n")
   val () = $B.bput(b, "const SHELL = [\n")
   val () = $B.bput(b, "  './', '")
   val () = $B.bput(b, wasm_name)
-  val () = $B.bput(b, "', 'manifest.json',\n")
+  val () = $B.bput(b, "', 'bridge.js', 'manifest.json',\n")
   val () = $B.bput(b, "];\n\n")
   val () = $B.bput(b, "self.addEventListener('install', e => {\n")
   val () = $B.bput(b, "  self.skipWaiting();\n")
