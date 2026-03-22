@@ -18,7 +18,7 @@
 
 #pub fun stash_get_int
   {s:nat | s < 32}
-  (slot: int s): [n:int] int n
+  (slot: int s): int
 
 (* Get root element's HTML id as stashed string. Returns byte length.
    Read the string with stash_read(stash_get_int(1), len). *)
@@ -89,7 +89,7 @@ implement stash_read{n}(stash_id, len) =
 
 implement stash_set_int{s}(slot, v0) = _stash_set_int(slot, v0)
 
-implement stash_get_int{s}(slot) = g1ofg0_int(_stash_get_int(slot))
+implement stash_get_int{s}(slot) = _stash_get_int(slot)
 
 implement get_root_node() = _bats_js_get_root_node()
 
