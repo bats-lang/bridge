@@ -14,13 +14,13 @@ staload "./stash.bats"
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    event_type: !$A.borrow(byte, lb, n), type_len: int n,
    listener_id: int,
-   callback: ([pl:int] int pl) -<cloref1> int): void
+   callback: (int) -<cloref1> int): void
 
 #pub fun listen_document
   {lb:agz}{n:pos}
   (event_type: !$A.borrow(byte, lb, n), type_len: int n,
    listener_id: int,
-   callback: ([pl:int] int pl) -<cloref1> int): void
+   callback: (int) -<cloref1> int): void
 
 #pub fun unlisten
   (listener_id: int): void
@@ -92,8 +92,8 @@ implement on_event(listener_id, payload_len) = let
   val cbp = $UNSAFE begin $extfcall(ptr, "bats_listener_get", listener_id) end
 in
   if ptr_isnot_null(cbp) then let
-    val cb = $UNSAFE begin $UNSAFE.cast{([pl:int] int pl) -<cloref1> int}(cbp) end
-    val _ = cb(g1ofg0_int(payload_len))
+    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
+    val _ = cb(payload_len)
   in () end
   else ()
 end
