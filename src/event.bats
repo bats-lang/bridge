@@ -13,21 +13,25 @@ staload "./stash.bats"
    listener can bound it with a guard and allocate with it. *)
 #pub typedef event_len = [v:int] int v
 
+(* A listener id indexes bridge's listener table (128 slots, shared with
+   listen_media), so it is proven to be in range. *)
+#pub typedef listener_id = [i:nat | i < 128] int i
+
 #pub fun listen
   {li:agz}{ni:pos}{lb:agz}{n:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    event_type: !$A.borrow(byte, lb, n), type_len: int n,
-   listener_id: int,
+   listener_id: listener_id,
    callback: (event_len) -<cloref1> int): void
 
 #pub fun listen_document
   {lb:agz}{n:pos}
   (event_type: !$A.borrow(byte, lb, n), type_len: int n,
-   listener_id: int,
+   listener_id: listener_id,
    callback: (event_len) -<cloref1> int): void
 
 #pub fun unlisten
-  (listener_id: int): void
+  (listener_id: listener_id): void
 
 #pub fun prevent_default(): void
 
