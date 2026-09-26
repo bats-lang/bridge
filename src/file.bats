@@ -15,9 +15,9 @@ staload "./stash.bats"
   : {li:agz}{ni:pos}
   (!$A.borrow(byte, li, ni), int ni) -> $P.promise_pending(int)
 
-#pub fun file_size(): int
+#pub fun file_size(): [v:int] int v
 
-#pub fun file_name_len(): int
+#pub fun file_name_len(): [v:int] int v
 
 #pub fun file_name
   : {n:pos | n <= 1048576}
