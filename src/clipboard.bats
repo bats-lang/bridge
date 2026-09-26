@@ -12,20 +12,20 @@ staload "./stash.bats"
 
 #pub fun clipboard_write
   : {lb:agz}{n:nat}
-  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(int)
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
 
 #pub fun clipboard_read
-  : () -> $P.promise_pending(int)
+  : () -> $P.promise_pending(Int)
 
 #pub fun clipboard_read_result
   : {n:pos | n <= 1048576}
   (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun on_clipboard_complete
-  (resolver_id: int, success: int): void = "ext#bats_on_clipboard_complete"
+  (resolver_id: int, success: Int): void = "ext#bats_on_clipboard_complete"
 
 #pub fun on_clipboard_read_complete
-  (resolver_id: int, text_len: int): void = "ext#bats_on_clipboard_read_complete"
+  (resolver_id: int, text_len: Int): void = "ext#bats_on_clipboard_read_complete"
 
 (* ============================================================
    WASM implementation
@@ -45,7 +45,7 @@ extern fun _bats_js_clipboard_read_text
 end
 
 implement clipboard_write{lb}{n}(text, text_len) = let
-  val @(p, r) = $P.create<int>()
+  val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_clipboard_write_text(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(text) end, text_len,
@@ -53,7 +53,7 @@ implement clipboard_write{lb}{n}(text, text_len) = let
 in p end
 
 implement clipboard_read() = let
-  val @(p, r) = $P.create<int>()
+  val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_clipboard_read_text(id)
 in p end

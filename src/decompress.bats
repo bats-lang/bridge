@@ -27,7 +27,7 @@ staload "./stash.bats"
   (handle: int): void
 
 #pub fun on_decompress_complete
-  (resolver_id: int, handle: int, decompressed_len: int)
+  (resolver_id: int, handle: Int, decompressed_len: int)
   : void = "ext#bats_on_decompress_complete"
 
 (* ============================================================

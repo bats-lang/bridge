@@ -11,7 +11,7 @@ staload "./stash.bats"
    ============================================================ *)
 
 #pub fun notify_request_permission
-  : () -> $P.promise_pending(int)
+  : () -> $P.promise_pending(Int)
 
 #pub fun notify_show
   {lb:agz}{n:pos}
@@ -19,20 +19,20 @@ staload "./stash.bats"
 
 #pub fun notify_push_subscribe
   : {lb:agz}{n:pos}
-  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(int)
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
 
 #pub fun notify_push_get_result
   : {n:pos | n <= 1048576}
   (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun notify_push_get_subscription
-  : () -> $P.promise_pending(int)
+  : () -> $P.promise_pending(Int)
 
 #pub fun on_permission_result
-  (resolver_id: int, granted: int): void = "ext#bats_on_permission_result"
+  (resolver_id: int, granted: Int): void = "ext#bats_on_permission_result"
 
 #pub fun on_push_subscribe
-  (resolver_id: int, json_len: int): void = "ext#bats_on_push_subscribe"
+  (resolver_id: int, json_len: Int): void = "ext#bats_on_push_subscribe"
 
 (* ============================================================
    WASM implementation
@@ -58,7 +58,7 @@ extern fun _bats_js_push_get_subscription
 end
 
 implement notify_request_permission() = let
-  val @(p, r) = $P.create<int>()
+  val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_notification_request_permission(id)
 in p end
@@ -69,7 +69,7 @@ implement notify_show{lb}{n}(title, title_len) =
     title_len)
 
 implement notify_push_subscribe{lb}{n}(vapid, vapid_len) = let
-  val @(p, r) = $P.create<int>()
+  val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_push_subscribe(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(vapid) end,
@@ -80,7 +80,7 @@ implement notify_push_get_result{n}(len) =
   stash_read(stash_get_int(1), len)
 
 implement notify_push_get_subscription() = let
-  val @(p, r) = $P.create<int>()
+  val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_push_get_subscription(id)
 in p end
