@@ -16,7 +16,7 @@ staload "./stash.bats"
   (data: !$A.borrow(byte, lb, n), data_len: int n,
    method: int, resolver_id: int): void
 
-#pub fun decompress_len(): int
+#pub fun decompress_len(): [v:int] int v
 
 #pub fun blob_read
   {l:agz}{n:pos}

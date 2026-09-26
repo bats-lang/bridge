@@ -16,9 +16,12 @@
   {s:nat | s < 32}
   (slot: int s, v: int): void
 
+(* The int JS stashed in slot. It can be any int, so it is returned
+   indexed: a caller can then check it and use it as a size or index
+   with no cast. *)
 #pub fun stash_get_int
   {s:nat | s < 32}
-  (slot: int s): int
+  (slot: int s): [v:int] int v
 
 (* Get root element's HTML id as stashed string. Returns byte length.
    Read the string with stash_read(stash_get_int(1), len). *)
@@ -78,8 +81,8 @@ fn _bridge_recv{n:pos | n <= 1048576}
   val () = _bats_js_stash_read(stash_id, p, len)
 in buf end
 
-fn _stash_get_int{s:nat | s < 32}(slot: int s): int =
-  $UNSAFE begin $extfcall(int, "bats_bridge_stash_get_int", slot) end
+fn _stash_get_int{s:nat | s < 32}(slot: int s): [v:int] int v =
+  $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_stash_get_int", slot) end
 
 fn _stash_set_int{s:nat | s < 32}(slot: int s, v: int): void =
   $UNSAFE begin $extfcall(void, "bats_bridge_stash_set_int", slot, v) end
