@@ -12,7 +12,7 @@ staload "./stash.bats"
 
 #pub fun fetch
   : {lb:agz}{n:pos}
-  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(int)
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
 
 #pub fun get_body_len(): int
 
@@ -21,7 +21,7 @@ staload "./stash.bats"
   (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun on_fetch_complete
-  (resolver_id: int, status: int, body_len: int)
+  (resolver_id: int, status: Int, body_len: int)
   : void = "ext#bats_on_fetch_complete"
 
 (* ============================================================
@@ -38,7 +38,7 @@ extern fun _bats_js_fetch
 end
 
 implement fetch{lb}{n}(url, url_len) = let
-  val @(p, r) = $P.create<int>()
+  val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_fetch(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end, url_len,

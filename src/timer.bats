@@ -9,7 +9,7 @@
    ============================================================ *)
 
 #pub fun timer_set
-  : (int) -> $P.promise_pending(int)
+  : (int) -> $P.promise_pending(Int)
 
 #pub fun get_time_ms(): int
 
@@ -38,7 +38,7 @@ extern fun _bats_exit
 end
 
 implement timer_set(delay_ms) = let
-  val @(p, r) = $P.create<int>()
+  val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_set_timer(delay_ms, id)
 in p end

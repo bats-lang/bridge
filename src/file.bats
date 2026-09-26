@@ -13,7 +13,7 @@ staload "./stash.bats"
 
 #pub fun file_open
   : {li:agz}{ni:pos}
-  (!$A.borrow(byte, li, ni), int ni) -> $P.promise_pending(int)
+  (!$A.borrow(byte, li, ni), int ni) -> $P.promise_pending(Int)
 
 #pub fun file_size(): [v:int] int v
 
@@ -36,7 +36,7 @@ staload "./stash.bats"
   (!$A.borrow(byte, l, n), int n): int
 
 #pub fun on_file_open
-  (resolver_id: int, handle: int, size: int)
+  (resolver_id: int, handle: Int, size: int)
   : void = "ext#bats_on_file_open"
 
 (* ============================================================
@@ -62,7 +62,7 @@ extern fun _bats_js_file_store
 end
 
 implement file_open{li}{ni}(input_node_id, id_len) = let
-  val @(p, r) = $P.create<int>()
+  val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_file_open(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(input_node_id) end, id_len, id)
