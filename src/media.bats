@@ -12,13 +12,14 @@
   {lb:agz}{n:pos}
   (query: !$A.borrow(byte, lb, n), query_len: int n): int
 
+(* The callback gets whether the query matches (1 or 0) from JS, as Int. *)
 #pub fun listen_media
   {lb:agz}{n:pos}
   (query: !$A.borrow(byte, lb, n), query_len: int n,
-   listener_id: int, callback: (int) -<cloref1> int): void
+   listener_id: int, callback: (Int) -<cloref1> int): void
 
 #pub fun on_media_change
-  (listener_id: int, matches: int): void = "ext#bats_on_media_change"
+  (listener_id: int, matches: Int): void = "ext#bats_on_media_change"
 
 (* ============================================================
    WASM implementation
@@ -54,7 +55,7 @@ implement on_media_change(listener_id, matches) = let
   val cbp = $UNSAFE begin $extfcall(ptr, "bats_listener_get", listener_id) end
 in
   if ptr_isnot_null(cbp) then let
-    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
+    val cb = $UNSAFE begin $UNSAFE.cast{(Int) -<cloref1> int}(cbp) end
     val _ = cb(matches)
   in () end
   else ()

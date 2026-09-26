@@ -32,10 +32,12 @@
 #pub fun reload(): void
 
 #pub fun on_popstate
-  (url_len: int): void = "ext#bats_on_popstate"
+  (url_len: Int): void = "ext#bats_on_popstate"
 
+(* The callback gets the new URL's byte length from JS as Int (any int),
+   so it bounds the length with its own checks, without a cast. *)
 #pub fun set_popstate_callback
-  (cb: (int) -<cloref1> int): void
+  (cb: (Int) -<cloref1> int): void
 
 (* ============================================================
    WASM implementation
@@ -108,7 +110,7 @@ implement on_popstate(url_len) = let
   val cbp = $UNSAFE begin $extfcall(ptr, "bats_listener_get", 999999) end
 in
   if ptr_isnot_null(cbp) then let
-    val cb = $UNSAFE begin $UNSAFE.cast{(int) -<cloref1> int}(cbp) end
+    val cb = $UNSAFE begin $UNSAFE.cast{(Int) -<cloref1> int}(cbp) end
     val _ = cb(url_len)
   in () end
   else ()
