@@ -16,7 +16,7 @@
 #pub fun listen_media
   {lb:agz}{n:pos}
   (query: !$A.borrow(byte, lb, n), query_len: int n,
-   listener_id: int, callback: (Int) -<cloref1> int): void
+   listener_id: [i:nat | i < 128] int i, callback: (Int) -<cloref1> int): void
 
 #pub fun on_media_change
   (listener_id: int, matches: Int): void = "ext#bats_on_media_change"
