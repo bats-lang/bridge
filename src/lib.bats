@@ -74,6 +74,13 @@ void *bats_listener_get(int id) {
   if (id >= 0 && id < _BRIDGE_MAX_LISTENERS) return _bridge_listener_table[id];
   return (void*)0;
 }
+
+/* The popstate callback -- one, set by set_popstate_callback */
+static void *_bridge_popstate_cb = (void*)0;
+
+void bats_popstate_set(void *cb) { _bridge_popstate_cb = cb; }
+
+void *bats_popstate_get(void) { return _bridge_popstate_cb; }
 %}
 end
 end (* #target wasm *)

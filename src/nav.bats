@@ -46,8 +46,8 @@
 #target wasm begin
 $UNSAFE begin
 %{
-extern void bats_listener_set(int id, void *cb);
-extern void *bats_listener_get(int id);
+extern void bats_popstate_set(void *cb);
+extern void *bats_popstate_get(void);
 extern int bats_js_get_url(void*, int);
 extern int bats_js_get_url_hash(void*, int);
 extern void bats_js_set_url_hash(void*, int);
@@ -104,10 +104,10 @@ implement reload() = _bats_js_reload()
 
 implement set_popstate_callback(cb) = let
   val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(cb) end
-in $UNSAFE begin $extfcall(void, "bats_listener_set", 999999, cbp) end end
+in $UNSAFE begin $extfcall(void, "bats_popstate_set", cbp) end end
 
 implement on_popstate(url_len) = let
-  val cbp = $UNSAFE begin $extfcall(ptr, "bats_listener_get", 999999) end
+  val cbp = $UNSAFE begin $extfcall(ptr, "bats_popstate_get") end
 in
   if ptr_isnot_null(cbp) then let
     val cb = $UNSAFE begin $UNSAFE.cast{(Int) -<cloref1> int}(cbp) end
