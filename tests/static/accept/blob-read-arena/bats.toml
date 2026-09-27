@@ -1,0 +1,8 @@
+[package]
+name = "blob-read-arena"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

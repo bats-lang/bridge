@@ -29,9 +29,9 @@
 
 (* out[0, len) := the file's bytes [file_offset, file_offset + len) *)
 #pub fun file_read
-  {n:nat}{o,k:nat | o + k <= n}{l:agz}{m:pos | k <= m}
+  {n:nat}{o,k:nat | o + k <= n}{l:agz}{ow:addr}{m:pos | k <= m}
   (f: infile(n), file_offset: int o,
-   out: !$A.arr(byte, l, m), len: int k): void
+   out: !$A.arrx(byte, l, m, ow), len: int k): void
 
 #pub fun file_close {n:nat} (f: infile(n)): void
 
@@ -110,7 +110,7 @@ implement file_size{n}(f) = let
   val InfileRep(_, n) = f
 in n end
 
-implement file_read{n}{o,k}{l}{m}(f, file_offset, out, len) = let
+implement file_read{n}{o,k}{l}{ow}{m}(f, file_offset, out, len) = let
   val InfileRep(h, _) = f
 in
   _bats_js_file_read(h, file_offset, len,
