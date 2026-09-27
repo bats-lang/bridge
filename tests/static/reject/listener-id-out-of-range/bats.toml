@@ -1,0 +1,8 @@
+[package]
+name = "listener-id-out-of-range"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
