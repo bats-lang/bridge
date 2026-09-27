@@ -14,17 +14,18 @@ staload "./stash.bats"
   {li:agz}{ni:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni): $R.result(int, int)
 
-#pub fun get_measure_x(): int
+(* The last measure's values, as the page reported them: any int *)
+#pub fun get_measure_x(): [v:int] int v
 
-#pub fun get_measure_y(): int
+#pub fun get_measure_y(): [v:int] int v
 
-#pub fun get_measure_w(): int
+#pub fun get_measure_w(): [v:int] int v
 
-#pub fun get_measure_h(): int
+#pub fun get_measure_h(): [v:int] int v
 
-#pub fun get_measure_scroll_w(): int
+#pub fun get_measure_scroll_w(): [v:int] int v
 
-#pub fun get_measure_scroll_h(): int
+#pub fun get_measure_scroll_h(): [v:int] int v
 
 #pub fun query_selector
   {lb:agz}{n:pos}
@@ -107,12 +108,12 @@ in
   if r >= 0 then $R.ok(r) else $R.err(r)
 end
 
-implement get_measure_x() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 0) end
-implement get_measure_y() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 1) end
-implement get_measure_w() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 2) end
-implement get_measure_h() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 3) end
-implement get_measure_scroll_w() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 4) end
-implement get_measure_scroll_h() = $UNSAFE begin $extfcall(int, "bats_bridge_measure_get", 5) end
+implement get_measure_x() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 0) end
+implement get_measure_y() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 1) end
+implement get_measure_w() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 2) end
+implement get_measure_h() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 3) end
+implement get_measure_scroll_w() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 4) end
+implement get_measure_scroll_h() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 5) end
 
 implement query_selector{lb}{n}(sel, sel_len) = let
   val r = _bats_js_query_selector(
