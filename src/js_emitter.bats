@@ -479,8 +479,8 @@ fn emit_js_nav {n:nat | n + 1100 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom_read {n:nat | n + 5500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5500] $B.builder(m)): void = let
+fn emit_js_dom_read {n:nat | n + 5300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5300] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM read ---\n")
   val () = $B.bput(b,"\n")
@@ -509,9 +509,7 @@ fn emit_js_dom_read {n:nat | n + 5500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const el = document.querySelector(selector);\n")
   val () = $B.bput(b,"      if (!el || !el.id) return 0;\n")
   val () = $B.bput(b,"      const bytes = new TextEncoder().encode(el.id);\n")
-  val () = $B.bput(b,"      const stashId = stashData(bytes);\n")
-  val () = $B.bput(b,"      instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"      return bytes.length;\n")
+  val () = $B.bput(b,"      return pendBlob(bytes);\n")
   val () = $B.bput(b,"    } catch(e) { return 0; }\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
@@ -538,21 +536,17 @@ fn emit_js_dom_read {n:nat | n + 5500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const text = el.textContent || '';\n")
   val () = $B.bput(b,"    const bytes = new TextEncoder().encode(text);\n")
   val () = $B.bput(b,"    if (bytes.length === 0) return 0;\n")
-  val () = $B.bput(b,"    const stashId = stashData(bytes);\n")
-  val () = $B.bput(b,"    instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"    return bytes.length;\n")
+  val () = $B.bput(b,"    return pendBlob(bytes);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   (* read_input_value: read form input .value *)
-  val () = $B.bput(b,"  function batsJsReadInputValue(idPtr, idLen, destPtr, maxLen) {\n")
+  val () = $B.bput(b,"  function batsJsReadInputValue(idPtr, idLen) {\n")
   val () = $B.bput(b,"    const id = readIdFromPtr(idPtr, idLen);\n")
   val () = $B.bput(b,"    const el = getEl(id);\n")
   val () = $B.bput(b,"    if (!el || el.value === undefined) return 0;\n")
   val () = $B.bput(b,"    const bytes = new TextEncoder().encode(el.value);\n")
   val () = $B.bput(b,"    if (bytes.length === 0) return 0;\n")
-  val () = $B.bput(b,"    const stashId = stashData(bytes);\n")
-  val () = $B.bput(b,"    instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"    return bytes.length;\n")
+  val () = $B.bput(b,"    return pendBlob(bytes);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
 
@@ -602,9 +596,7 @@ fn emit_js_dom_read {n:nat | n + 5500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const text = sel.toString();\n")
   val () = $B.bput(b,"      const bytes = new TextEncoder().encode(text);\n")
   val () = $B.bput(b,"      if (bytes.length === 0) return 0;\n")
-  val () = $B.bput(b,"      const stashId = stashData(bytes);\n")
-  val () = $B.bput(b,"      instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"      return bytes.length;\n")
+  val () = $B.bput(b,"      return pendBlob(bytes);\n")
   val () = $B.bput(b,"    } catch(e) { return 0; }\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
@@ -635,10 +627,8 @@ fn emit_js_dom_read {n:nat | n + 5500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const eid = (ec.id || '');\n")
   val () = $B.bput(b,"      const sb = new TextEncoder().encode(sid);\n")
   val () = $B.bput(b,"      const eb = new TextEncoder().encode(eid);\n")
-  val () = $B.bput(b,"      instance.exports.bats_bridge_stash_set_int(2, stashData(sb));\n")
-  val () = $B.bput(b,"      instance.exports.bats_bridge_stash_set_int(3, stashData(eb));\n")
-  val () = $B.bput(b,"      instance.exports.bats_measure_set(2, sb.length);\n")
-  val () = $B.bput(b,"      instance.exports.bats_measure_set(3, eb.length);\n")
+  val () = $B.bput(b,"      instance.exports.bats_measure_set(2, pendBlob(sb));\n")
+  val () = $B.bput(b,"      instance.exports.bats_measure_set(3, pendBlob(eb));\n")
   val () = $B.bput(b,"    } catch(e) {}\n")
   val () = $B.bput(b,"  }\n")
 in end
@@ -878,8 +868,8 @@ fn emit_js_file {n:nat | n + 2100 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_decompress {n:nat | n + 2200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2200] $B.builder(m)): void = let
+fn emit_js_decompress {n:nat | n + 2400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2400] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Decompress ---\n")
   val () = $B.bput(b,"\n")
@@ -888,6 +878,11 @@ fn emit_js_decompress {n:nat | n + 2200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  const pendingBlobs = new Map();\n")
   val () = $B.bput(b,"  const blobCache = new Map();\n")
   val () = $B.bput(b,"  let nextBlobHandle = 1;\n")
+  val () = $B.bput(b,"  function pendBlob(bytes) {\n")
+  val () = $B.bput(b,"    const handle = nextBlobHandle++;\n")
+  val () = $B.bput(b,"    pendingBlobs.set(handle, bytes);\n")
+  val () = $B.bput(b,"    return handle;\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsDecompress(dataPtr, dataLen, method, resolverId) {\n")
   val () = $B.bput(b,"    const compressed = readBytes(dataPtr, dataLen);\n")
@@ -1339,8 +1334,8 @@ fn _emit_2 {n:nat | n + 4300 <= $B.BUILDER_CAP}
   val () = emit_js_window(b)
 in end
 
-fn _emit_3 {n:nat | n + 6600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6600] $B.builder(m)): void = let
+fn _emit_3 {n:nat | n + 6400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6400] $B.builder(m)): void = let
   val () = emit_js_nav(b)
   val () = emit_js_dom_read(b)
 in end
@@ -1357,8 +1352,8 @@ fn _emit_5 {n:nat | n + 3700 <= $B.BUILDER_CAP}
   val () = emit_js_file(b)
 in end
 
-fn _emit_6 {n:nat | n + 4600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4600] $B.builder(m)): void = let
+fn _emit_6 {n:nat | n + 4800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4800] $B.builder(m)): void = let
   val () = emit_js_decompress(b)
   val () = emit_js_notify(b)
 in end
@@ -1381,16 +1376,16 @@ fn _emit_9 {n:nat | n + 4600 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 28200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28200] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 28000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28000] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 18600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18600] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 18800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18800] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
