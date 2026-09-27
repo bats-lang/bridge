@@ -1,7 +1,6 @@
 (* idb -- IndexedDB key-value storage for bridge *)
 
 #include "share/atspre_staload.hats"
-staload "./stash.bats"
 
 #use array as A
 #use promise as P
@@ -15,25 +14,24 @@ staload "./stash.bats"
   (!$A.borrow(byte, lk, nk), int nk,
    !$A.borrow(byte, lv, nv), int nv) -> $P.promise_pending(Int)
 
+(* The value stored under the key: the promise resolves with a handle
+   to claim with blob_claim (decompress.bats), 0 when there is none.
+   Each result is its own blob, so concurrent gets cannot overwrite
+   each other's data *)
 #pub fun idb_get
   : {lk:agz}{nk:pos}
   (!$A.borrow(byte, lk, nk), int nk) -> $P.promise_pending(Int)
-
-#pub fun idb_get_result
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun idb_delete
   : {lk:agz}{nk:pos}
   (!$A.borrow(byte, lk, nk), int nk) -> $P.promise_pending(Int)
 
+(* The keys starting with the prefix, each as a u16le length and its
+   bytes: the promise resolves with a blob handle as idb_get's does, 0
+   when there are none *)
 #pub fun idb_list_keys
   : {lb:agz}{n:nat}
   (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
-
-#pub fun idb_list_keys_result
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun idb_delete_database(): void
 
@@ -41,7 +39,7 @@ staload "./stash.bats"
   (resolver_id: int, status: Int): void = "ext#bats_idb_fire"
 
 #pub fun on_idb_fire_get
-  (resolver_id: int, data_len: Int): void = "ext#bats_idb_fire_get"
+  (resolver_id: int, handle: Int): void = "ext#bats_idb_fire_get"
 
 (* ============================================================
    WASM implementation
@@ -89,9 +87,6 @@ implement idb_get{lk}{nk}(key, key_len) = let
     id)
 in p end
 
-implement idb_get_result{n}(len) =
-  stash_read(stash_get_int(1), len)
-
 implement idb_delete{lk}{nk}(key, key_len) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
@@ -108,14 +103,11 @@ implement idb_list_keys{lb}{n}(pfx, pfx_len) = let
     id)
 in p end
 
-implement idb_list_keys_result{n}(len) =
-  stash_read(stash_get_int(1), len)
-
 implement on_idb_fire(resolver_id, status) =
   $P.fire(resolver_id, status)
 
-implement on_idb_fire_get(resolver_id, data_len) =
-  $P.fire(resolver_id, data_len)
+implement on_idb_fire_get(resolver_id, handle) =
+  $P.fire(resolver_id, handle)
 
 implement idb_delete_database() = _bats_js_idb_delete_database()
 
