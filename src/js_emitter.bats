@@ -72,8 +72,8 @@ fn emit_js_loadwasm_open {n:nat | n + 1400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom {n:nat | n + 8900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8900] $B.builder(m)): void = let
+fn emit_js_dom {n:nat | n + 9100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9100] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM helpers ---\n")
   val () = $B.bput(b,"\n")
@@ -154,6 +154,7 @@ fn emit_js_dom {n:nat | n + 8900 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"          pos = dataStart;\n")
   val () = $B.bput(b,"          break;\n")
   val () = $B.bput(b,"        }\n")
+  val () = $B.bput(b,"        case 6:{const tL=mem[bufPtr+dataStart]|(mem[bufPtr+dataStart+1]<<8);const e=getEl(nid.s);if(e)e.appendChild(document.createTextNode(_dec.decode(mem.slice(bufPtr+dataStart+2,bufPtr+dataStart+2+tL))));pos=dataStart+2+tL;break;} // APPEND_TEXT\n")
   val () = $B.bput(b,"        case 7:{const nL=mem[bufPtr+dataStart];const n=_dec.decode(mem.slice(bufPtr+dataStart+1,bufPtr+dataStart+1+nL));const e=getEl(nid.s);if(e)e.removeAttribute(n);pos=dataStart+1+nL;break;}\n")
   (* Canvas opcodes 64-84 — all use dataStart for params, nid.s for element *)
   val () = $B.bput(b,"        case 64: { // CANVAS_FILL_RECT\n")
@@ -1291,8 +1292,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 10900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10900] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 11100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11100] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_loadwasm_open(b)
   val () = emit_js_dom(b)
@@ -1347,8 +1348,8 @@ fn _emit_9 {n:nat | n + 4400 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 26800 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26800] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 27000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 27000] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
