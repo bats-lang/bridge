@@ -30,9 +30,9 @@
 
 (* out[0, len) := the blob's bytes [blob_offset, blob_offset + len) *)
 #pub fun blob_read
-  {n:nat}{o,k:nat | o + k <= n}{l:agz}{m:pos | k <= m}
+  {n:nat}{o,k:nat | o + k <= n}{l:agz}{ow:addr}{m:pos | k <= m}
   (b: !dblob(n), blob_offset: int o,
-   out: !$A.arr(byte, l, m), len: int k): void
+   out: !$A.arrx(byte, l, m, ow), len: int k): void
 
 #pub fun blob_free {n:nat} (b: dblob(n)): void
 
@@ -81,7 +81,7 @@ implement blob_len{n}(b) = let
   val+ BlobRep(_, n) = b
 in n end
 
-implement blob_read{n}{o,k}{l}{m}(b, blob_offset, out, len) = let
+implement blob_read{n}{o,k}{l}{ow}{m}(b, blob_offset, out, len) = let
   val+ BlobRep(h, _) = b
 in
   _bats_js_blob_read(h, blob_offset, len,
