@@ -1,22 +1,21 @@
 (* blob -- blob URL creation, revocation, download for bridge *)
 
 #include "share/atspre_staload.hats"
-staload "./stash.bats"
+staload "./decompress.bats"
 
 #use array as A
+#use result as R
 
 (* ============================================================
    Public API
    ============================================================ *)
 
+(* A blob URL for the data, as a blob; none when it could not be made *)
 #pub fun create_blob_url
   {ld:agz}{nd:pos}{lm:agz}{nm:pos}
   (data: !$A.borrow(byte, ld, nd), data_len: int nd,
-   mime: !$A.borrow(byte, lm, nm), mime_len: int nm): int
-
-#pub fun create_blob_url_get
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
+   mime: !$A.borrow(byte, lm, nm), mime_len: int nm)
+  : $R.option([k:nat] dblob(k))
 
 #pub fun revoke_blob_url
   {lb:agz}{n:pos}
@@ -40,7 +39,7 @@ extern void bats_js_revoke_blob_url(void*, int);
 extern void bats_js_download_blob(void*, int, void*, int, void*, int);
 %}
 extern fun _bats_js_create_blob_url
-  (data: ptr, data_len: int, mime: ptr, mime_len: int): int
+  (data: ptr, data_len: int, mime: ptr, mime_len: int): [v:int] int v
   = "mac#bats_js_create_blob_url"
 extern fun _bats_js_revoke_blob_url
   (url: ptr, url_len: int): void = "mac#bats_js_revoke_blob_url"
@@ -49,12 +48,9 @@ extern fun _bats_js_download_blob
    name: ptr, name_len: int): void = "mac#bats_js_download_blob"
 
 implement create_blob_url{ld}{nd}{lm}{nm}(data, data_len, mime, mime_len) =
-  _bats_js_create_blob_url(
+  blob_claim(_bats_js_create_blob_url(
     $UNSAFE.castvwtp1{ptr}(data), data_len,
-    $UNSAFE.castvwtp1{ptr}(mime), mime_len)
-
-implement create_blob_url_get{n}(len) =
-  stash_read(stash_get_int(1), len)
+    $UNSAFE.castvwtp1{ptr}(mime), mime_len))
 
 implement revoke_blob_url{lb}{n}(url, url_len) =
   _bats_js_revoke_blob_url(

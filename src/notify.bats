@@ -1,7 +1,6 @@
 (* notify -- notifications and push subscriptions for bridge *)
 
 #include "share/atspre_staload.hats"
-staload "./stash.bats"
 
 #use array as A
 #use promise as P
@@ -17,14 +16,14 @@ staload "./stash.bats"
   {lb:agz}{n:pos}
   (title: !$A.borrow(byte, lb, n), title_len: int n): void
 
+(* Subscribes to push: the promise resolves with a handle to the
+   subscription's JSON, to claim with blob_claim (decompress.bats), 0
+   when subscribing failed *)
 #pub fun notify_push_subscribe
   : {lb:agz}{n:pos}
   (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
 
-#pub fun notify_push_get_result
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
-
+(* The current push subscription, resolved as notify_push_subscribe's *)
 #pub fun notify_push_get_subscription
   : () -> $P.promise_pending(Int)
 
@@ -32,7 +31,7 @@ staload "./stash.bats"
   (resolver_id: int, granted: Int): void = "ext#bats_on_permission_result"
 
 #pub fun on_push_subscribe
-  (resolver_id: int, json_len: Int): void = "ext#bats_on_push_subscribe"
+  (resolver_id: int, handle: Int): void = "ext#bats_on_push_subscribe"
 
 (* ============================================================
    WASM implementation
@@ -76,9 +75,6 @@ implement notify_push_subscribe{lb}{n}(vapid, vapid_len) = let
     vapid_len, id)
 in p end
 
-implement notify_push_get_result{n}(len) =
-  stash_read(stash_get_int(1), len)
-
 implement notify_push_get_subscription() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
@@ -88,7 +84,7 @@ in p end
 implement on_permission_result(resolver_id, granted) =
   $P.fire(resolver_id, granted)
 
-implement on_push_subscribe(resolver_id, json_len) =
-  $P.fire(resolver_id, json_len)
+implement on_push_subscribe(resolver_id, handle) =
+  $P.fire(resolver_id, handle)
 
 end (* #target wasm *)

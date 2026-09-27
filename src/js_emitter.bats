@@ -32,8 +32,8 @@ fn emit_js_header {n:nat | n + 600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"}\n")
 in end
 
-fn emit_js_loadwasm_open {n:nat | n + 1900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1900] $B.builder(m)): void = let
+fn emit_js_loadwasm_open {n:nat | n + 1400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1400] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"/**\n")
   val () = $B.bput(b," * Load a bats WASM module and connect it to a DOM document.\n")
@@ -59,26 +59,6 @@ fn emit_js_loadwasm_open {n:nat | n + 1900 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function readString(ptr, len) {\n")
   val () = $B.bput(b,"    return new TextDecoder().decode(readBytes(ptr, len));\n")
-  val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  // JS-side data stash — WASM pulls data via bats_js_stash_read\n")
-  val () = $B.bput(b,"  const dataStash = new Map();\n")
-  val () = $B.bput(b,"  let nextStashId = 0;\n")
-  val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  function stashData(data) {\n")
-  val () = $B.bput(b,"    const id = nextStashId++;\n")
-  val () = $B.bput(b,"    dataStash.set(id, data);\n")
-  val () = $B.bput(b,"    return id;\n")
-  val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  function batsJsStashRead(stashId, destPtr, len) {\n")
-  val () = $B.bput(b,"    const data = dataStash.get(stashId);\n")
-  val () = $B.bput(b,"    if (data) {\n")
-  val () = $B.bput(b,"      const copyLen = Math.min(len, data.length);\n")
-  val () = $B.bput(b,"      new Uint8Array(instance.exports.memory.buffer).set(\n")
-  val () = $B.bput(b,"        data.subarray(0, copyLen), destPtr);\n")
-  val () = $B.bput(b,"      dataStash.delete(stashId);\n")
-  val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Blob URL lifecycle tracking — revoked when element gets new image or is removed\n")
@@ -775,8 +755,8 @@ fn emit_js_fetch {n:nat | n + 900 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_clipboard {n:nat | n + 1700 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1700] $B.builder(m)): void = let
+fn emit_js_clipboard {n:nat | n + 1500 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1500] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Clipboard ---\n")
   val () = $B.bput(b,"\n")
@@ -805,11 +785,7 @@ fn emit_js_clipboard {n:nat | n + 1700 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        win.navigator.clipboard.readText().then(\n")
   val () = $B.bput(b,"          (text) => {\n")
   val () = $B.bput(b,"            const bytes = new TextEncoder().encode(text);\n")
-  val () = $B.bput(b,"            if (bytes.length > 0) {\n")
-  val () = $B.bput(b,"              const stashId = stashData(bytes);\n")
-  val () = $B.bput(b,"              instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"            }\n")
-  val () = $B.bput(b,"            instance.exports.bats_on_clipboard_read_complete(resolverId, bytes.length);\n")
+  val () = $B.bput(b,"            instance.exports.bats_on_clipboard_read_complete(resolverId, pendBlob(bytes));\n")
   val () = $B.bput(b,"          },\n")
   val () = $B.bput(b,"          () => { instance.exports.bats_on_clipboard_read_complete(resolverId, 0); }\n")
   val () = $B.bput(b,"        );\n")
@@ -948,8 +924,8 @@ fn emit_js_decompress {n:nat | n + 2400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_notify {n:nat | n + 2400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2400] $B.builder(m)): void = let
+fn emit_js_notify {n:nat | n + 2200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2200] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Notification/Push ---\n")
   val () = $B.bput(b,"\n")
@@ -982,9 +958,7 @@ fn emit_js_notify {n:nat | n + 2400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      }).then((sub) => {\n")
   val () = $B.bput(b,"        const json = JSON.stringify(sub.toJSON());\n")
   val () = $B.bput(b,"        const jsonBytes = new TextEncoder().encode(json);\n")
-  val () = $B.bput(b,"        const stashId = stashData(jsonBytes);\n")
-  val () = $B.bput(b,"        instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, jsonBytes.length);\n")
+  val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, pendBlob(jsonBytes));\n")
   val () = $B.bput(b,"      }).catch(() => {\n")
   val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, 0);\n")
   val () = $B.bput(b,"      });\n")
@@ -1004,9 +978,7 @@ fn emit_js_notify {n:nat | n + 2400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        }\n")
   val () = $B.bput(b,"        const json = JSON.stringify(sub.toJSON());\n")
   val () = $B.bput(b,"        const jsonBytes = new TextEncoder().encode(json);\n")
-  val () = $B.bput(b,"        const stashId = stashData(jsonBytes);\n")
-  val () = $B.bput(b,"        instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, jsonBytes.length);\n")
+  val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, pendBlob(jsonBytes));\n")
   val () = $B.bput(b,"      }).catch(() => {\n")
   val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, 0);\n")
   val () = $B.bput(b,"      });\n")
@@ -1016,8 +988,8 @@ fn emit_js_notify {n:nat | n + 2400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_xml {n:nat | n + 3000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3000] $B.builder(m)): void = let
+fn emit_js_xml {n:nat | n + 2900 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2900] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- HTML parsing ---\n")
   val () = $B.bput(b,"\n")
@@ -1106,14 +1078,12 @@ fn emit_js_xml {n:nat | n + 3000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      combined.set(chunk, off);\n")
   val () = $B.bput(b,"      off += chunk.length;\n")
   val () = $B.bput(b,"    }\n")
-  val () = $B.bput(b,"    const stashId = stashData(combined);\n")
-  val () = $B.bput(b,"    instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"    return totalLen;\n")
+  val () = $B.bput(b,"    return pendBlob(combined);\n")
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_blob {n:nat | n + 1300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1300] $B.builder(m)): void = let
+fn emit_js_blob {n:nat | n + 1200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1200] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Blob URLs ---\n")
   val () = $B.bput(b,"\n")
@@ -1123,9 +1093,7 @@ fn emit_js_blob {n:nat | n + 1300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const blob = new Blob([bytes], { type: mime });\n")
   val () = $B.bput(b,"    const url = URL.createObjectURL(blob);\n")
   val () = $B.bput(b,"    const urlBytes = new TextEncoder().encode(url);\n")
-  val () = $B.bput(b,"    const stashId = stashData(urlBytes);\n")
-  val () = $B.bput(b,"    instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"    return urlBytes.length;\n")
+  val () = $B.bput(b,"    return pendBlob(urlBytes);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsRevokeBlobUrl(urlPtr, urlLen) {\n")
@@ -1202,8 +1170,8 @@ fn emit_js_scroll {n:nat | n + 900 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 3800 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3800] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 3600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3600] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1281,21 +1249,18 @@ fn emit_js_imports {n:nat | n + 3800 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_scroll_into_view: batsJsScrollIntoView,\n")
   val () = $B.bput(b,"      bats_js_set_scroll_top: batsJsSetScrollTop,\n")
   val () = $B.bput(b,"      bats_js_set_scroll_left: batsJsSetScrollLeft,\n")
-  val () = $B.bput(b,"      // Data stash\n")
-  val () = $B.bput(b,"      bats_js_stash_read: batsJsStashRead,\n")
+  val () = $B.bput(b,"      // Root node\n")
   val () = $B.bput(b,"      bats_js_get_root_node() {\n")
   val () = $B.bput(b,"        const id = root.id || 'bats-root';\n")
   val () = $B.bput(b,"        const bytes = new TextEncoder().encode(id);\n")
-  val () = $B.bput(b,"        const stashId = stashData(bytes);\n")
-  val () = $B.bput(b,"        instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"        return bytes.length;\n")
+  val () = $B.bput(b,"        return pendBlob(bytes);\n")
   val () = $B.bput(b,"      },\n")
   val () = $B.bput(b,"  };\n")
   val () = $B.bput(b,"  const imports = { env: envObj };\n")
 in end
 
-fn emit_js_loadwasm_close {n:nat | n + 900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 900] $B.builder(m)): void = let
+fn emit_js_loadwasm_close {n:nat | n + 800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 800] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const result = await WebAssembly.instantiate(wasmBytes, imports);\n")
   val () = $B.bput(b,"  instance = result.instance;\n")
@@ -1311,9 +1276,9 @@ fn emit_js_loadwasm_close {n:nat | n + 900 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      try {\n")
   val () = $B.bput(b,"        const url = win.location.pathname + win.location.search + win.location.hash;\n")
   val () = $B.bput(b,"        const encoded = new TextEncoder().encode(url);\n")
-  val () = $B.bput(b,"        const stashId = stashData(encoded);\n")
-  val () = $B.bput(b,"        instance.exports.bats_bridge_stash_set_int(1, stashId);\n")
-  val () = $B.bput(b,"        instance.exports.bats_on_popstate(encoded.length);\n")
+  val () = $B.bput(b,"        const handle = pendBlob(encoded);\n")
+  val () = $B.bput(b,"        instance.exports.bats_on_popstate(handle);\n")
+  val () = $B.bput(b,"        pendingBlobs.delete(handle);\n")
   val () = $B.bput(b,"      } catch(e) {}\n")
   val () = $B.bput(b,"    });\n")
   val () = $B.bput(b,"  }\n")
@@ -1326,8 +1291,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 11400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11400] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 10900 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10900] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_loadwasm_open(b)
   val () = emit_js_dom(b)
@@ -1352,20 +1317,20 @@ fn _emit_4 {n:nat | n + 5400 <= $B.BUILDER_CAP}
   val () = emit_js_fetch(b)
 in end
 
-fn _emit_5 {n:nat | n + 3200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3200] $B.builder(m)): void = let
+fn _emit_5 {n:nat | n + 3000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3000] $B.builder(m)): void = let
   val () = emit_js_clipboard(b)
   val () = emit_js_file(b)
 in end
 
-fn _emit_6 {n:nat | n + 4800 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4800] $B.builder(m)): void = let
+fn _emit_6 {n:nat | n + 4600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4600] $B.builder(m)): void = let
   val () = emit_js_decompress(b)
   val () = emit_js_notify(b)
 in end
 
-fn _emit_7 {n:nat | n + 4300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4300] $B.builder(m)): void = let
+fn _emit_7 {n:nat | n + 4100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4100] $B.builder(m)): void = let
   val () = emit_js_xml(b)
   val () = emit_js_blob(b)
 in end
@@ -1376,22 +1341,22 @@ fn _emit_8 {n:nat | n + 1700 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_9 {n:nat | n + 4700 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4700] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 4400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 27300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 27300] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 26800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26800] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 18700 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18700] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 17800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 17800] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
