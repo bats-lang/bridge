@@ -1295,7 +1295,7 @@ fn emit_js_imports {n:nat | n + 3800 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        return bytes.length;\n")
   val () = $B.bput(b,"      },\n")
   val () = $B.bput(b,"  };\n")
-  val () = $B.bput(b,"  const imports = { env: new Proxy(envObj, { get: (t, p) => p in t ? t[p] : () => 0 }) };\n")
+  val () = $B.bput(b,"  const imports = { env: envObj };\n")
 in end
 
 fn emit_js_loadwasm_close {n:nat | n + 800 <= $B.BUILDER_CAP}
