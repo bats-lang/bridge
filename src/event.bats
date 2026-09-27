@@ -1,7 +1,6 @@
 (* event -- DOM event listener management for bridge *)
 
 #include "share/atspre_staload.hats"
-staload "./stash.bats"
 
 #use array as A
 
@@ -9,9 +8,11 @@ staload "./stash.bats"
    Public API
    ============================================================ *)
 
-(* The payload length JS passes to a listener: any int, indexed so a
-   listener can bound it with a guard and allocate with it. *)
-#pub typedef event_len = [v:int] int v
+(* The event's payload as JS passes it to a listener: a handle to claim
+   with blob_claim (decompress.bats) during the callback, 0 when the
+   event has none. Each event's payload is its own blob, and one not
+   claimed during its callback is dropped. *)
+#pub typedef event_payload = [v:int] int v
 
 (* A listener id indexes bridge's listener table (128 slots, shared with
    listen_media), so it is proven to be in range. *)
@@ -22,25 +23,21 @@ staload "./stash.bats"
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    event_type: !$A.borrow(byte, lb, n), type_len: int n,
    listener_id: listener_id,
-   callback: (event_len) -<cloref1> int): void
+   callback: (event_payload) -<cloref1> int): void
 
 #pub fun listen_document
   {lb:agz}{n:pos}
   (event_type: !$A.borrow(byte, lb, n), type_len: int n,
    listener_id: listener_id,
-   callback: (event_len) -<cloref1> int): void
+   callback: (event_payload) -<cloref1> int): void
 
 #pub fun unlisten
   (listener_id: listener_id): void
 
 #pub fun prevent_default(): void
 
-#pub fun get_payload
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
-
 #pub fun on_event
-  (listener_id: int, payload_len: event_len): void = "ext#bats_on_event"
+  (listener_id: int, payload: event_payload): void = "ext#bats_on_event"
 
 (* ============================================================
    WASM implementation
@@ -51,7 +48,6 @@ $UNSAFE begin
 %{
 extern void bats_listener_set(int id, void *cb);
 extern void *bats_listener_get(int id);
-extern int bats_bridge_stash_get_int(int slot);
 extern void bats_js_add_event_listener(void*, int, void*, int, int);
 extern void bats_js_add_document_listener(void*, int, int);
 extern void bats_js_remove_event_listener(int);
@@ -92,16 +88,12 @@ in _bats_js_remove_event_listener(listener_id) end
 
 implement prevent_default() = _bats_js_prevent_default()
 
-implement get_payload{n}(len) = let
-  val sid = $UNSAFE begin $extfcall(int, "bats_bridge_stash_get_int", 1) end
-in stash_read(sid, len) end
-
-implement on_event(listener_id, payload_len) = let
+implement on_event(listener_id, payload) = let
   val cbp = $UNSAFE begin $extfcall(ptr, "bats_listener_get", listener_id) end
 in
   if ptr_isnot_null(cbp) then let
-    val cb = $UNSAFE begin $UNSAFE.cast{(event_len) -<cloref1> int}(cbp) end
-    val _ = cb(payload_len)
+    val cb = $UNSAFE begin $UNSAFE.cast{(event_payload) -<cloref1> int}(cbp) end
+    val _ = cb(payload)
   in () end
   else ()
 end
