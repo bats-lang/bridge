@@ -1,6 +1,7 @@
 (* file -- file input/read/close for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./decompress.bats"
 
 #use array as A
 #use promise as P
@@ -59,6 +60,29 @@
   (key: !$A.borrow(byte, lk, nk), key_len: int nk)
   : $P.promise_pending(Int)
 
+(* How many files are picked in the file input with that id (0 when
+   there is no such input) *)
+#pub fun file_count
+  {li:agz}{ni:pos}
+  (!$A.borrow(byte, li, ni), int ni): [v:nat] int v
+
+(* Reads file i of those picked in the file input with that id; the
+   promise resolves with a handle to claim (0 when there is no file i) *)
+#pub fun file_open_at
+  {li:agz}{ni:pos}
+  (!$A.borrow(byte, li, ni), int ni, int): $P.promise_pending(Int)
+
+(* How many files the last drop event carried (set when a drop
+   listener's payload is made) *)
+#pub fun dropped_count (): [v:nat] int v
+
+(* Reads file i of the last drop; as file_open_at *)
+#pub fun dropped_open_at (int): $P.promise_pending(Int)
+
+(* The name the file had where it came from (a picked, dropped or
+   external file), as a blob; none when it has none *)
+#pub fun file_name {n:nat} (f: !infile(n)): $R.option([k:nat] dblob(k))
+
 #pub fun on_file_open
   (resolver_id: int, handle: Int)
   : void = "ext#bats_on_file_open"
@@ -77,6 +101,11 @@ extern void bats_js_file_close(int);
 extern int bats_js_file_store(void*, int);
 extern void bats_js_file_idb_put(void*, int, int, int);
 extern void bats_js_file_idb_get(void*, int, int);
+extern int bats_js_file_count(void*, int);
+extern void bats_js_file_open_at(void*, int, int, int);
+extern int bats_js_dropped_count(void);
+extern void bats_js_dropped_open_at(int, int);
+extern int bats_js_file_name(int);
 %}
 extern fun _bats_js_file_open
   (id: ptr, id_len: int, resolver_id: int): void = "mac#bats_js_file_open"
@@ -92,6 +121,16 @@ extern fun _bats_js_file_idb_put
   (key: ptr, key_len: int, handle: int, resolver_id: int): void = "mac#bats_js_file_idb_put"
 extern fun _bats_js_file_idb_get
   (key: ptr, key_len: int, resolver_id: int): void = "mac#bats_js_file_idb_get"
+extern fun _bats_js_file_count
+  (id: ptr, id_len: int): [v:int] int v = "mac#bats_js_file_count"
+extern fun _bats_js_file_open_at
+  (id: ptr, id_len: int, i: int, resolver_id: int): void = "mac#bats_js_file_open_at"
+extern fun _bats_js_dropped_count
+  (): [v:int] int v = "mac#bats_js_dropped_count"
+extern fun _bats_js_dropped_open_at
+  (i: int, resolver_id: int): void = "mac#bats_js_dropped_open_at"
+extern fun _bats_js_file_name
+  (handle: int): [v:int] int v = "mac#bats_js_file_name"
 
 (* The JS handle and the size: flat, no cell to allocate *)
 assume infile(n) = @(int, int n)
@@ -139,6 +178,31 @@ implement file_idb_get{lk}{nk}(key, key_len) = let
   val () = _bats_js_file_idb_get(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len, id)
 in p end
+
+(* A count from JS, checked here once *)
+fn _count {c:int} (c: int c): [v:nat] int v =
+  if c > 0 then c else 0
+
+implement file_count{li}{ni}(input_node_id, id_len) =
+  _count(_bats_js_file_count(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(input_node_id) end, id_len))
+
+implement file_open_at{li}{ni}(input_node_id, id_len, i) = let
+  val @(p, r) = $P.create<Int>()
+  val id = $P.stash(r)
+  val () = _bats_js_file_open_at(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(input_node_id) end, id_len, i, id)
+in p end
+
+implement dropped_count() = _count(_bats_js_dropped_count())
+
+implement dropped_open_at(i) = let
+  val @(p, r) = $P.create<Int>()
+  val id = $P.stash(r)
+  val () = _bats_js_dropped_open_at(i, id)
+in p end
+
+implement file_name{n}(f) = blob_claim(_bats_js_file_name(f.0))
 
 implement on_file_open(resolver_id, handle) =
   $P.fire(resolver_id, handle)

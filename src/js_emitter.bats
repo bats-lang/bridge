@@ -9,8 +9,8 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 46800 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46800] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 50300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 50300] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -614,25 +614,26 @@ fn emit_js_dom_read {n:nat | n + 4900 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_event {n:nat | n + 4500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4500] $B.builder(m)): void = let
+fn emit_js_event {n:nat | n + 5200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5200] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Event listener ---\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const listenerMap = new Map();\n")
   val () = $B.bput(b,"  let currentEvent = null;\n")
   val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // Every position is a whole number of CSS pixels, as int32 LE\n")
   val () = $B.bput(b,"  function encodeEventPayload(event, eventType) {\n")
-  val () = $B.bput(b,"    if (eventType === 'click' || eventType === 'pointerdown' ||\n")
-  val () = $B.bput(b,"        eventType === 'pointerup' || eventType === 'pointermove') {\n")
+  val () = $B.bput(b,"    if (eventType === 'click' || eventType === 'dblclick' || eventType === 'contextmenu' ||\n")
+  val () = $B.bput(b,"        eventType === 'pointerdown' || eventType === 'pointerup' || eventType === 'pointermove') {\n")
   val () = $B.bput(b,"      const targetId = (event.target && event.target.id) || '';\n")
   val () = $B.bput(b,"      const idBytes = new TextEncoder().encode(targetId);\n")
-  val () = $B.bput(b,"      const buf = new ArrayBuffer(16 + 2 + idBytes.length);\n")
+  val () = $B.bput(b,"      const buf = new ArrayBuffer(8 + 2 + idBytes.length);\n")
   val () = $B.bput(b,"      const dv = new DataView(buf);\n")
-  val () = $B.bput(b,"      dv.setFloat64(0, event.clientX || 0, true);\n")
-  val () = $B.bput(b,"      dv.setFloat64(8, event.clientY || 0, true);\n")
-  val () = $B.bput(b,"      dv.setUint16(16, idBytes.length, true);\n")
-  val () = $B.bput(b,"      new Uint8Array(buf).set(idBytes, 18);\n")
+  val () = $B.bput(b,"      dv.setInt32(0, Math.round(event.clientX || 0), true);\n")
+  val () = $B.bput(b,"      dv.setInt32(4, Math.round(event.clientY || 0), true);\n")
+  val () = $B.bput(b,"      dv.setUint16(8, idBytes.length, true);\n")
+  val () = $B.bput(b,"      new Uint8Array(buf).set(idBytes, 10);\n")
   val () = $B.bput(b,"      return new Uint8Array(buf);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    if (eventType === 'keydown' || eventType === 'keyup') {\n")
@@ -655,34 +656,45 @@ fn emit_js_event {n:nat | n + 4500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      buf.set(valBytes, 2);\n")
   val () = $B.bput(b,"      return buf;\n")
   val () = $B.bput(b,"    }\n")
+  val () = $B.bput(b,"    if (eventType === 'wheel') {\n")
+  val () = $B.bput(b,"      const buf = new ArrayBuffer(8);\n")
+  val () = $B.bput(b,"      const dv = new DataView(buf);\n")
+  val () = $B.bput(b,"      dv.setInt32(0, Math.round(event.deltaX || 0), true);\n")
+  val () = $B.bput(b,"      dv.setInt32(4, Math.round(event.deltaY || 0), true);\n")
+  val () = $B.bput(b,"      return new Uint8Array(buf);\n")
+  val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    if (eventType === 'scroll') {\n")
-  val () = $B.bput(b,"      const buf = new ArrayBuffer(16);\n")
+  val () = $B.bput(b,"      const buf = new ArrayBuffer(8);\n")
   val () = $B.bput(b,"      const dv = new DataView(buf);\n")
   val () = $B.bput(b,"      const target = event.target || {};\n")
-  val () = $B.bput(b,"      dv.setFloat64(0, target.scrollTop || 0, true);\n")
-  val () = $B.bput(b,"      dv.setFloat64(8, target.scrollLeft || 0, true);\n")
+  val () = $B.bput(b,"      dv.setInt32(0, Math.round(target.scrollTop || 0), true);\n")
+  val () = $B.bput(b,"      dv.setInt32(4, Math.round(target.scrollLeft || 0), true);\n")
   val () = $B.bput(b,"      return new Uint8Array(buf);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    if (eventType === 'resize') {\n")
-  val () = $B.bput(b,"      const buf = new ArrayBuffer(16);\n")
+  val () = $B.bput(b,"      const buf = new ArrayBuffer(8);\n")
   val () = $B.bput(b,"      const dv = new DataView(buf);\n")
   val () = $B.bput(b,"      const win = root.ownerDocument.defaultView || {};\n")
-  val () = $B.bput(b,"      dv.setFloat64(0, win.innerWidth || 0, true);\n")
-  val () = $B.bput(b,"      dv.setFloat64(8, win.innerHeight || 0, true);\n")
+  val () = $B.bput(b,"      dv.setInt32(0, Math.round(win.innerWidth || 0), true);\n")
+  val () = $B.bput(b,"      dv.setInt32(4, Math.round(win.innerHeight || 0), true);\n")
   val () = $B.bput(b,"      return new Uint8Array(buf);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    if (eventType === 'touchstart' || eventType === 'touchend' || eventType === 'touchmove') {\n")
   val () = $B.bput(b,"      const touch = (event.touches && event.touches[0]) ||\n")
   val () = $B.bput(b,"                    (event.changedTouches && event.changedTouches[0]);\n")
   val () = $B.bput(b,"      if (touch) {\n")
-  val () = $B.bput(b,"        const buf = new ArrayBuffer(20);\n")
+  val () = $B.bput(b,"        const buf = new ArrayBuffer(12);\n")
   val () = $B.bput(b,"        const dv = new DataView(buf);\n")
-  val () = $B.bput(b,"        dv.setFloat64(0, touch.clientX || 0, true);\n")
-  val () = $B.bput(b,"        dv.setFloat64(8, touch.clientY || 0, true);\n")
-  val () = $B.bput(b,"        dv.setInt32(16, touch.identifier || 0, true);\n")
+  val () = $B.bput(b,"        dv.setInt32(0, Math.round(touch.clientX || 0), true);\n")
+  val () = $B.bput(b,"        dv.setInt32(4, Math.round(touch.clientY || 0), true);\n")
+  val () = $B.bput(b,"        dv.setInt32(8, touch.identifier || 0, true);\n")
   val () = $B.bput(b,"        return new Uint8Array(buf);\n")
   val () = $B.bput(b,"      }\n")
   val () = $B.bput(b,"      return null;\n")
+  val () = $B.bput(b,"    }\n")
+  val () = $B.bput(b,"    if (eventType === 'drop') {\n")
+  val () = $B.bput(b,"      droppedFiles = Array.from((event.dataTransfer && event.dataTransfer.files) || []);\n")
+  val () = $B.bput(b,"      return new Uint8Array([Math.min(droppedFiles.length, 255)]);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    if (eventType === 'visibilitychange') {\n")
   val () = $B.bput(b,"      return new Uint8Array([document.visibilityState === 'hidden' ? 1 : 0]);\n")
@@ -811,22 +823,8 @@ fn emit_js_file {n:nat | n + 2800 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  let nextFileHandle = 1;\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsFileOpen(idPtr, idLen, resolverId) {\n")
-  val () = $B.bput(b,"    const id = readIdFromPtr(idPtr, idLen);\n")
-  val () = $B.bput(b,"    const el = getEl(id);\n")
-  val () = $B.bput(b,"    if (!el || !el.files || !el.files[0]) {\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_file_open(resolverId, 0);\n")
-  val () = $B.bput(b,"      return;\n")
-  val () = $B.bput(b,"    }\n")
-  val () = $B.bput(b,"    const reader = new FileReader();\n")
-  val () = $B.bput(b,"    reader.onload = () => {\n")
-  val () = $B.bput(b,"      const handle = nextFileHandle++;\n")
-  val () = $B.bput(b,"      pendingFiles.set(handle, new Uint8Array(reader.result));\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_file_open(resolverId, handle);\n")
-  val () = $B.bput(b,"    };\n")
-  val () = $B.bput(b,"    reader.onerror = () => {\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_file_open(resolverId, 0);\n")
-  val () = $B.bput(b,"    };\n")
-  val () = $B.bput(b,"    reader.readAsArrayBuffer(el.files[0]);\n")
+  val () = $B.bput(b,"    const el = getEl(readIdFromPtr(idPtr, idLen));\n")
+  val () = $B.bput(b,"    batsJsReadFileObj(el && el.files ? el.files[0] : null, resolverId);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsFileClaim(handle) {\n")
@@ -843,7 +841,7 @@ fn emit_js_file {n:nat | n + 2800 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsFileClose(handle) {\n")
-  val () = $B.bput(b,"    fileCache.delete(handle);\n")
+  val () = $B.bput(b,"    fileCache.delete(handle); fileNames.delete(handle);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsFileIdbPut(keyPtr, keyLen, handle, resolverId) {\n")
@@ -1191,15 +1189,93 @@ fn emit_js_scroll {n:nat | n + 900 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 3700 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3700] $B.builder(m)): void = let
+
+fn emit_js_extra {n:nat | n + 3000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3000] $B.builder(m)): void = let
+  val () = $B.bput(b,"  // --- Window listeners, clock, picked, dropped and external files ---\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  let droppedFiles = [];\n")
+  val () = $B.bput(b,"  const fileNames = new Map();\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsAddWindowListener(eventTypePtr, typeLen, listenerId) {\n")
+  val () = $B.bput(b,"    const eventType = readString(eventTypePtr, typeLen);\n")
+  val () = $B.bput(b,"    const win = root.ownerDocument.defaultView || window;\n")
+  val () = $B.bput(b,"    const handler = (event) => batsJsFireEvent(listenerId, event, eventType);\n")
+  val () = $B.bput(b,"    listenerMap.set(listenerId, { node: win, eventType, handler });\n")
+  val () = $B.bput(b,"    win.addEventListener(eventType, handler);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsEpochMinutes() { return Math.floor(Date.now() / 60000); }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsReadFileObj(f, resolverId) {\n")
+  val () = $B.bput(b,"    if (!f) { instance.exports.bats_on_file_open(resolverId, 0); return; }\n")
+  val () = $B.bput(b,"    const reader = new FileReader();\n")
+  val () = $B.bput(b,"    reader.onload = () => {\n")
+  val () = $B.bput(b,"      const handle = nextFileHandle++;\n")
+  val () = $B.bput(b,"      pendingFiles.set(handle, new Uint8Array(reader.result));\n")
+  val () = $B.bput(b,"      fileNames.set(handle, f.name || '');\n")
+  val () = $B.bput(b,"      instance.exports.bats_on_file_open(resolverId, handle);\n")
+  val () = $B.bput(b,"    };\n")
+  val () = $B.bput(b,"    reader.onerror = () => instance.exports.bats_on_file_open(resolverId, 0);\n")
+  val () = $B.bput(b,"    reader.readAsArrayBuffer(f);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsFileCount(idPtr, idLen) {\n")
+  val () = $B.bput(b,"    const el = getEl(readIdFromPtr(idPtr, idLen));\n")
+  val () = $B.bput(b,"    return (el && el.files) ? el.files.length : 0;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsFileOpenAt(idPtr, idLen, i, resolverId) {\n")
+  val () = $B.bput(b,"    const el = getEl(readIdFromPtr(idPtr, idLen));\n")
+  val () = $B.bput(b,"    batsJsReadFileObj(el && el.files ? el.files[i] : null, resolverId);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsDroppedCount() { return droppedFiles.length; }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsDroppedOpenAt(i, resolverId) { batsJsReadFileObj(droppedFiles[i], resolverId); }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsFileName(handle) {\n")
+  val () = $B.bput(b,"    const name = fileNames.get(handle);\n")
+  val () = $B.bput(b,"    if (!name) return 0;\n")
+  val () = $B.bput(b,"    return pendBlob(new TextEncoder().encode(name));\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // Files handed to the app from outside it (an Android intent): each is\n")
+  val () = $B.bput(b,"  // a pending file, its handle passed to the listener as its payload\n")
+  val () = $B.bput(b,"  const externalFiles = [];\n")
+  val () = $B.bput(b,"  let externalListener = -1;\n")
+  val () = $B.bput(b,"  function batsJsFlushExternal() {\n")
+  val () = $B.bput(b,"    while (externalListener >= 0 && externalFiles.length > 0) {\n")
+  val () = $B.bput(b,"      instance.exports.bats_on_event(externalListener, externalFiles.shift());\n")
+  val () = $B.bput(b,"    }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsDeliverFile(bytes, name) {\n")
+  val () = $B.bput(b,"    const handle = nextFileHandle++;\n")
+  val () = $B.bput(b,"    pendingFiles.set(handle, bytes);\n")
+  val () = $B.bput(b,"    fileNames.set(handle, name || '');\n")
+  val () = $B.bput(b,"    externalFiles.push(handle);\n")
+  val () = $B.bput(b,"    batsJsFlushExternal();\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  globalThis.batsFetchExternal = (url, name) =>\n")
+  val () = $B.bput(b,"    fetch(url).then(r => r.arrayBuffer()).then(buf => batsDeliverFile(new Uint8Array(buf), name));\n")
+  val () = $B.bput(b,"  function batsJsListenExternalFiles(listenerId) {\n")
+  val () = $B.bput(b,"    externalListener = listenerId;\n")
+  val () = $B.bput(b,"    const queued = globalThis.batsQueuedUrls || [];\n")
+  val () = $B.bput(b,"    globalThis.batsQueuedUrls = [];\n")
+  val () = $B.bput(b,"    for (const q of queued) globalThis.batsFetchExternal(q[0], q[1]);\n")
+  val () = $B.bput(b,"    batsJsFlushExternal();\n")
+  val () = $B.bput(b,"  }\n")
+in end
+
+fn emit_js_imports {n:nat | n + 4100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4100] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
   val () = $B.bput(b,"      bats_dom_flush: batsDomFlush,\n")
   val () = $B.bput(b,"      bats_js_set_image_src: batsJsSetImageSrc,\n")
   val () = $B.bput(b,"      bats_set_timer: batsSetTimer,\n")
-  val () = $B.bput(b,"      bats_get_time_ms: () => Math.floor(Date.now()),\n")
+  val () = $B.bput(b,"      bats_js_epoch_minutes: batsJsEpochMinutes,\n")
   val () = $B.bput(b,"      bats_exit: () => { resolveDone(); },\n")
   val () = $B.bput(b,"      // IDB\n")
   val () = $B.bput(b,"      bats_idb_js_put: batsIdbPut,\n")
@@ -1242,6 +1318,13 @@ fn emit_js_imports {n:nat | n + 3700 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_clipboard_read_text: batsJsClipboardReadText,\n")
   val () = $B.bput(b,"      // File\n")
   val () = $B.bput(b,"      bats_js_file_open: batsJsFileOpen,\n")
+  val () = $B.bput(b,"      bats_js_file_count: batsJsFileCount,\n")
+  val () = $B.bput(b,"      bats_js_file_open_at: batsJsFileOpenAt,\n")
+  val () = $B.bput(b,"      bats_js_dropped_count: batsJsDroppedCount,\n")
+  val () = $B.bput(b,"      bats_js_dropped_open_at: batsJsDroppedOpenAt,\n")
+  val () = $B.bput(b,"      bats_js_file_name: batsJsFileName,\n")
+  val () = $B.bput(b,"      bats_js_listen_external_files: batsJsListenExternalFiles,\n")
+  val () = $B.bput(b,"      bats_js_add_window_listener: batsJsAddWindowListener,\n")
   val () = $B.bput(b,"      bats_js_file_claim: batsJsFileClaim,\n")
   val () = $B.bput(b,"      bats_js_file_read: batsJsFileRead,\n")
   val () = $B.bput(b,"      bats_js_file_close: batsJsFileClose,\n")
@@ -1334,8 +1417,8 @@ fn _emit_3 {n:nat | n + 6100 <= $B.BUILDER_CAP}
   val () = emit_js_dom_read(b)
 in end
 
-fn _emit_4 {n:nat | n + 5400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5400] $B.builder(m)): void = let
+fn _emit_4 {n:nat | n + 6100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6100] $B.builder(m)): void = let
   val () = emit_js_event(b)
   val () = emit_js_fetch(b)
 in end
@@ -1364,26 +1447,31 @@ fn _emit_8 {n:nat | n + 1700 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_9 {n:nat | n + 4500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4500] $B.builder(m)): void = let
+fn _emit_10 {n:nat | n + 3000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3000] $B.builder(m)): void =
+  emit_js_extra(b)
+
+fn _emit_9 {n:nat | n + 4900 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4900] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 27000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 27000] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 27700 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 27700] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 19200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 19200] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 22600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 22600] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
   val () = _emit_8(b)
+  val () = _emit_10(b)
   val () = _emit_9(b)
 in end
 
