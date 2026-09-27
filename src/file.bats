@@ -39,6 +39,22 @@
   {l:agz}{n:pos}
   (!$A.borrow(byte, l, n), int n): infile(n)
 
+(* Stores f's bytes in IndexedDB under key, from the JS side (the bytes
+   never pass through wasm memory); the promise resolves with 0, or -1
+   when the store failed *)
+#pub fun file_idb_put
+  {lk:agz}{nk:pos}{n:nat}
+  (key: !$A.borrow(byte, lk, nk), key_len: int nk, f: infile(n))
+  : $P.promise_pending(Int)
+
+(* The bytes stored under key (by file_idb_put) as a file, from the JS
+   side; the promise resolves with a handle to claim with file_claim,
+   which is none when nothing is stored there *)
+#pub fun file_idb_get
+  {lk:agz}{nk:pos}
+  (key: !$A.borrow(byte, lk, nk), key_len: int nk)
+  : $P.promise_pending(Int)
+
 #pub fun on_file_open
   (resolver_id: int, handle: Int)
   : void = "ext#bats_on_file_open"
@@ -55,6 +71,8 @@ extern int bats_js_file_size(int);
 extern void bats_js_file_read(int, int, int, void*);
 extern void bats_js_file_close(int);
 extern int bats_js_file_store(void*, int);
+extern void bats_js_file_idb_put(void*, int, int, int);
+extern void bats_js_file_idb_get(void*, int, int);
 %}
 extern fun _bats_js_file_open
   (id: ptr, id_len: int, resolver_id: int): void = "mac#bats_js_file_open"
@@ -66,6 +84,10 @@ extern fun _bats_js_file_close
   (handle: int): void = "mac#bats_js_file_close"
 extern fun _bats_js_file_store
   (data: ptr, len: int): int = "mac#bats_js_file_store"
+extern fun _bats_js_file_idb_put
+  (key: ptr, key_len: int, handle: int, resolver_id: int): void = "mac#bats_js_file_idb_put"
+extern fun _bats_js_file_idb_get
+  (key: ptr, key_len: int, resolver_id: int): void = "mac#bats_js_file_idb_get"
 
 datatype infile_rep(int) = {n:nat} InfileRep(n) of (int, int n)
 assume infile(n) = infile_rep(n)
@@ -102,6 +124,21 @@ in _bats_js_file_close(h) end
 implement file_store{l}{n}(data, len) =
   InfileRep(_bats_js_file_store(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end, len), len)
+
+implement file_idb_put{lk}{nk}{n}(key, key_len, f) = let
+  val InfileRep(h, _) = f
+  val @(p, r) = $P.create<Int>()
+  val id = $P.stash(r)
+  val () = _bats_js_file_idb_put(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len, h, id)
+in p end
+
+implement file_idb_get{lk}{nk}(key, key_len) = let
+  val @(p, r) = $P.create<Int>()
+  val id = $P.stash(r)
+  val () = _bats_js_file_idb_get(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len, id)
+in p end
 
 implement on_file_open(resolver_id, handle) =
   $P.fire(resolver_id, handle)
