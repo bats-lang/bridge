@@ -1,7 +1,7 @@
 (* clipboard -- clipboard read/write for bridge *)
 
 #include "share/atspre_staload.hats"
-staload "./stash.bats"
+staload "./decompress.bats"
 
 #use array as A
 #use promise as P
@@ -14,18 +14,16 @@ staload "./stash.bats"
   : {lb:agz}{n:nat}
   (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
 
+(* Reads the clipboard's text: the promise resolves with a handle to
+   claim with blob_claim (decompress.bats), 0 when there is none *)
 #pub fun clipboard_read
   : () -> $P.promise_pending(Int)
-
-#pub fun clipboard_read_result
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
 
 #pub fun on_clipboard_complete
   (resolver_id: int, success: Int): void = "ext#bats_on_clipboard_complete"
 
 #pub fun on_clipboard_read_complete
-  (resolver_id: int, text_len: Int): void = "ext#bats_on_clipboard_read_complete"
+  (resolver_id: int, handle: Int): void = "ext#bats_on_clipboard_read_complete"
 
 (* ============================================================
    WASM implementation
@@ -58,13 +56,10 @@ implement clipboard_read() = let
   val () = _bats_js_clipboard_read_text(id)
 in p end
 
-implement clipboard_read_result{n}(len) =
-  stash_read(stash_get_int(1), len)
-
 implement on_clipboard_complete(resolver_id, success) =
   $P.fire(resolver_id, success)
 
-implement on_clipboard_read_complete(resolver_id, text_len) =
-  $P.fire(resolver_id, text_len)
+implement on_clipboard_read_complete(resolver_id, handle) =
+  $P.fire(resolver_id, handle)
 
 end (* #target wasm *)

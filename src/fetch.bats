@@ -1,27 +1,30 @@
 (* fetch -- network fetch with promise-based async for bridge *)
 
 #include "share/atspre_staload.hats"
-staload "./stash.bats"
+staload "./decompress.bats"
 
 #use array as A
 #use promise as P
+#use result as R
 
 (* ============================================================
    Public API
    ============================================================ *)
 
+(* Fetches the URL; the promise resolves with a handle to the response,
+   0 when the request failed, to claim with fetch_claim *)
 #pub fun fetch
   : {lb:agz}{n:pos}
   (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
 
-#pub fun get_body_len(): int
-
-#pub fun get_body
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
+(* The response a fetch promise resolved with: its HTTP status and its
+   body, a blob of its own size; none when the request failed or the
+   handle is not a pending response. Claimed once. *)
+#pub fun fetch_claim
+  (handle: Int): $R.option(@([s:int] int s, [k:nat] dblob(k)))
 
 #pub fun on_fetch_complete
-  (resolver_id: int, status: Int, body_len: int)
+  (resolver_id: int, handle: Int)
   : void = "ext#bats_on_fetch_complete"
 
 (* ============================================================
@@ -32,9 +35,12 @@ staload "./stash.bats"
 $UNSAFE begin
 %{
 extern void bats_js_fetch(void*, int, int);
+extern int bats_js_fetch_status(int);
 %}
 extern fun _bats_js_fetch
   (url: ptr, url_len: int, resolver_id: int): void = "mac#bats_js_fetch"
+extern fun _bats_js_fetch_status
+  (handle: int): [s:int] int s = "mac#bats_js_fetch_status"
 end
 
 implement fetch{lb}{n}(url, url_len) = let
@@ -45,14 +51,16 @@ implement fetch{lb}{n}(url, url_len) = let
     id)
 in p end
 
-implement get_body_len() =
-  stash_get_int(0)
+implement fetch_claim(handle) = let
+  (* The status is taken first: JS drops it when the body is claimed *)
+  val status = _bats_js_fetch_status(handle)
+in
+  case+ blob_claim(handle) of
+  | ~$R.none() => $R.none()
+  | ~$R.some(b) => $R.some(@(status, b))
+end
 
-implement get_body{n}(len) =
-  stash_read(stash_get_int(1), len)
-
-implement on_fetch_complete(resolver_id, status, body_len) = let
-  val () = stash_set_int(0, body_len)
-in $P.fire(resolver_id, status) end
+implement on_fetch_complete(resolver_id, handle) =
+  $P.fire(resolver_id, handle)
 
 end (* #target wasm *)

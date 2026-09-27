@@ -1,7 +1,7 @@
 (* dom_read -- DOM measurement, query, text content, selection for bridge *)
 
 #include "share/atspre_staload.hats"
-staload "./stash.bats"
+staload "./decompress.bats"
 
 #use array as A
 #use result as R
@@ -27,41 +27,45 @@ staload "./stash.bats"
 
 #pub fun get_measure_scroll_h(): [v:int] int v
 
+(* The id of the first element the selector matches, as a blob; none
+   when nothing matches or the element has no id *)
 #pub fun query_selector
   {lb:agz}{n:pos}
-  (sel: !$A.borrow(byte, lb, n), sel_len: int n): $R.option(int)
+  (sel: !$A.borrow(byte, lb, n), sel_len: int n)
+  : $R.option([k:nat] dblob(k))
 
 #pub fun caret_position_from_point
   (x: int, y: int): int
 
+(* The node's text content as a blob; none when there is no such node
+   or its text is empty *)
 #pub fun read_text_content
   {li:agz}{ni:pos}
-  (node_id: !$A.borrow(byte, li, ni), id_len: int ni): int
-
-#pub fun read_text_content_get
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni)
+  : $R.option([k:nat] dblob(k))
 
 #pub fun measure_text_offset
   {li:agz}{ni:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    offset: int): int
 
-#pub fun get_selection_text(): int
-
-#pub fun get_selection_text_get
-  : {n:pos | n <= 1048576}
-  (int n) -> [l:agz] $A.arr(byte, l, n)
+(* The selected text as a blob; none when the selection is empty *)
+#pub fun get_selection_text(): $R.option([k:nat] dblob(k))
 
 #pub fun get_selection_rect(): void
 
-#pub fun get_selection_range(): void
+(* The selection's start and end offsets go to measure slots 0 and 1;
+   the ids of the elements it starts and ends in are returned as blobs
+   (none when there is no selection or the element has no id) *)
+#pub fun get_selection_range()
+  : @($R.option([k:nat] dblob(k)), $R.option([k:nat] dblob(k)))
 
-(* Read form input .value into WASM memory. Returns byte length. *)
+(* A form input's value as a blob; none when there is no such input or
+   its value is empty *)
 #pub fun read_input_value
   {li:agz}{ni:pos}
-  (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
-   max_len: int): int
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni)
+  : $R.option([k:nat] dblob(k))
 
 (* ============================================================
    WASM implementation
@@ -71,6 +75,7 @@ staload "./stash.bats"
 $UNSAFE begin
 %{
 extern int bats_bridge_measure_get(int slot);
+extern void bats_measure_set(int slot, int v);
 extern int bats_js_measure_node(void*, int);
 extern int bats_js_query_selector(void*, int);
 extern int bats_js_caret_position_from_point(int, int);
@@ -79,26 +84,26 @@ extern int bats_js_measure_text_offset(void*, int, int);
 extern int bats_js_get_selection_text(void);
 extern void bats_js_get_selection_rect(void);
 extern void bats_js_get_selection_range(void);
-extern int bats_js_read_input_value(void*, int, void*, int);
+extern int bats_js_read_input_value(void*, int);
 %}
 extern fun _bats_js_measure_node
   (id: ptr, id_len: int): int = "mac#bats_js_measure_node"
 extern fun _bats_js_query_selector
-  (selector: ptr, selector_len: int): int = "mac#bats_js_query_selector"
+  (selector: ptr, selector_len: int): [v:int] int v = "mac#bats_js_query_selector"
 extern fun _bats_js_caret_position_from_point
   (x: int, y: int): int = "mac#bats_js_caret_position_from_point"
 extern fun _bats_js_read_text_content
-  (id: ptr, id_len: int): int = "mac#bats_js_read_text_content"
+  (id: ptr, id_len: int): [v:int] int v = "mac#bats_js_read_text_content"
 extern fun _bats_js_measure_text_offset
   (id: ptr, id_len: int, offset: int): int = "mac#bats_js_measure_text_offset"
 extern fun _bats_js_get_selection_text
-  (): int = "mac#bats_js_get_selection_text"
+  (): [v:int] int v = "mac#bats_js_get_selection_text"
 extern fun _bats_js_get_selection_rect
   (): void = "mac#bats_js_get_selection_rect"
 extern fun _bats_js_get_selection_range
   (): void = "mac#bats_js_get_selection_range"
 extern fun _bats_js_read_input_value
-  (id: ptr, id_len: int, dest: ptr, max_len: int): int = "mac#bats_js_read_input_value"
+  (id: ptr, id_len: int): [v:int] int v = "mac#bats_js_read_input_value"
 end
 
 implement measure{li}{ni}(node_id, id_len) = let
@@ -115,42 +120,43 @@ implement get_measure_h() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_
 implement get_measure_scroll_w() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 4) end
 implement get_measure_scroll_h() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 5) end
 
-implement query_selector{lb}{n}(sel, sel_len) = let
-  val r = _bats_js_query_selector(
+fn _measure_set (slot: int, v: int): void =
+  $UNSAFE begin $extfcall(void, "bats_measure_set", slot, v) end
+
+implement query_selector{lb}{n}(sel, sel_len) =
+  blob_claim(_bats_js_query_selector(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(sel) end,
-    sel_len)
-in
-  if r >= 0 then $R.some(r) else $R.none()
-end
+    sel_len))
 
 implement caret_position_from_point(x, y) =
   _bats_js_caret_position_from_point(x, y)
 
 implement read_text_content{li}{ni}(node_id, id_len) =
-  _bats_js_read_text_content(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len)
-
-implement read_text_content_get{n}(len) =
-  stash_read(stash_get_int(1), len)
+  blob_claim(_bats_js_read_text_content(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len))
 
 implement measure_text_offset{li}{ni}(node_id, id_len, offset) =
   _bats_js_measure_text_offset(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, offset)
 
 implement get_selection_text() =
-  _bats_js_get_selection_text()
-
-implement get_selection_text_get{n}(len) =
-  stash_read(stash_get_int(1), len)
+  blob_claim(_bats_js_get_selection_text())
 
 implement get_selection_rect() =
   _bats_js_get_selection_rect()
 
-implement get_selection_range() =
-  _bats_js_get_selection_range()
+implement get_selection_range() = let
+  (* Measure slots 2 and 3 are cleared first, so a range that sets
+     nothing claims no stale handle *)
+  val () = _measure_set(2, 0)
+  val () = _measure_set(3, 0)
+  val () = _bats_js_get_selection_range()
+  val s = blob_claim(get_measure_w())
+  val e = blob_claim(get_measure_h())
+in @(s, e) end
 
-implement read_input_value{li}{ni}(node_id, id_len, max_len) =
-  _bats_js_read_input_value(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, the_null_ptr, max_len)
+implement read_input_value{li}{ni}(node_id, id_len) =
+  blob_claim(_bats_js_read_input_value(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len))
 
 end (* #target wasm *)

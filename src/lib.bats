@@ -30,25 +30,12 @@ staload "./window.bats"
 staload "./xml.bats"
 
 (* ============================================================
-   C runtime -- stash, measure, listener tables + WASM exports
+   C runtime -- measure, listener tables + WASM exports
    ============================================================ *)
 
 #target wasm begin
 $UNSAFE begin
 %{$
-/* Bridge int stash -- 32 slots for stash IDs and metadata */
-#define _BRIDGE_STASH_INT_SLOTS 32
-static int _bridge_stash_int[_BRIDGE_STASH_INT_SLOTS] = {0};
-
-void bats_bridge_stash_set_int(int slot, int v) {
-  if (slot >= 0 && slot < _BRIDGE_STASH_INT_SLOTS) _bridge_stash_int[slot] = v;
-}
-
-int bats_bridge_stash_get_int(int slot) {
-  if (slot >= 0 && slot < _BRIDGE_STASH_INT_SLOTS) return _bridge_stash_int[slot];
-  return 0;
-}
-
 /* Measure stash -- 6 slots for x, y, w, h, scrollW, scrollH */
 #define _BRIDGE_MEASURE_SLOTS 6
 static int _bridge_measure[_BRIDGE_MEASURE_SLOTS] = {0};

@@ -32,10 +32,11 @@
 #pub fun reload(): void
 
 #pub fun on_popstate
-  (url_len: Int): void = "ext#bats_on_popstate"
+  (url: Int): void = "ext#bats_on_popstate"
 
-(* The callback gets the new URL's byte length from JS as Int (any int),
-   so it bounds the length with its own checks, without a cast. *)
+(* The callback gets a handle to the new URL, a blob to claim with
+   blob_claim (decompress.bats) during the callback; JS drops it when
+   the callback returns *)
 #pub fun set_popstate_callback
   (cb: (Int) -<cloref1> int): void
 
@@ -106,12 +107,12 @@ implement set_popstate_callback(cb) = let
   val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(cb) end
 in $UNSAFE begin $extfcall(void, "bats_popstate_set", cbp) end end
 
-implement on_popstate(url_len) = let
+implement on_popstate(url) = let
   val cbp = $UNSAFE begin $extfcall(ptr, "bats_popstate_get") end
 in
   if ptr_isnot_null(cbp) then let
     val cb = $UNSAFE begin $UNSAFE.cast{(Int) -<cloref1> int}(cbp) end
-    val _ = cb(url_len)
+    val _ = cb(url)
   in () end
   else ()
 end
