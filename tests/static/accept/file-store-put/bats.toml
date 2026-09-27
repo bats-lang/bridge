@@ -1,0 +1,9 @@
+[package]
+name = "file-store-put"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

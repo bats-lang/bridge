@@ -799,11 +799,14 @@ fn emit_js_clipboard {n:nat | n + 1500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_file {n:nat | n + 2500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2500] $B.builder(m)): void = let
+fn emit_js_file {n:nat | n + 2800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2800] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- File ---\n")
   val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // A file waits in pendingFiles until claimed, then lives in fileCache\n")
+  val () = $B.bput(b,"  // until closed; each is claimed at most once\n")
+  val () = $B.bput(b,"  const pendingFiles = new Map();\n")
   val () = $B.bput(b,"  const fileCache = new Map();\n")
   val () = $B.bput(b,"  let nextFileHandle = 1;\n")
   val () = $B.bput(b,"\n")
@@ -817,7 +820,7 @@ fn emit_js_file {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const reader = new FileReader();\n")
   val () = $B.bput(b,"    reader.onload = () => {\n")
   val () = $B.bput(b,"      const handle = nextFileHandle++;\n")
-  val () = $B.bput(b,"      fileCache.set(handle, new Uint8Array(reader.result));\n")
+  val () = $B.bput(b,"      pendingFiles.set(handle, new Uint8Array(reader.result));\n")
   val () = $B.bput(b,"      instance.exports.bats_on_file_open(resolverId, handle);\n")
   val () = $B.bput(b,"    };\n")
   val () = $B.bput(b,"    reader.onerror = () => {\n")
@@ -826,9 +829,12 @@ fn emit_js_file {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    reader.readAsArrayBuffer(el.files[0]);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  function batsJsFileSize(handle) {\n")
-  val () = $B.bput(b,"    const data = fileCache.get(handle);\n")
-  val () = $B.bput(b,"    return data ? data.length : -1;\n")
+  val () = $B.bput(b,"  function batsJsFileClaim(handle) {\n")
+  val () = $B.bput(b,"    const data = pendingFiles.get(handle);\n")
+  val () = $B.bput(b,"    if (!data) return -1;\n")
+  val () = $B.bput(b,"    pendingFiles.delete(handle);\n")
+  val () = $B.bput(b,"    fileCache.set(handle, data);\n")
+  val () = $B.bput(b,"    return data.length;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsFileRead(handle, fileOffset, len, outPtr) {\n")
@@ -850,7 +856,7 @@ fn emit_js_file {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const key = readString(keyPtr, keyLen);\n")
   val () = $B.bput(b,"    openDB().then(db => { const req = db.transaction('kv', 'readonly').objectStore('kv').get(key);\n")
   val () = $B.bput(b,"      req.onsuccess = () => { if (req.result === undefined) { instance.exports.bats_on_file_open(resolverId, 0); return; }\n")
-  val () = $B.bput(b,"        const handle = nextFileHandle++; fileCache.set(handle, new Uint8Array(req.result));\n")
+  val () = $B.bput(b,"        const handle = nextFileHandle++; pendingFiles.set(handle, new Uint8Array(req.result));\n")
   val () = $B.bput(b,"        instance.exports.bats_on_file_open(resolverId, handle); };\n")
   val () = $B.bput(b,"      req.onerror = () => instance.exports.bats_on_file_open(resolverId, 0); });\n")
   val () = $B.bput(b,"  }\n")
@@ -1236,7 +1242,7 @@ fn emit_js_imports {n:nat | n + 3700 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_clipboard_read_text: batsJsClipboardReadText,\n")
   val () = $B.bput(b,"      // File\n")
   val () = $B.bput(b,"      bats_js_file_open: batsJsFileOpen,\n")
-  val () = $B.bput(b,"      bats_js_file_size: batsJsFileSize,\n")
+  val () = $B.bput(b,"      bats_js_file_claim: batsJsFileClaim,\n")
   val () = $B.bput(b,"      bats_js_file_read: batsJsFileRead,\n")
   val () = $B.bput(b,"      bats_js_file_close: batsJsFileClose,\n")
   val () = $B.bput(b,"      bats_js_file_store: batsJsFileStore,\n")
@@ -1334,8 +1340,8 @@ fn _emit_4 {n:nat | n + 5400 <= $B.BUILDER_CAP}
   val () = emit_js_fetch(b)
 in end
 
-fn _emit_5 {n:nat | n + 4000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4000] $B.builder(m)): void = let
+fn _emit_5 {n:nat | n + 4300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4300] $B.builder(m)): void = let
   val () = emit_js_clipboard(b)
   val () = emit_js_file(b)
 in end
@@ -1372,8 +1378,8 @@ fn _emit_first_half {n:nat | n + 27000 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 18900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18900] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 19200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 19200] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
