@@ -1,0 +1,8 @@
+[package]
+name = "file-read-whole"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

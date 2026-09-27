@@ -1,0 +1,8 @@
+[package]
+name = "blob-double-free"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

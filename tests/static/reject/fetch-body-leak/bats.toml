@@ -1,0 +1,8 @@
+[package]
+name = "fetch-body-leak"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
