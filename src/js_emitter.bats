@@ -9,8 +9,8 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 56300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 56300] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 56800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 56800] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -1191,8 +1191,8 @@ fn emit_js_scroll {n:nat | n + 900 <= $B.BUILDER_CAP}
 in end
 
 
-fn emit_js_gestures {n:nat | n + 4300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4300] $B.builder(m)): void = let
+fn emit_js_gestures {n:nat | n + 4800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4800] $B.builder(m)): void = let
   val () = $B.bput(b,"  // --- Gestures: pointer events for the gestures package ---\n")
   val () = $B.bput(b,"  // Records of 8 int32 LE: kind, then its fields (gestures' decode.bats).\n")
   val () = $B.bput(b,"  // Batched and delivered once per animation frame (an up or cancel at\n")
@@ -1206,6 +1206,9 @@ fn emit_js_gestures {n:nat | n + 4300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const win = doc.defaultView || window;\n")
   val () = $B.bput(b,"    const recs = [];\n")
   val () = $B.bput(b,"    const down = new Set();\n")
+  val () = $B.bput(b,"    // a mouse is captured to the root once it has moved 4 px: a click\n")
+  val () = $B.bput(b,"    // (no drag) keeps its own target\n")
+  val () = $B.bput(b,"    const mouseAt = new Map();\n")
   val () = $B.bput(b,"    let frame = 0;\n")
   val () = $B.bput(b,"    const px = (v) => Math.round((v || 0) * 16);\n")
   val () = $B.bput(b,"    const regionEl = (el) => (el && el.closest) ? el.closest('[data-gesture-region]') : null;\n")
@@ -1241,21 +1244,28 @@ fn emit_js_gestures {n:nat | n + 4300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        push([6, 0, m ? px(m.m41) : 0, m ? px(m.m42) : 0, 0, 0, reg, 0]);\n")
   val () = $B.bput(b,"      }\n")
   val () = $B.bput(b,"      down.add(e.pointerId);\n")
-  val () = $B.bput(b,"      if (e.pointerType === 'mouse' && node.setPointerCapture) node.setPointerCapture(e.pointerId);\n")
+  val () = $B.bput(b,"      if (e.pointerType === 'mouse') mouseAt.set(e.pointerId, [e.clientX, e.clientY]);\n")
   val () = $B.bput(b,"      push([0, e.pointerId, px(e.clientX), px(e.clientY), Math.round(e.timeStamp), kindOf(e), reg, px(win.innerWidth)]);\n")
   val () = $B.bput(b,"    });\n")
   val () = $B.bput(b,"    node.addEventListener('pointermove', (e) => {\n")
   val () = $B.bput(b,"      if (!down.has(e.pointerId)) return;\n")
+  val () = $B.bput(b,"      const m = mouseAt.get(e.pointerId);\n")
+  val () = $B.bput(b,"      if (m && Math.abs(e.clientX - m[0]) + Math.abs(e.clientY - m[1]) > 4) {\n")
+  val () = $B.bput(b,"        mouseAt.delete(e.pointerId);\n")
+  val () = $B.bput(b,"        if (node.setPointerCapture) node.setPointerCapture(e.pointerId);\n")
+  val () = $B.bput(b,"      }\n")
   val () = $B.bput(b,"      push([1, e.pointerId, px(e.clientX), px(e.clientY), Math.round(e.timeStamp), 0, 0, 0]);\n")
   val () = $B.bput(b,"    });\n")
   val () = $B.bput(b,"    node.addEventListener('pointerup', (e) => {\n")
   val () = $B.bput(b,"      if (!down.has(e.pointerId)) return;\n")
   val () = $B.bput(b,"      down.delete(e.pointerId);\n")
+  val () = $B.bput(b,"      mouseAt.delete(e.pointerId);\n")
   val () = $B.bput(b,"      now([2, e.pointerId, px(e.clientX), px(e.clientY), Math.round(e.timeStamp), 0, 0, 0]);\n")
   val () = $B.bput(b,"    });\n")
   val () = $B.bput(b,"    node.addEventListener('pointercancel', (e) => {\n")
   val () = $B.bput(b,"      if (!down.has(e.pointerId)) return;\n")
   val () = $B.bput(b,"      down.delete(e.pointerId);\n")
+  val () = $B.bput(b,"      mouseAt.delete(e.pointerId);\n")
   val () = $B.bput(b,"      now([3, e.pointerId, 0, 0, 0, 0, 0, 0]);\n")
   val () = $B.bput(b,"    });\n")
   val () = $B.bput(b,"    node.addEventListener('lostpointercapture', (e) => { if (down.has(e.pointerId)) cancelAll(); });\n")
@@ -1574,8 +1584,8 @@ fn _emit_8 {n:nat | n + 1700 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_10 {n:nat | n + 8700 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8700] $B.builder(m)): void = let
+fn _emit_10 {n:nat | n + 9200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9200] $B.builder(m)): void = let
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
@@ -1593,8 +1603,8 @@ fn _emit_first_half {n:nat | n + 27700 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 28600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28600] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 29100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29100] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

@@ -49,7 +49,8 @@
 (* Pointer events for the gestures package, on node_id (a stable root:
    an element a DOM diff does not replace): down, move, up and cancel
    (moves only for a pointer down; a mouse only while its primary button
-   is held, and captured to the root), a cancel of all on
+   is held, and captured to the root once it has moved 4 px, so a plain
+   click keeps its own target), a cancel of all on
    visibilitychange, window blur or a lost capture, a region's rendered
    offset on a down while its transition is in flight, and scrollend,
    transitionend and transitioncancel of a region (an element with
