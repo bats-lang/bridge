@@ -162,7 +162,10 @@ implement produce_service_worker (b, wasm_name) = let
      what was fetched is kept for when there is no network *)
   val () = $B.bput(b, "self.addEventListener('fetch', e => {\n")
   val () = $B.bput(b, "  const r = e.request;\n")
-  val () = $B.bput(b, "  if (r.method !== 'GET' || new URL(r.url).origin !== self.location.origin) return;\n")
+  (* A file the host hands over (Capacitor's /_capacitor_file_ URLs) is
+     the host's to serve, and is not kept *)
+  val () = $B.bput(b, "  const u = new URL(r.url);\n")
+  val () = $B.bput(b, "  if (r.method !== 'GET' || u.origin !== self.location.origin || u.pathname.startsWith('/_capacitor_')) return;\n")
   val () = $B.bput(b, "  e.respondWith(fetch(r).then(res => {\n")
   val () = $B.bput(b, "    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }\n")
   val () = $B.bput(b, "    return res;\n")
