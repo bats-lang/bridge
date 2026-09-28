@@ -83,8 +83,12 @@ end (* #target wasm *)
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 52600] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
-#pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 1000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1000] $B.builder(m),
+(* The service worker: the shell is cached when it is installed, and
+   every same-origin GET goes to the network first (so a new build is
+   used as soon as it is served), its response kept in the cache for
+   when there is no network *)
+#pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 1400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1400] $B.builder(m),
    wasm_name: string nw): void
 
 implement produce_bridge(b) = emit_js_all(b)
@@ -128,7 +132,14 @@ implement produce_service_worker (b, wasm_name) = let
   val () = $B.bput(b, "    ).then(() => self.clients.claim())\n")
   val () = $B.bput(b, "  );\n")
   val () = $B.bput(b, "});\n\n")
+  (* Network first, so a new build is taken as soon as it is served;
+     what was fetched is kept for when there is no network *)
   val () = $B.bput(b, "self.addEventListener('fetch', e => {\n")
-  val () = $B.bput(b, "  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));\n")
+  val () = $B.bput(b, "  const r = e.request;\n")
+  val () = $B.bput(b, "  if (r.method !== 'GET' || new URL(r.url).origin !== self.location.origin) return;\n")
+  val () = $B.bput(b, "  e.respondWith(fetch(r).then(res => {\n")
+  val () = $B.bput(b, "    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }\n")
+  val () = $B.bput(b, "    return res;\n")
+  val () = $B.bput(b, "  }).catch(() => caches.match(r).then(m => m || caches.match('./'))));\n")
   val () = $B.bput(b, "});\n")
 in end
