@@ -39,6 +39,11 @@ staload "./decompress.bats"
 
 (* The node's text content as a blob; none when there is no such node
    or its text is empty *)
+(* The id of the element at viewport point (x, y), or of its nearest
+   ancestor that has one; none when there is none *)
+#pub fun element_at_point
+  (x: int, y: int): $R.option([k:nat] dblob(k))
+
 #pub fun read_text_content
   {li:agz}{ni:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni)
@@ -82,6 +87,7 @@ extern int bats_js_caret_position_from_point(int, int);
 extern int bats_js_read_text_content(void*, int);
 extern int bats_js_measure_text_offset(void*, int, int);
 extern int bats_js_get_selection_text(void);
+extern int bats_js_element_at_point(int, int);
 extern void bats_js_get_selection_rect(void);
 extern void bats_js_get_selection_range(void);
 extern int bats_js_read_input_value(void*, int);
@@ -96,6 +102,8 @@ extern fun _bats_js_read_text_content
   (id: ptr, id_len: int): [v:int] int v = "mac#bats_js_read_text_content"
 extern fun _bats_js_measure_text_offset
   (id: ptr, id_len: int, offset: int): int = "mac#bats_js_measure_text_offset"
+extern fun _bats_js_element_at_point
+  (x: int, y: int): [v:int] int v = "mac#bats_js_element_at_point"
 extern fun _bats_js_get_selection_text
   (): [v:int] int v = "mac#bats_js_get_selection_text"
 extern fun _bats_js_get_selection_rect
@@ -130,6 +138,9 @@ implement query_selector{lb}{n}(sel, sel_len) =
 
 implement caret_position_from_point(x, y) =
   _bats_js_caret_position_from_point(x, y)
+
+implement element_at_point(x, y) =
+  blob_claim(_bats_js_element_at_point(x, y))
 
 implement read_text_content{li}{ni}(node_id, id_len) =
   blob_claim(_bats_js_read_text_content(
