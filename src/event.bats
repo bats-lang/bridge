@@ -46,6 +46,22 @@
   (listener_id: listener_id,
    callback: (event_payload) -<cloref1> int): void
 
+(* Pointer events for the gestures package, on node_id (a stable root:
+   an element a DOM diff does not replace): down, move, up and cancel
+   (moves only for a pointer down; a mouse only while its primary button
+   is held, and captured to the root), a cancel of all on
+   visibilitychange, window blur or a lost capture, a region's rendered
+   offset on a down while its transition is in flight, and scrollend,
+   transitionend and transitioncancel of a region (an element with
+   data-gesture-region). They are batched and passed once per animation
+   frame, with a tick each frame while a pointer is down, as one blob of
+   32-byte records (gestures' decode.bats) *)
+#pub fun listen_gestures
+  {li:agz}{ni:pos}
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
+   listener_id: listener_id,
+   callback: (event_payload) -<cloref1> int): void
+
 #pub fun unlisten
   (listener_id: listener_id): void
 
@@ -68,6 +84,7 @@ extern void bats_js_add_document_listener(void*, int, int);
 extern void bats_js_remove_event_listener(int);
 extern void bats_js_add_window_listener(void*, int, int);
 extern void bats_js_listen_external_files(int);
+extern void bats_js_listen_gestures(void*, int, int);
 extern void bats_js_prevent_default(void);
 %}
 extern fun _bats_js_add_event_listener
@@ -79,6 +96,8 @@ extern fun _bats_js_add_document_listener
 extern fun _bats_js_add_window_listener
   (event_type: ptr, type_len: int, listener_id: int)
   : void = "mac#bats_js_add_window_listener"
+extern fun _bats_js_listen_gestures
+  (id: ptr, id_len: int, listener_id: int): void = "mac#bats_js_listen_gestures"
 extern fun _bats_js_listen_external_files
   (listener_id: int): void = "mac#bats_js_listen_external_files"
 extern fun _bats_js_remove_event_listener
@@ -116,6 +135,12 @@ implement listen_external_files(listener_id, callback) = let
   val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
   val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
 in _bats_js_listen_external_files(listener_id) end
+
+implement listen_gestures{li}{ni}(node_id, id_len, listener_id, callback) = let
+  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
+in _bats_js_listen_gestures(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, listener_id) end
 
 implement unlisten(listener_id) = let
   val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, the_null_ptr) end
