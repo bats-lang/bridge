@@ -9,26 +9,32 @@
    Public API
    ============================================================ *)
 
+(* Stores the value under the key: the promise resolves with 0, or -1
+   when the store failed (the database could not be opened, or the
+   transaction aborted, as it does when storage is full) *)
 #pub fun idb_put
   : {lk:agz}{nk:pos}{lv:agz}{nv:nat}
   (!$A.borrow(byte, lk, nk), int nk,
    !$A.borrow(byte, lv, nv), int nv) -> $P.promise_pending(Int)
 
 (* The value stored under the key: the promise resolves with a handle
-   to claim with blob_claim (decompress.bats), 0 when there is none.
-   Each result is its own blob, so concurrent gets cannot overwrite
-   each other's data *)
+   to claim with blob_claim (decompress.bats), 0 when there is none,
+   or -1 when it could not be read (a read that failed is never taken
+   for an absent value, so a caller does not write a default over data
+   it could not see). Each result is its own blob, so concurrent gets
+   cannot overwrite each other's data *)
 #pub fun idb_get
   : {lk:agz}{nk:pos}
   (!$A.borrow(byte, lk, nk), int nk) -> $P.promise_pending(Int)
 
+(* Deletes the key: resolves with 0, or -1 as idb_put's does *)
 #pub fun idb_delete
   : {lk:agz}{nk:pos}
   (!$A.borrow(byte, lk, nk), int nk) -> $P.promise_pending(Int)
 
 (* The keys starting with the prefix, each as a u16le length and its
    bytes: the promise resolves with a blob handle as idb_get's does, 0
-   when there are none *)
+   when there are none, -1 when they could not be read *)
 #pub fun idb_list_keys
   : {lb:agz}{n:nat}
   (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)

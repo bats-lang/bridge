@@ -46,7 +46,7 @@ staload "./decompress.bats"
 
 (* Stores f's bytes in IndexedDB under key, from the JS side (the bytes
    never pass through wasm memory); the promise resolves with 0, or -1
-   when the store failed *)
+   when the store failed (as idb_put's) *)
 #pub fun file_idb_put
   {lk:agz}{nk:pos}{n:nat}
   (key: !$A.borrow(byte, lk, nk), key_len: int nk, f: !infile(n))
@@ -54,7 +54,8 @@ staload "./decompress.bats"
 
 (* The bytes stored under key (by file_idb_put) as a file, from the JS
    side; the promise resolves with a handle to claim with file_claim,
-   which is none when nothing is stored there *)
+   0 when nothing is stored there, or -1 when it could not be read
+   (file_claim of either is none) *)
 #pub fun file_idb_get
   {lk:agz}{nk:pos}
   (key: !$A.borrow(byte, lk, nk), key_len: int nk)
