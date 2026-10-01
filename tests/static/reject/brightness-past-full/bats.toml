@@ -1,0 +1,7 @@
+[package]
+name = "brightness-past-full"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"wasm.bats-packages.dev/bridge" = ""
