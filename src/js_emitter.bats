@@ -760,53 +760,61 @@ fn emit_js_event {n:nat | n + 5040 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_fetch {n:nat | n + 1930 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1930] $B.builder(m)): void = let
+fn emit_js_fetch {n:nat | n + 1672 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1672] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Fetch ---\n")
   val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  // A pending response's status, until its body is claimed\n")
-  val () = $B.bput(b,"  const fetchStatus = new Map();\n")
-  val () = $B.bput(b,"  const fetchEtag = new Map();\n")
-  val () = $B.bput(b,"  function batsJsFetchEtag(handle, outPtr, maxLen) {\n")
-  val () = $B.bput(b,"    const etag = fetchEtag.get(handle);\n")
-  val () = $B.bput(b,"    if (!etag) return 0;\n")
-  val () = $B.bput(b,"    const encoded = new TextEncoder().encode(etag);\n")
-  val () = $B.bput(b,"    if (encoded.length > maxLen) return 0;\n")
-  val () = $B.bput(b,"    new Uint8Array(instance.exports.memory.buffer).set(encoded, outPtr);\n")
-  val () = $B.bput(b,"    return encoded.length;\n")
+  val () = $B.bput(b,"  // A pending response (its status and headers), until its status is taken\n")
+  val () = $B.bput(b,"  const fetchResponses = new Map();\n")
+  val () = $B.bput(b,"  function batsJsFetchStatus(h) {\n")
+  val () = $B.bput(b,"    const r = fetchResponses.get(h);\n")
+  val () = $B.bput(b,"    fetchResponses.delete(h);\n")
+  val () = $B.bput(b,"    return r ? r.status : 0;\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsFetchStatus(handle) {\n")
-  val () = $B.bput(b,"    const status = fetchStatus.get(handle);\n")
-  val () = $B.bput(b,"    fetchStatus.delete(handle);\n")
-  val () = $B.bput(b,"    fetchEtag.delete(handle);\n")
-  val () = $B.bput(b,"    return status === undefined ? 0 : status;\n")
+  (* 0 when the header is absent, longer than the buffer, not exposed
+     by CORS, or its name is not a valid one *)
+  val () = $B.bput(b,"  function batsJsFetchHeader(h, p, l, o, m) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const s = fetchResponses.get(h).headers.get(readString(p, l)) || '';\n")
+  val () = $B.bput(b,"      return new TextEncoder().encode(s).length > m ? 0 : writeStringToWasm(s, o, m);\n")
+  val () = $B.bput(b,"    } catch (e) { return 0; }\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsFetch(urlPtr, urlLen, resolverId) {\n")
-  val () = $B.bput(b,"    const url = readString(urlPtr, urlLen);\n")
-  val () = $B.bput(b,"    fetchDeliver(fetch(url), resolverId);\n")
+  (* The caller reads its arguments at once; a throw of fetch, even a
+     synchronous one, resolves 0 *)
+  val () = $B.bput(b,"  async function fetchDeliver(url, init, i) {\n")
+  val () = $B.bput(b,"    let h = 0;\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const r = await fetch(url, init);\n")
+  val () = $B.bput(b,"      h = pendBlob(new Uint8Array(await r.arrayBuffer()));\n")
+  val () = $B.bput(b,"      fetchResponses.set(h, r);\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    instance.exports.bats_on_fetch_complete(i, h);\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function fetchDeliver(request, resolverId) {\n")
-  val () = $B.bput(b,"    request.then(async (response) => {\n")
-  val () = $B.bput(b,"      const body = new Uint8Array(await response.arrayBuffer());\n")
-  val () = $B.bput(b,"      const handle = pendBlob(body);\n")
-  val () = $B.bput(b,"      fetchStatus.set(handle, response.status);\n")
-  val () = $B.bput(b,"      const etag = response.headers.get('ETag');\n")
-  val () = $B.bput(b,"      if (etag) fetchEtag.set(handle, etag);\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_fetch_complete(resolverId, handle);\n")
-  val () = $B.bput(b,"    }).catch(() => {\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_fetch_complete(resolverId, 0);\n")
-  val () = $B.bput(b,"    });\n")
+  val () = $B.bput(b,"  function batsJsFetch(p, l, i) {\n")
+  val () = $B.bput(b,"    fetchDeliver(readString(p, l), {}, i);\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsFetchSend(methodPtr, methodLen, urlPtr, urlLen, authPtr, authLen, matchPtr, matchLen, bodyPtr, bodyLen, resolverId) {\n")
-  val () = $B.bput(b,"    const init = { method: readString(methodPtr, methodLen), headers: {}, cache: 'no-store' };\n")
-  val () = $B.bput(b,"    if (authLen > 0) init.headers['Authorization'] = readString(authPtr, authLen);\n")
-  val () = $B.bput(b,"    if (matchLen > 0) init.headers['If-Match'] = readString(matchPtr, matchLen);\n")
-  val () = $B.bput(b,"    if (bodyLen > 0) init.body = readBytes(bodyPtr, bodyLen);\n")
-  val () = $B.bput(b,"    let request;\n")
-  val () = $B.bput(b,"    try { request = fetch(readString(urlPtr, urlLen), init); }\n")
-  val () = $B.bput(b,"    catch (e) { request = Promise.reject(e); }\n")
-  val () = $B.bput(b,"    fetchDeliver(request, resolverId);\n")
+  (* Headers are [name, value] pairs; the body is left out when empty *)
+  val () = $B.bput(b,"  function fetchSend(mp, ml, up, ul, h, bp, bl, i) {\n")
+  val () = $B.bput(b,"    fetchDeliver(readString(up, ul), { method: readString(mp, ml), headers: h,\n")
+  val () = $B.bput(b,"      body: bl > 0 ? readBytes(bp, bl) : null, cache: 'no-store' }, i);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsFetchSend(mp, ml, up, ul, ap, al, tp, tl, bp, bl, i) {\n")
+  val () = $B.bput(b,"    const h = [];\n")
+  val () = $B.bput(b,"    if (al > 0) h.push(['Authorization', readString(ap, al)]);\n")
+  val () = $B.bput(b,"    if (tl > 0) h.push(['If-Match', readString(tp, tl)]);\n")
+  val () = $B.bput(b,"    fetchSend(mp, ml, up, ul, h, bp, bl, i);\n")
+  val () = $B.bput(b,"  }\n")
+  (* Header lines, split at a newline (the template literal holds one),
+     then at their first colon, each side trimmed; a line with no name
+     is skipped *)
+  val () = $B.bput(b,"  function batsJsFetchRequest(mp, ml, up, ul, hp, hl, bp, bl, i) {\n")
+  val () = $B.bput(b,"    const h = [];\n")
+  val () = $B.bput(b,"    for (const s of readString(hp, hl).split(`\n`)) {\n")
+  val () = $B.bput(b,"      const c = s.indexOf(':'), n = s.slice(0, c).trim();\n")
+  val () = $B.bput(b,"      if (c > 0 && n) h.push([n, s.slice(c + 1).trim()]);\n")
+  val () = $B.bput(b,"    }\n")
+  val () = $B.bput(b,"    fetchSend(mp, ml, up, ul, h, bp, bl, i);\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -1489,8 +1497,8 @@ fn emit_js_extra {n:nat | n + 4370 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 4590 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4590] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 4649 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4649] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1537,7 +1545,8 @@ fn emit_js_imports {n:nat | n + 4590 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_fetch: batsJsFetch,\n")
   val () = $B.bput(b,"      bats_js_fetch_status: batsJsFetchStatus,\n")
   val () = $B.bput(b,"      bats_js_fetch_send: batsJsFetchSend,\n")
-  val () = $B.bput(b,"      bats_js_fetch_etag: batsJsFetchEtag,\n")
+  val () = $B.bput(b,"      bats_js_fetch_header: batsJsFetchHeader,\n")
+  val () = $B.bput(b,"      bats_js_fetch_request: batsJsFetchRequest,\n")
   val () = $B.bput(b,"      // Clipboard\n")
   val () = $B.bput(b,"      bats_js_clipboard_write_text: batsJsClipboardWriteText,\n")
   val () = $B.bput(b,"      bats_js_clipboard_read_text: batsJsClipboardReadText,\n")
@@ -1654,8 +1663,8 @@ fn _emit_3 {n:nat | n + 5780 <= $B.BUILDER_CAP}
   val () = emit_js_dom_read(b)
 in end
 
-fn _emit_4 {n:nat | n + 6970 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6970] $B.builder(m)): void = let
+fn _emit_4 {n:nat | n + 6712 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6712] $B.builder(m)): void = let
   val () = emit_js_event(b)
   val () = emit_js_fetch(b)
 in end
@@ -1690,22 +1699,22 @@ fn _emit_10 {n:nat | n + 8850 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_9 {n:nat | n + 5290 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5290] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 5349 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5349] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 28480 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28480] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 28222 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28222] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 29000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29000] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 29059 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29059] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
