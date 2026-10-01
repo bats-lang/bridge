@@ -9,8 +9,8 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 57600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 57600] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 61440 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61440] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -1497,8 +1497,8 @@ fn emit_js_extra {n:nat | n + 4370 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 4649 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4649] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 4903 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4903] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1506,6 +1506,11 @@ fn emit_js_imports {n:nat | n + 4649 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_set_image_src: batsJsSetImageSrc,\n")
   val () = $B.bput(b,"      bats_set_timer: batsSetTimer,\n")
   val () = $B.bput(b,"      bats_js_epoch_minutes: batsJsEpochMinutes,\n")
+  (* Date.now() as its high and low parts, written to the two ints at p
+     (t, a parameter wasm never passes, is the one reading of the clock;
+     Int32Array truncates the quotient); then n random bytes at p *)
+  val () = $B.bput(b,"      bats_js_epoch_millis: (p, t = Date.now()) => new Int32Array(instance.exports.memory.buffer, p, 2).set([t / 1073741824, t % 1073741824]),\n")
+  val () = $B.bput(b,"      bats_js_random_bytes: (p, n) => crypto.getRandomValues(new Uint8Array(instance.exports.memory.buffer, p, n)),\n")
   val () = $B.bput(b,"      bats_exit: () => { resolveDone(); },\n")
   val () = $B.bput(b,"      // IDB\n")
   val () = $B.bput(b,"      bats_idb_js_put: batsIdbPut,\n")
@@ -1699,8 +1704,8 @@ fn _emit_10 {n:nat | n + 8850 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_9 {n:nat | n + 5349 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5349] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 5603 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5603] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_loadwasm_close(b)
 in end
@@ -1713,8 +1718,8 @@ fn _emit_first_half {n:nat | n + 28222 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 29059 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29059] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 29313 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29313] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
