@@ -16,8 +16,8 @@
    Per-concept JS emitters
    ============================================================ *)
 
-fn emit_js_header {n:nat | n + 600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 600] $B.builder(m)): void = let
+fn emit_js_header {n:nat | n + 460 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 460] $B.builder(m)): void = let
   val () = $B.bput(b,"// bats_bridge.mjs — Bridge between bats WASM and a DOM document\n")
   val () = $B.bput(b,"// Parses the bats binary diff protocol and applies it to a standard DOM.\n")
   val () = $B.bput(b,"// Works in any ES module environment (browser or Node.js).\n")
@@ -32,8 +32,8 @@ fn emit_js_header {n:nat | n + 600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"}\n")
 in end
 
-fn emit_js_loadwasm_open {n:nat | n + 1400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1400] $B.builder(m)): void = let
+fn emit_js_loadwasm_open {n:nat | n + 1250 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1250] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"/**\n")
   val () = $B.bput(b," * Load a bats WASM module and connect it to a DOM document.\n")
@@ -72,8 +72,8 @@ fn emit_js_loadwasm_open {n:nat | n + 1400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom {n:nat | n + 9100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9100] $B.builder(m)): void = let
+fn emit_js_dom {n:nat | n + 8970 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8970] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM helpers ---\n")
   val () = $B.bput(b,"\n")
@@ -283,8 +283,8 @@ fn emit_js_dom {n:nat | n + 9100 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_timer {n:nat | n + 300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 300] $B.builder(m)): void = let
+fn emit_js_timer {n:nat | n + 180 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 180] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Timer ---\n")
   val () = $B.bput(b,"\n")
@@ -295,8 +295,8 @@ fn emit_js_timer {n:nat | n + 300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_idb {n:nat | n + 3400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3400] $B.builder(m)): void = let
+fn emit_js_idb {n:nat | n + 3390 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3390] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- IndexedDB ---\n")
   val () = $B.bput(b,"\n")
@@ -388,8 +388,8 @@ fn emit_js_idb {n:nat | n + 3400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_window {n:nat | n + 1500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1500] $B.builder(m)): void = let
+fn emit_js_window {n:nat | n + 1480 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1480] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Window ---\n")
   val () = $B.bput(b,"\n")
@@ -435,8 +435,8 @@ fn emit_js_window {n:nat | n + 1500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_nav {n:nat | n + 1050 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1050] $B.builder(m)): void = let
+fn emit_js_nav {n:nat | n + 1030 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1030] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Navigation ---\n")
   val () = $B.bput(b,"\n")
@@ -476,8 +476,8 @@ fn emit_js_nav {n:nat | n + 1050 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom_read {n:nat | n + 4800 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4800] $B.builder(m)): void = let
+fn emit_js_dom_read {n:nat | n + 4750 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4750] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM read ---\n")
   val () = $B.bput(b,"\n")
@@ -630,8 +630,8 @@ fn emit_js_dom_read {n:nat | n + 4800 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_event {n:nat | n + 5200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5200] $B.builder(m)): void = let
+fn emit_js_event {n:nat | n + 5040 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5040] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Event listener ---\n")
   val () = $B.bput(b,"\n")
@@ -760,8 +760,8 @@ fn emit_js_event {n:nat | n + 5200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_fetch {n:nat | n + 2000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2000] $B.builder(m)): void = let
+fn emit_js_fetch {n:nat | n + 1930 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1930] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Fetch ---\n")
   val () = $B.bput(b,"\n")
@@ -810,8 +810,8 @@ fn emit_js_fetch {n:nat | n + 2000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_clipboard {n:nat | n + 1500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1500] $B.builder(m)): void = let
+fn emit_js_clipboard {n:nat | n + 1380 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1380] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Clipboard ---\n")
   val () = $B.bput(b,"\n")
@@ -853,8 +853,8 @@ fn emit_js_clipboard {n:nat | n + 1500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_file {n:nat | n + 2400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2400] $B.builder(m)): void = let
+fn emit_js_file {n:nat | n + 2700 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2700] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- File ---\n")
   val () = $B.bput(b,"\n")
@@ -910,10 +910,20 @@ fn emit_js_file {n:nat | n + 2400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    fileCache.set(handle, copy);\n")
   val () = $B.bput(b,"    return handle;\n")
   val () = $B.bput(b,"  }\n")
+  (* The Blob is made from a view of the cached bytes: nothing is
+     copied through wasm memory *)
+  val () = $B.bput(b,"  function batsJsFileBlobUrl(handle, fileOffset, len, mimePtr, mimeLen) {\n")
+  val () = $B.bput(b,"    const data = fileCache.get(handle);\n")
+  val () = $B.bput(b,"    if (!data) return 0;\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const blob = new Blob([data.subarray(fileOffset, fileOffset + len)], { type: readString(mimePtr, mimeLen) });\n")
+  val () = $B.bput(b,"      return pendBlob(new TextEncoder().encode(URL.createObjectURL(blob)));\n")
+  val () = $B.bput(b,"    } catch(e) { return 0; }\n")
+  val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_decompress {n:nat | n + 2400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2400] $B.builder(m)): void = let
+fn emit_js_decompress {n:nat | n + 2310 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2310] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Decompress ---\n")
   val () = $B.bput(b,"\n")
@@ -987,8 +997,8 @@ fn emit_js_decompress {n:nat | n + 2400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_notify {n:nat | n + 2200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2200] $B.builder(m)): void = let
+fn emit_js_notify {n:nat | n + 2090 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2090] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Notification/Push ---\n")
   val () = $B.bput(b,"\n")
@@ -1051,8 +1061,8 @@ fn emit_js_notify {n:nat | n + 2200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_xml {n:nat | n + 2900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2900] $B.builder(m)): void = let
+fn emit_js_xml {n:nat | n + 2800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2800] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- HTML parsing ---\n")
   val () = $B.bput(b,"\n")
@@ -1145,8 +1155,8 @@ fn emit_js_xml {n:nat | n + 2900 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_blob {n:nat | n + 1200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1200] $B.builder(m)): void = let
+fn emit_js_blob {n:nat | n + 1050 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1050] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Blob URLs ---\n")
   val () = $B.bput(b,"\n")
@@ -1178,8 +1188,8 @@ fn emit_js_blob {n:nat | n + 1200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_media {n:nat | n + 800 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 800] $B.builder(m)): void = let
+fn emit_js_media {n:nat | n + 660 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 660] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Media queries ---\n")
   val () = $B.bput(b,"\n")
@@ -1203,8 +1213,45 @@ fn emit_js_media {n:nat | n + 800 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_scroll {n:nat | n + 750 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 750] $B.builder(m)): void = let
+(* play() is called at once, inside the caller's user activation; its
+   answer comes back on a later turn, so the promise is never fired
+   while audio_play is still running *)
+fn emit_js_audio {n:nat | n + 1150 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1150] $B.builder(m)): void = let
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // --- Audio ---\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function mediaEl(idPtr, idLen) {\n")
+  val () = $B.bput(b,"    const el = getEl(readIdFromPtr(idPtr, idLen));\n")
+  val () = $B.bput(b,"    return el && typeof el.play === 'function' ? el : null;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsAudioPlay(idPtr, idLen, resolverId) {\n")
+  val () = $B.bput(b,"    const el = mediaEl(idPtr, idLen);\n")
+  val () = $B.bput(b,"    let played;\n")
+  val () = $B.bput(b,"    try { played = el ? el.play() : Promise.reject(null); } catch(e) { played = Promise.reject(e); }\n")
+  val () = $B.bput(b,"    Promise.resolve(played).then(() => 0, e => e && e.name === 'NotAllowedError' ? 1 : 2)\n")
+  val () = $B.bput(b,"      .then(result => instance.exports.bats_on_audio_play(resolverId, result));\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsAudioPause(idPtr, idLen) {\n")
+  val () = $B.bput(b,"    const el = mediaEl(idPtr, idLen);\n")
+  val () = $B.bput(b,"    if (el) el.pause();\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsAudioSeek(idPtr, idLen, ms) {\n")
+  val () = $B.bput(b,"    const el = mediaEl(idPtr, idLen);\n")
+  val () = $B.bput(b,"    if (el) { try { el.currentTime = ms / 1000; } catch(e) {} }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsAudioRate(idPtr, idLen, hundredths) {\n")
+  val () = $B.bput(b,"    const el = mediaEl(idPtr, idLen);\n")
+  val () = $B.bput(b,"    if (el) { el.preservesPitch = true; el.playbackRate = hundredths / 100; }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsAudioTime(idPtr, idLen) {\n")
+  val () = $B.bput(b,"    const el = mediaEl(idPtr, idLen);\n")
+  val () = $B.bput(b,"    return el ? Math.floor(el.currentTime * 1000) : -1;\n")
+  val () = $B.bput(b,"  }\n")
+in end
+
+fn emit_js_scroll {n:nat | n + 720 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 720] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Scroll ---\n")
   val () = $B.bput(b,"\n")
@@ -1234,8 +1281,8 @@ fn emit_js_scroll {n:nat | n + 750 <= $B.BUILDER_CAP}
 in end
 
 
-fn emit_js_gestures {n:nat | n + 4500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4500] $B.builder(m)): void = let
+fn emit_js_gestures {n:nat | n + 4480 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4480] $B.builder(m)): void = let
   val () = $B.bput(b,"  // --- Gestures: pointer events for the gestures package ---\n")
   val () = $B.bput(b,"  // Records of 8 int32 LE: kind, then its fields (gestures' decode.bats).\n")
   val () = $B.bput(b,"  // Batched and delivered once per animation frame (an up or cancel at\n")
@@ -1328,8 +1375,8 @@ fn emit_js_gestures {n:nat | n + 4500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"\n")
 in end
 
-fn emit_js_extra {n:nat | n + 4400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
+fn emit_js_extra {n:nat | n + 4370 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4370] $B.builder(m)): void = let
   val () = $B.bput(b,"  // --- Window listeners, clock, picked, dropped and external files ---\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  let droppedFiles = [];\n")
@@ -1442,8 +1489,8 @@ fn emit_js_extra {n:nat | n + 4400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 4400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 4590 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4590] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1514,6 +1561,7 @@ fn emit_js_imports {n:nat | n + 4400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_file_store: batsJsFileStore,\n")
   val () = $B.bput(b,"      bats_js_file_idb_put: batsJsFileIdbPut,\n")
   val () = $B.bput(b,"      bats_js_file_idb_get: batsJsFileIdbGet,\n")
+  val () = $B.bput(b,"      bats_js_file_blob_url: batsJsFileBlobUrl,\n")
   val () = $B.bput(b,"      // Decompress\n")
   val () = $B.bput(b,"      bats_js_decompress: batsJsDecompress,\n")
   val () = $B.bput(b,"      bats_js_blob_claim: batsJsBlobClaim,\n")
@@ -1533,6 +1581,12 @@ fn emit_js_imports {n:nat | n + 4400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      // Media queries\n")
   val () = $B.bput(b,"      bats_js_match_media: batsJsMatchMedia,\n")
   val () = $B.bput(b,"      bats_js_listen_media: batsJsListenMedia,\n")
+  val () = $B.bput(b,"      // Audio\n")
+  val () = $B.bput(b,"      bats_js_audio_play: batsJsAudioPlay,\n")
+  val () = $B.bput(b,"      bats_js_audio_pause: batsJsAudioPause,\n")
+  val () = $B.bput(b,"      bats_js_audio_seek: batsJsAudioSeek,\n")
+  val () = $B.bput(b,"      bats_js_audio_rate: batsJsAudioRate,\n")
+  val () = $B.bput(b,"      bats_js_audio_time: batsJsAudioTime,\n")
   val () = $B.bput(b,"      // Scroll\n")
   val () = $B.bput(b,"      bats_js_scroll_to: batsJsScrollTo,\n")
   val () = $B.bput(b,"      bats_js_scroll_into_view: batsJsScrollIntoView,\n")
@@ -1548,8 +1602,8 @@ fn emit_js_imports {n:nat | n + 4400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  const imports = { env: envObj };\n")
 in end
 
-fn emit_js_loadwasm_close {n:nat | n + 800 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 800] $B.builder(m)): void = let
+fn emit_js_loadwasm_close {n:nat | n + 700 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 700] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const result = await WebAssembly.instantiate(wasmBytes, imports);\n")
   val () = $B.bput(b,"  instance = result.instance;\n")
@@ -1580,77 +1634,78 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 11100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11100] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 10680 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10680] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_loadwasm_open(b)
   val () = emit_js_dom(b)
 in end
 
-fn _emit_2 {n:nat | n + 5200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5200] $B.builder(m)): void = let
+fn _emit_2 {n:nat | n + 5050 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5050] $B.builder(m)): void = let
   val () = emit_js_timer(b)
   val () = emit_js_idb(b)
   val () = emit_js_window(b)
 in end
 
-fn _emit_3 {n:nat | n + 5850 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5850] $B.builder(m)): void = let
+fn _emit_3 {n:nat | n + 5780 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5780] $B.builder(m)): void = let
   val () = emit_js_nav(b)
   val () = emit_js_dom_read(b)
 in end
 
-fn _emit_4 {n:nat | n + 7200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7200] $B.builder(m)): void = let
+fn _emit_4 {n:nat | n + 6970 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6970] $B.builder(m)): void = let
   val () = emit_js_event(b)
   val () = emit_js_fetch(b)
 in end
 
-fn _emit_5 {n:nat | n + 3900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3900] $B.builder(m)): void = let
+fn _emit_5 {n:nat | n + 4080 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4080] $B.builder(m)): void = let
   val () = emit_js_clipboard(b)
   val () = emit_js_file(b)
 in end
 
-fn _emit_6 {n:nat | n + 4600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4600] $B.builder(m)): void = let
+fn _emit_6 {n:nat | n + 4400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
   val () = emit_js_decompress(b)
   val () = emit_js_notify(b)
 in end
 
-fn _emit_7 {n:nat | n + 4100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4100] $B.builder(m)): void = let
+fn _emit_7 {n:nat | n + 3850 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3850] $B.builder(m)): void = let
   val () = emit_js_xml(b)
   val () = emit_js_blob(b)
 in end
 
-fn _emit_8 {n:nat | n + 1550 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1550] $B.builder(m)): void = let
+fn _emit_8 {n:nat | n + 2530 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2530] $B.builder(m)): void = let
   val () = emit_js_media(b)
+  val () = emit_js_audio(b)
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_10 {n:nat | n + 8900 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8900] $B.builder(m)): void = let
+fn _emit_10 {n:nat | n + 8850 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8850] $B.builder(m)): void = let
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_9 {n:nat | n + 5200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5200] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 5290 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5290] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 29350 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29350] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 28480 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28480] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 28250 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28250] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 29000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29000] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

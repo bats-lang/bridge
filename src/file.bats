@@ -84,6 +84,16 @@ staload "./decompress.bats"
    external file), as a blob; none when it has none *)
 #pub fun file_name {n:nat} (f: !infile(n)): $R.option([k:nat] dblob(k))
 
+(* A blob URL, typed with mime, for the file's bytes
+   [file_offset, file_offset + len), made on the JS side from the bytes
+   it holds (they never pass through wasm memory), as a blob; none when
+   it could not be made. Revoke it with revoke_blob_url. *)
+#pub fun file_blob_url
+  {n:nat}{o,k:nat | o + k <= n; k > 0}{lm:agz}{nm:pos}
+  (f: !infile(n), file_offset: int o, len: int k,
+   mime: !$A.borrow(byte, lm, nm), mime_len: int nm)
+  : $R.option([u:nat] dblob(u))
+
 #pub fun on_file_open
   (resolver_id: int, handle: Int)
   : void = "ext#bats_on_file_open"
@@ -107,6 +117,7 @@ extern void bats_js_file_open_at(void*, int, int, int);
 extern int bats_js_dropped_count(void);
 extern void bats_js_dropped_open_at(int, int);
 extern int bats_js_file_name(int);
+extern int bats_js_file_blob_url(int, int, int, void*, int);
 %}
 extern fun _bats_js_file_open
   (id: ptr, id_len: int, resolver_id: int): void = "mac#bats_js_file_open"
@@ -132,6 +143,9 @@ extern fun _bats_js_dropped_open_at
   (i: int, resolver_id: int): void = "mac#bats_js_dropped_open_at"
 extern fun _bats_js_file_name
   (handle: int): [v:int] int v = "mac#bats_js_file_name"
+extern fun _bats_js_file_blob_url
+  (handle: int, file_offset: int, len: int, mime: ptr, mime_len: int)
+  : [v:int] int v = "mac#bats_js_file_blob_url"
 
 (* The JS handle and the size: flat, no cell to allocate *)
 assume infile(n) = @(int, int n)
@@ -204,6 +218,10 @@ implement dropped_open_at(i) = let
 in p end
 
 implement file_name{n}(f) = blob_claim(_bats_js_file_name(f.0))
+
+implement file_blob_url{n}{o,k}{lm}{nm}(f, file_offset, len, mime, mime_len) =
+  blob_claim(_bats_js_file_blob_url(f.0, file_offset, len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(mime) end, mime_len))
 
 implement on_file_open(resolver_id, handle) =
   $P.fire(resolver_id, handle)
