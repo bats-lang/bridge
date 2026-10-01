@@ -1,0 +1,7 @@
+[package]
+name = "audio-rate-seek"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"wasm.bats-packages.dev/bridge" = ""
