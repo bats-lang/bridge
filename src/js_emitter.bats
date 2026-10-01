@@ -9,8 +9,8 @@
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 57600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 57600] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 61440 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61440] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
