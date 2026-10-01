@@ -39,6 +39,33 @@ staload "./decompress.bats"
    !$A.borrow(byte, match_loc, match_size), int match_len,
    !$A.borrow(byte, body_loc, body_size), int body_len) -> $P.promise_pending(Int)
 
+(* Sends a request: its method, the URL, its headers as a block of
+   "Name: value" lines separated by newlines (any number; an empty line
+   or one with no name is skipped, and each name and value is trimmed)
+   and its body (none when it is empty). The headers and the body may
+   be empty: length 0 inside a buffer. The promise resolves as fetch's
+   does, with a handle to claim with fetch_claim or fetch_claim_tagged,
+   and 0 when the request failed, even at once (a header the browser
+   refuses). The response is not cached. *)
+#pub fun fetch_request
+  : {method_loc:agz}{method_len:pos}{url_loc:agz}{url_len:pos}
+    {headers_loc:agz}{headers_size:nat}{headers_len:nat | headers_len <= headers_size}
+    {body_loc:agz}{body_size:nat}{body_len:nat | body_len <= body_size}
+  (!$A.borrow(byte, method_loc, method_len), int method_len,
+   !$A.borrow(byte, url_loc, url_len), int url_len,
+   !$A.borrow(byte, headers_loc, headers_size), int headers_len,
+   !$A.borrow(byte, body_loc, body_size), int body_len) -> $P.promise_pending(Int)
+
+(* The named header of a pending response (one a fetch promise resolved
+   with, not yet claimed) written to out: its length, at most out_size,
+   and 0 when the response has no such header, it is longer, or the
+   server does not let the page read it (CORS) *)
+#pub fun fetch_header
+  {name_loc:agz}{name_len:pos}{out_loc:agz}{out_size:pos}
+  (handle: Int, name: !$A.borrow(byte, name_loc, name_len), name_len: int name_len,
+   out: !$A.arr(byte, out_loc, out_size), out_size: int out_size)
+  : [k:nat | k <= out_size] int k
+
 (* As fetch_claim, with the response's ETag header written to etag:
    its length, at most etag_size, and 0 when the response has none, it
    is longer, or the server does not let the page read it *)
@@ -61,7 +88,12 @@ $UNSAFE begin
 extern void bats_js_fetch(void*, int, int);
 extern int bats_js_fetch_status(int);
 extern void bats_js_fetch_send(void*, int, void*, int, void*, int, void*, int, void*, int, int);
-extern int bats_js_fetch_etag(int, void*, int);
+extern void bats_js_fetch_request(void*, int, void*, int, void*, int, void*, int, int);
+extern int bats_js_fetch_header(int, void*, int, void*, int);
+/* The response's ETag header, as fetch_header reads it */
+static int bats_fetch_etag(int handle, void *out, int out_size) {
+  return bats_js_fetch_header(handle, (void*)"ETag", 4, out, out_size);
+}
 %}
 extern fun _bats_js_fetch
   (url: ptr, url_len: int, resolver_id: int): void = "mac#bats_js_fetch"
@@ -71,8 +103,14 @@ extern fun _bats_js_fetch_send
   (method: ptr, method_len: int, url: ptr, url_len: int,
    authorization: ptr, authorization_len: int, match: ptr, match_len: int,
    body: ptr, body_len: int, resolver_id: int): void = "mac#bats_js_fetch_send"
-extern fun _bats_js_fetch_etag
-  (handle: int, etag: ptr, etag_size: int): int = "mac#bats_js_fetch_etag"
+extern fun _bats_js_fetch_request
+  (method: ptr, method_len: int, url: ptr, url_len: int,
+   headers: ptr, headers_len: int, body: ptr, body_len: int,
+   resolver_id: int): void = "mac#bats_js_fetch_request"
+extern fun _bats_js_fetch_header
+  (handle: int, name: ptr, name_len: int, out: ptr, out_size: int): int = "mac#bats_js_fetch_header"
+extern fun _bats_fetch_etag
+  (handle: int, etag: ptr, etag_size: int): int = "mac#bats_fetch_etag"
 end
 
 implement fetch{lb}{n}(url, url_len) = let
@@ -111,7 +149,7 @@ in p end
 implement fetch_claim_tagged{etag_loc}{etag_size}(handle, etag, etag_size) = let
   (* The ETag and the status are taken first: JS drops them when the
      body is claimed *)
-  val etag_written = _bats_js_fetch_etag(handle,
+  val etag_written = _bats_fetch_etag(handle,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(etag) end, etag_size)
   val etag_len = g1ofg0(etag_written)
   val status = _bats_js_fetch_status(handle)
@@ -122,6 +160,30 @@ in
     if etag_len < 0 then $R.some(@(status, 0, b))
     else if etag_len > etag_size then $R.some(@(status, 0, b))
     else $R.some(@(status, etag_len, b))
+end
+
+implement fetch_request{method_loc}{method_len}{url_loc}{url_len}
+  {headers_loc}{headers_size}{headers_len}{body_loc}{body_size}{body_len}
+  (method, method_len, url, url_len, headers, headers_len, body, body_len) = let
+  val @(p, r) = $P.create<Int>()
+  val id = $P.stash(r)
+  val () = _bats_js_fetch_request(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(method) end, method_len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end, url_len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(headers) end, headers_len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(body) end, body_len,
+    id)
+in p end
+
+implement fetch_header{name_loc}{name_len}{out_loc}{out_size}
+  (handle, name, name_len, out, out_size) = let
+  val written = g1ofg0(_bats_js_fetch_header(handle,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(name) end, name_len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end, out_size))
+in
+  if written < 0 then 0
+  else if written > out_size then 0
+  else written
 end
 
 implement on_fetch_complete(resolver_id, handle) =

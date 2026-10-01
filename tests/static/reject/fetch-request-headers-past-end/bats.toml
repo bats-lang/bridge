@@ -1,0 +1,9 @@
+[package]
+name = "fetch-request-headers-past-end"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
