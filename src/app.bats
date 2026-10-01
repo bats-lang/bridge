@@ -9,6 +9,18 @@ staload "./event.bats"
    Public API
    ============================================================ *)
 
+(* How the offer to install ended. JS's answer is decoded here, once: a
+   code it should not send is InstallUnavailable. *)
+#pub datatype install_outcome =
+  | InstallAccepted     (* the user installed the app *)
+  | InstallDismissed    (* the user said no *)
+  | InstallUnavailable  (* there was no offer, or showing it failed *)
+
+(* The offer's coming and going, as listen_install_prompt passes it *)
+#pub datatype install_offer =
+  | InstallOffered    (* there is an offer now *)
+  | InstallWithdrawn  (* it was used, or the app was installed *)
+
 (* Whether the page runs in the native app (Capacitor's
    isNativePlatform()), not in a browser *)
 #pub fun is_native_platform(): bool
@@ -25,18 +37,17 @@ staload "./event.bats"
 #pub fun install_prompt_available(): bool
 
 (* Shows the browser's offer to install the app; call it from a click's
-   listener. The offer is used up. The promise resolves with 1 when the
-   user accepted, 0 when they dismissed it, 2 when there was no offer
-   (unavailable) or it failed. *)
-#pub fun install_prompt(): $P.promise_pending(Int)
+   listener. The offer is used up. The promise resolves with how it
+   ended. *)
+#pub fun install_prompt(): $P.promise(install_outcome, $P.Chained)
 
-(* A listener for the offer's coming and going (browser only): its
-   payload is one byte, 1 when there is an offer now, 0 when it was used
-   or the app was installed. An offer made before the listener is set is
-   not passed to it: ask install_prompt_available. *)
+(* A listener for the offer's coming and going (browser only), passed
+   whether there is an offer now (install_prompt_available, read as the
+   event comes). An offer made before the listener is set is not passed
+   to it: ask install_prompt_available. *)
 #pub fun listen_install_prompt
   (listener_id: listener_id,
-   callback: (event_payload) -<cloref1> int): void
+   callback: (install_offer) -<cloref1> void): void
 
 (* ============================================================
    WASM implementation
@@ -70,14 +81,27 @@ implement is_ios_browser() = _bats_js_is_ios_browser() > 0
 
 implement install_prompt_available() = _bats_js_install_prompt_available() > 0
 
+(* JS's codes: 1 accepted, 0 dismissed, 2 no offer or failed *)
+fn _install_outcome (code: Int): install_outcome =
+  if code = 1 then InstallAccepted()
+  else if code = 0 then InstallDismissed()
+  else InstallUnavailable()
+
 implement install_prompt() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_install_prompt(id)
-in p end
+in $P.and_then<Int><install_outcome>(p, lam (code) =>
+  $P.ret<install_outcome>(_install_outcome(code))) end
 
+(* The event carries no payload: whether there is an offer is read as it
+   comes, so there is nothing to decode that could be wrong *)
 implement listen_install_prompt(listener_id, callback) = let
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val decode = lam (_: event_payload): int =<cloref1> let
+    val () = callback(if install_prompt_available()
+      then InstallOffered() else InstallWithdrawn())
+  in 0 end
+  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
   val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
 in _bats_js_listen_install_prompt(listener_id) end
 

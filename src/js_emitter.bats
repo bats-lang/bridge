@@ -1686,8 +1686,8 @@ fn emit_js_early {n:nat | n + 1310 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"};\n")
 in end
 
-fn emit_js_screen {n:nat | n + 4070 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4070] $B.builder(m)): void = let
+fn emit_js_screen {n:nat | n + 4140 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4140] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Platform: the browser's APIs, or the app's (Capacitor) plugins ---\n")
   val () = $B.bput(b,"  function capNative() {\n")
@@ -1727,7 +1727,8 @@ fn emit_js_screen {n:nat | n + 4070 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function batsJsFullscreenActive() {\n")
   val () = $B.bput(b,"    return (capPlugin('StatusBar') ? fsApp : !!document.fullscreenElement) ? 1 : 0;\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function fsFire() { fireBytes(fsListener, new Uint8Array([batsJsFullscreenActive()])); }\n")
+  val () = $B.bput(b,"  // No payload: bridge reads the state as the event comes\n")
+  val () = $B.bput(b,"  function fsFire() { if (fsListener >= 0) instance.exports.bats_on_event(fsListener, 0); }\n")
   val () = $B.bput(b,"  document.addEventListener('fullscreenchange', fsFire);\n")
   val () = $B.bput(b,"  function batsJsFullscreenSet(on) {\n")
   val () = $B.bput(b,"    const s = capPlugin('StatusBar'), n = capPlugin('NavigationBar');\n")
@@ -1828,7 +1829,7 @@ fn emit_js_share {n:nat | n + 3910 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Installing (a browser's offer, kept from the start: batsInstall)\n")
   val () = $B.bput(b,"  let installListener = -1;\n")
-  val () = $B.bput(b,"  batsInstall.changed = () => fireBytes(installListener, new Uint8Array([batsInstall.offer ? 1 : 0]));\n")
+  val () = $B.bput(b,"  batsInstall.changed = () => { if (installListener >= 0) instance.exports.bats_on_event(installListener, 0); };\n")
   val () = $B.bput(b,"  function batsJsInstallPrompt(id) {\n")
   val () = $B.bput(b,"    const o = batsInstall.offer;\n")
   val () = $B.bput(b,"    if (!o) return settle(id, 2);\n")
@@ -1856,8 +1857,8 @@ fn emit_js_share {n:nat | n + 3910 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_speech {n:nat | n + 3520 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3520] $B.builder(m)): void = let
+fn emit_js_speech {n:nat | n + 3960 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3960] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Speech (the Web Speech API). Each event is 9 bytes: its kind (0 start,\n")
   val () = $B.bput(b,"  // 1 boundary, 2 end, 3 error, 4 the voices changed), the utterance's\n")
@@ -1874,10 +1875,16 @@ fn emit_js_speech {n:nat | n + 3520 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  if (synth && synth.addEventListener) synth.addEventListener('voiceschanged', () => speechFire(4, 0, 0));\n")
   val () = $B.bput(b,"  function batsJsSpeechAvailable() { return synth && globalThis.SpeechSynthesisUtterance ? 1 : 0; }\n")
+  val () = $B.bput(b,"  // The voices with a name, each a byte (1 the default), and its name's and\n")
+  val () = $B.bput(b,"  // its language's UTF-8 bytes, each after its length (int32 LE)\n")
   val () = $B.bput(b,"  function batsJsSpeechVoices() {\n")
-  val () = $B.bput(b,"    const one = s => String(s || '').replace(/[\\t\\n]/g, ' ');\n")
-  val () = $B.bput(b,"    const t = synth ? synth.getVoices().map(v => one(v.name) + '\\t' + one(v.lang) + '\\t' + (v.default ? 1 : 0) + '\\n').join('') : '';\n")
-  val () = $B.bput(b,"    return t ? pendBlob(utf8.encode(t)) : 0;\n")
+  val () = $B.bput(b,"    if (!batsJsSpeechAvailable()) return 0;\n")
+  val () = $B.bput(b,"    const parts = [];\n")
+  val () = $B.bput(b,"    const put = t => { const u = utf8.encode(String(t || '')), n = new DataView(new ArrayBuffer(4)); n.setInt32(0, u.length, true); parts.push(new Uint8Array(n.buffer), u); };\n")
+  val () = $B.bput(b,"    for (const v of synth.getVoices()) if (v.name) { parts.push(new Uint8Array([v.default ? 1 : 0])); put(v.name); put(v.lang); }\n")
+  val () = $B.bput(b,"    const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));\n")
+  val () = $B.bput(b,"    parts.reduce((at, p) => (out.set(p, at), at + p.length), 0);\n")
+  val () = $B.bput(b,"    return pendBlob(out);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  const speechError = e => /^(canceled|interrupted)$/.test(e) ? 1 : e === 'not-allowed' ? 2 : /^(language|voice)-unavailable$/.test(e) ? 3 : 0;\n")
   val () = $B.bput(b,"  function batsJsSpeechSpeak(tp, tl, lp, ll, vp, vl, rate) {\n")
@@ -2026,8 +2033,8 @@ fn _emit_10 {n:nat | n + 8850 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 11500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11500] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 12010 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12010] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
 in emit_js_speech(b) end
@@ -2047,8 +2054,8 @@ fn _emit_first_half {n:nat | n + 29705 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 42630 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 42630] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 43140 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43140] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

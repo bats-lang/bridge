@@ -9,6 +9,32 @@ staload "./event.bats"
    Public API
    ============================================================ *)
 
+(* Full screen's change, as listen_fullscreen passes it *)
+#pub datatype fullscreen_change =
+  | FullscreenEntered
+  | FullscreenLeft
+
+(* How a rotation lock ended. JS's answer is decoded here, once:
+   anything but its yes is LockRefused. *)
+#pub datatype lock_outcome =
+  | Locked       (* the rotation is locked to the one the screen has *)
+  | LockRefused  (* refused, or it cannot be locked here *)
+
+(* The screen's brightness, as brightness_get reads it. JS's answer is
+   decoded here, once: anything outside 0 to 100 that is not the
+   system's own is BrightnessUnreadable. *)
+#pub datatype brightness_reading =
+  | Brightness of [n:nat | n <= 100] int n  (* percent *)
+  | SystemBrightness      (* the app leaves it to the system *)
+  | BrightnessUnreadable  (* it cannot be read here (not the app) *)
+
+(* A brightness to set: a level in percent, or the system's own. Linear,
+   so the one brightness_set takes is freed there (there is no garbage
+   collector). *)
+#pub datavtype brightness_setting =
+  | Level of [n:nat | n <= 100] int n
+  | FollowSystem
+
 (* Whether full screen can be had here. Browser: the Fullscreen API
    (document.fullscreenEnabled). App (Capacitor): the StatusBar plugin,
    which hides the status bar (and the NavigationBar plugin, when the app
@@ -28,13 +54,14 @@ staload "./event.bats"
    fullscreenElement; app: the bars hidden by fullscreen_enter) *)
 #pub fun fullscreen_active(): bool
 
-(* A listener for full screen's changes, browser and app: its payload is
-   one byte, 1 in full screen and 0 out of it. Browser: each
-   fullscreenchange (Escape leaves full screen too). App: once
-   fullscreen_enter or fullscreen_exit has hidden or shown the bars. *)
+(* A listener for full screen's changes, browser and app, passed whether
+   the page went into full screen or left it (fullscreen_active, read
+   as the event comes). Browser: each fullscreenchange (Escape leaves
+   full screen too). App: once fullscreen_enter or fullscreen_exit has
+   hidden or shown the bars. *)
 #pub fun listen_fullscreen
   (listener_id: listener_id,
-   callback: (event_payload) -<cloref1> int): void
+   callback: (fullscreen_change) -<cloref1> void): void
 
 (* Whether the rotation can be locked here and now. Browser:
    screen.orientation.lock, where a browser allows it (the app installed,
@@ -42,9 +69,9 @@ staload "./event.bats"
 #pub fun orientation_available(): bool
 
 (* Locks the rotation to the one the screen has now (browser, where it is
-   allowed; else the app's plugin); the promise resolves with 1 once it
-   is locked, 0 when it was refused or cannot be locked here *)
-#pub fun orientation_lock_current(): $P.promise_pending(Int)
+   allowed; else the app's plugin); the promise resolves once it is
+   locked, or was refused *)
+#pub fun orientation_lock_current(): $P.promise(lock_outcome, $P.Chained)
 
 (* Lets the screen rotate again (browser and app) *)
 #pub fun orientation_unlock(): void
@@ -53,17 +80,13 @@ staload "./event.bats"
    ScreenBrightness plugin); a web page cannot set it *)
 #pub fun brightness_available(): bool
 
-(* The screen's brightness (app only): the promise resolves with 0 to
-   100, -1 when the app leaves it to the system, -2 when it cannot be
-   read (not available) *)
-#pub fun brightness_get(): $P.promise_pending(Int)
+(* The screen's brightness (app only; BrightnessUnreadable elsewhere) *)
+#pub fun brightness_get(): $P.promise(brightness_reading, $P.Chained)
 
-(* Sets the screen's brightness to level percent while the app is shown
-   (app only; nothing elsewhere) *)
-#pub fun brightness_set {level:nat | level <= 100} (level: int level): void
-
-(* Leaves the brightness to the system again (app only) *)
-#pub fun brightness_system(): void
+(* Sets the screen's brightness while the app is shown: a level in
+   percent, or FollowSystem to leave it to the system again (app only;
+   nothing elsewhere) *)
+#pub fun brightness_set (setting: brightness_setting): void
 
 (* ============================================================
    WASM implementation
@@ -114,31 +137,52 @@ implement fullscreen_exit() = _bats_js_fullscreen_set(0)
 
 implement fullscreen_active() = _bats_js_fullscreen_active() > 0
 
+(* The event carries no payload: full screen's state is read as it
+   comes, so there is nothing to decode that could be wrong *)
 implement listen_fullscreen(listener_id, callback) = let
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val decode = lam (_: event_payload): int =<cloref1> let
+    val () = callback(if fullscreen_active()
+      then FullscreenEntered() else FullscreenLeft())
+  in 0 end
+  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
   val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
 in _bats_js_listen_fullscreen(listener_id) end
 
 implement orientation_available() = _bats_js_orientation_available() > 0
 
+(* JS's codes: 1 locked, 0 refused *)
+fn _lock_outcome (code: Int): lock_outcome =
+  if code = 1 then Locked() else LockRefused()
+
 implement orientation_lock_current() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_orientation_lock(id)
-in p end
+in $P.and_then<Int><lock_outcome>(p, lam (code) =>
+  $P.ret<lock_outcome>(_lock_outcome(code))) end
 
 implement orientation_unlock() = _bats_js_orientation_unlock()
 
 implement brightness_available() = _bats_js_brightness_available() > 0
 
+(* JS's codes: 0 to 100 percent, -1 the system's own, -2 unreadable *)
+fn _brightness_reading (code: Int): brightness_reading =
+  if code = ~1 then SystemBrightness()
+  else if code < 0 then BrightnessUnreadable()
+  else if code > 100 then BrightnessUnreadable()
+  else Brightness(code)
+
 implement brightness_get() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_brightness_get(id)
-in p end
+in $P.and_then<Int><brightness_reading>(p, lam (code) =>
+  $P.ret<brightness_reading>(_brightness_reading(code))) end
 
-implement brightness_set{level}(level) = _bats_js_brightness_set(level)
-
-implement brightness_system() = _bats_js_brightness_set(~1)
+(* JS's codes: 0 to 100 percent, -1 the system's own *)
+implement brightness_set(setting) =
+  case+ setting of
+  | ~Level(level) => _bats_js_brightness_set(level)
+  | ~FollowSystem() => _bats_js_brightness_set(~1)
 
 end (* #target wasm *)

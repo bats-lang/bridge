@@ -1,0 +1,7 @@
+[package]
+name = "speech-events"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"wasm.bats-packages.dev/bridge" = ""
