@@ -937,8 +937,8 @@ fn emit_js_file {n:nat | n + 2700 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_decompress {n:nat | n + 2310 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2310] $B.builder(m)): void = let
+fn emit_js_decompress {n:nat | n + 2400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2400] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Decompress ---\n")
   val () = $B.bput(b,"\n")
@@ -969,8 +969,9 @@ fn emit_js_decompress {n:nat | n + 2310 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    const ds = new DecompressionStream(format);\n")
   val () = $B.bput(b,"    const writer = ds.writable.getWriter();\n")
-  val () = $B.bput(b,"    writer.write(compressed);\n")
-  val () = $B.bput(b,"    writer.close();\n")
+  val () = $B.bput(b,"    // damaged data rejects these too; the reader's failure reports it\n")
+  val () = $B.bput(b,"    writer.write(compressed).catch(() => {});\n")
+  val () = $B.bput(b,"    writer.close().catch(() => {});\n")
   val () = $B.bput(b,"    const reader = ds.readable.getReader();\n")
   val () = $B.bput(b,"    const chunks = [];\n")
   val () = $B.bput(b,"    (function pump() {\n")
@@ -1688,8 +1689,8 @@ fn _emit_5 {n:nat | n + 4080 <= $B.BUILDER_CAP}
   val () = emit_js_file(b)
 in end
 
-fn _emit_6 {n:nat | n + 4400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
+fn _emit_6 {n:nat | n + 4490 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4490] $B.builder(m)): void = let
   val () = emit_js_decompress(b)
   val () = emit_js_notify(b)
 in end
@@ -1726,8 +1727,8 @@ fn _emit_first_half {n:nat | n + 28395 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 29370 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29370] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 29460 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29460] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
