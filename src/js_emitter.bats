@@ -760,8 +760,8 @@ fn emit_js_event {n:nat | n + 5040 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_fetch {n:nat | n + 1672 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1672] $B.builder(m)): void = let
+fn emit_js_fetch {n:nat | n + 1845 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1845] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Fetch ---\n")
   val () = $B.bput(b,"\n")
@@ -771,6 +771,13 @@ fn emit_js_fetch {n:nat | n + 1672 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const r = fetchResponses.get(h);\n")
   val () = $B.bput(b,"    fetchResponses.delete(h);\n")
   val () = $B.bput(b,"    return r ? r.status : 0;\n")
+  val () = $B.bput(b,"  }\n")
+  (* The body h as a pending file under a new handle (0 when there is
+     none): the Uint8Array moves, nothing is copied *)
+  val () = $B.bput(b,"  function batsJsFetchFile(h) {\n")
+  val () = $B.bput(b,"    const d = pendingBlobs.get(h), f = d ? nextFileHandle++ : 0;\n")
+  val () = $B.bput(b,"    if (d) { pendingBlobs.delete(h); pendingFiles.set(f, d); }\n")
+  val () = $B.bput(b,"    return f;\n")
   val () = $B.bput(b,"  }\n")
   (* 0 when the header is absent, longer than the buffer, not exposed
      by CORS, or its name is not a valid one *)
@@ -1497,8 +1504,8 @@ fn emit_js_extra {n:nat | n + 4370 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 4649 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4649] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 4687 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4687] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1547,6 +1554,7 @@ fn emit_js_imports {n:nat | n + 4649 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_fetch_send: batsJsFetchSend,\n")
   val () = $B.bput(b,"      bats_js_fetch_header: batsJsFetchHeader,\n")
   val () = $B.bput(b,"      bats_js_fetch_request: batsJsFetchRequest,\n")
+  val () = $B.bput(b,"      bats_js_fetch_file: batsJsFetchFile,\n")
   val () = $B.bput(b,"      // Clipboard\n")
   val () = $B.bput(b,"      bats_js_clipboard_write_text: batsJsClipboardWriteText,\n")
   val () = $B.bput(b,"      bats_js_clipboard_read_text: batsJsClipboardReadText,\n")
@@ -1663,8 +1671,8 @@ fn _emit_3 {n:nat | n + 5780 <= $B.BUILDER_CAP}
   val () = emit_js_dom_read(b)
 in end
 
-fn _emit_4 {n:nat | n + 6712 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6712] $B.builder(m)): void = let
+fn _emit_4 {n:nat | n + 6885 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6885] $B.builder(m)): void = let
   val () = emit_js_event(b)
   val () = emit_js_fetch(b)
 in end
@@ -1699,22 +1707,22 @@ fn _emit_10 {n:nat | n + 8850 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_9 {n:nat | n + 5349 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5349] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 5387 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5387] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 28222 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28222] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 28395 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28395] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 29059 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29059] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 29097 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29097] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

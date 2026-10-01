@@ -2,6 +2,8 @@
 
 #include "share/atspre_staload.hats"
 staload "./decompress.bats"
+(* file.bats does not staload this file, so this is no cycle *)
+staload "./file.bats"
 
 #use array as A
 #use promise as P
@@ -12,7 +14,8 @@ staload "./decompress.bats"
    ============================================================ *)
 
 (* Fetches the URL; the promise resolves with a handle to the response,
-   0 when the request failed, to claim with fetch_claim *)
+   0 when the request failed, to claim with fetch_claim (or
+   fetch_claim_file) *)
 #pub fun fetch
   : {lb:agz}{n:pos}
   (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
@@ -74,6 +77,12 @@ staload "./decompress.bats"
   (handle: Int, etag: !$A.arr(byte, etag_loc, etag_size), etag_size: int etag_size)
   : $R.option(@([s:int] int s, [k:nat | k <= etag_size] int k, [k:nat] dblob(k)))
 
+(* The body of a pending fetch response, as a file held by JS: its bytes
+   never pass through wasm memory. Consumes the response like a claim (the
+   status is taken first); none when the request failed. *)
+#pub fun fetch_claim_file
+  (handle: Int): $R.option(@([s:int] int s, [n:nat] infile(n)))
+
 #pub fun on_fetch_complete
   (resolver_id: int, handle: Int)
   : void = "ext#bats_on_fetch_complete"
@@ -90,6 +99,7 @@ extern int bats_js_fetch_status(int);
 extern void bats_js_fetch_send(void*, int, void*, int, void*, int, void*, int, void*, int, int);
 extern void bats_js_fetch_request(void*, int, void*, int, void*, int, void*, int, int);
 extern int bats_js_fetch_header(int, void*, int, void*, int);
+extern int bats_js_fetch_file(int);
 /* The response's ETag header, as fetch_header reads it */
 static int bats_fetch_etag(int handle, void *out, int out_size) {
   return bats_js_fetch_header(handle, (void*)"ETag", 4, out, out_size);
@@ -109,6 +119,8 @@ extern fun _bats_js_fetch_request
    resolver_id: int): void = "mac#bats_js_fetch_request"
 extern fun _bats_js_fetch_header
   (handle: int, name: ptr, name_len: int, out: ptr, out_size: int): int = "mac#bats_js_fetch_header"
+extern fun _bats_js_fetch_file
+  (handle: int): [v:int] int v = "mac#bats_js_fetch_file"
 extern fun _bats_fetch_etag
   (handle: int, etag: ptr, etag_size: int): int = "mac#bats_fetch_etag"
 end
@@ -184,6 +196,16 @@ in
   if written < 0 then 0
   else if written > out_size then 0
   else written
+end
+
+(* JS moves the body from the pending blobs to the pending files, under a
+   new file handle (0 when there is none), and file_claim checks it *)
+implement fetch_claim_file(handle) = let
+  val status = _bats_js_fetch_status(handle)
+in
+  case+ file_claim(_bats_js_fetch_file(handle)) of
+  | ~$R.none() => $R.none()
+  | ~$R.some(f) => $R.some(@(status, f))
 end
 
 implement on_fetch_complete(resolver_id, handle) =
