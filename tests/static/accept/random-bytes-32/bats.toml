@@ -1,0 +1,8 @@
+[package]
+name = "random-bytes-32"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
