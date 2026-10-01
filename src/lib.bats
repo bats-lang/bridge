@@ -27,6 +27,11 @@ staload "./nav.bats"
 staload "./notify.bats"
 staload "./random.bats"
 staload "./scroll.bats"
+staload "./screen.bats"
+staload "./share.bats"
+staload "./speech.bats"
+staload "./storage.bats"
+staload "./app.bats"
 staload "./timer.bats"
 staload "./window.bats"
 staload "./xml.bats"
@@ -78,19 +83,23 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge {n:nat | n + 61440 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61440] $B.builder(m)): void
+#pub fun produce_bridge {n:nat | n + 81920 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 81920] $B.builder(m)): void
 
-#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 63440 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 63440] $B.builder(m),
+#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 83920 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 83920] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
 (* The service worker: the shell is cached when it is installed, and
    every same-origin GET goes to the network first (so a new build is
    used as soon as it is served), its response kept in the cache for
-   when there is no network *)
-#pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 1400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1400] $B.builder(m),
+   when there is no network. A file shared with the installed app (a
+   manifest's share_target: a multipart POST of the field file to
+   share-target) is kept in the cache bats-shared and the app opened at
+   ?shared=, where the bridge hands it to the app as an external file
+   (listen_external_files) *)
+#pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 2600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2600] $B.builder(m),
    wasm_name: string nw): void
 
 implement produce_bridge(b) = emit_js_all(b)
@@ -148,7 +157,8 @@ implement produce_service_worker (b, wasm_name) = let
   val () = $B.bput(b, wasm_name)
   val () = $B.bput(b, "', 'bridge.js', 'manifest.json',\n")
   val () = $B.bput(b, "];\n")
-  val () = $B.bput(b, "const CACHE = 'bats-pwa-' + btoa(SHELL.join(',')).slice(0,8);\n\n")
+  val () = $B.bput(b, "const CACHE = 'bats-pwa-' + btoa(SHELL.join(',')).slice(0,8);\n")
+  val () = $B.bput(b, "const SHARED = 'bats-shared';\n\n")
   val () = $B.bput(b, "self.addEventListener('install', e => {\n")
   val () = $B.bput(b, "  self.skipWaiting();\n")
   val () = $B.bput(b, "  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));\n")
@@ -156,10 +166,27 @@ implement produce_service_worker (b, wasm_name) = let
   val () = $B.bput(b, "self.addEventListener('activate', e => {\n")
   val () = $B.bput(b, "  e.waitUntil(\n")
   val () = $B.bput(b, "    caches.keys().then(keys =>\n")
-  val () = $B.bput(b, "      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))\n")
+  val () = $B.bput(b, "      Promise.all(keys.filter(k => k !== CACHE && k !== SHARED).map(k => caches.delete(k)))\n")
   val () = $B.bput(b, "    ).then(() => self.clients.claim())\n")
   val () = $B.bput(b, "  );\n")
   val () = $B.bput(b, "});\n\n")
+  val () = $B.bput(b, "// A file shared with the installed app (the manifest's share_target, a\n")
+  val () = $B.bput(b, "// POST of its field file to share-target) is kept in the cache\n")
+  val () = $B.bput(b, "// bats-shared, and the app opened at ?shared=, where the bridge hands it\n")
+  val () = $B.bput(b, "// to the app as an external file\n")
+  val () = $B.bput(b, "self.addEventListener('fetch', e => {\n")
+  val () = $B.bput(b, "  const r = e.request;\n")
+  val () = $B.bput(b, "  if (r.method !== 'POST' || !/\\/share-target$/.test(new URL(r.url).pathname)) return;\n")
+  val () = $B.bput(b, "  const at = p => new URL(p, self.registration.scope).href;\n")
+  val () = $B.bput(b, "  e.respondWith((async () => {\n")
+  val () = $B.bput(b, "    const files = (await r.formData()).getAll('file').filter(f => typeof f !== 'string');\n")
+  val () = $B.bput(b, "    const c = await caches.open(SHARED);\n")
+  val () = $B.bput(b, "    await Promise.all(files.map((f, i) => c.put(at('shared/' + i + '/' + encodeURIComponent(f.name)),\n")
+  val () = $B.bput(b, "      new Response(f, { headers: { 'content-type': f.type || 'application/octet-stream' } }))));\n")
+  val () = $B.bput(b, "    return Response.redirect(at('./?shared=' + files.length), 303);\n")
+  val () = $B.bput(b, "  })().catch(() => Response.redirect(at('./'), 303)));\n")
+  val () = $B.bput(b, "});\n")
+  val () = $B.bput(b, "\n")
   (* Network first, so a new build is taken as soon as it is served;
      what was fetched is kept for when there is no network *)
   val () = $B.bput(b, "self.addEventListener('fetch', e => {\n")

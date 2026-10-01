@@ -38,10 +38,15 @@
    listener_id: listener_id,
    callback: (event_payload) -<cloref1> int): void
 
-(* A listener for files handed to the app from outside it (an Android
-   intent to open or share a file): each file's handle is the payload,
-   to claim with file_claim (file.bats). Files that came before the
-   listener are passed to it as soon as it is set. *)
+(* A listener for files handed to the app from outside it: an Android
+   intent to open or share a file (the native app's
+   batsNative.deliverFile), a file the system opens the installed web
+   app with (a manifest's file_handlers, through launchQueue), or one
+   shared with it (a manifest's share_target, kept by the service
+   worker: produce_service_worker). Each file's handle is the payload,
+   to claim with file_claim (file.bats); file_name gives its name. Files
+   that came before the listener are passed to it as soon as it is
+   set. *)
 #pub fun listen_external_files
   (listener_id: listener_id,
    callback: (event_payload) -<cloref1> int): void

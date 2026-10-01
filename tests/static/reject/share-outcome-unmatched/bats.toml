@@ -1,0 +1,8 @@
+[package]
+name = "share-outcome-unmatched"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"wasm.bats-packages.dev/bridge" = ""

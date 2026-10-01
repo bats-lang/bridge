@@ -19,6 +19,13 @@
    two ints that stay 32-bit. A clock set before 1970 reads as 0. *)
 #pub fun epoch_millis (): @([h:nat] int h, [l:nat | l < 1073741824] int l)
 
+(* UTC's offset from the local time now, in minutes: JS's
+   getTimezoneOffset(), so positive WEST of UTC (300 in New York in
+   winter, -60 in Paris in winter, -540 in Tokyo). The local time is
+   UTC minus it: local minutes = epoch_millis / 60000 - this. JS's word
+   is checked here: one outside UTC+14:00 to UTC-12:00 reads as 0. *)
+#pub fun timezone_offset_minutes (): [v:int | ~840 <= v; v <= 720] int v
+
 #pub fun exit(): void
 
 #pub fun on_timer_fire
@@ -41,6 +48,7 @@ static int bats_epoch_millis_high(void) {
   return bats_epoch_millis_parts[0];
 }
 static int bats_epoch_millis_low(void) { return bats_epoch_millis_parts[1]; }
+extern int bats_js_timezone_offset(void);
 extern void bats_exit(void);
 %}
 extern fun _bats_set_timer
@@ -51,6 +59,8 @@ extern fun _bats_epoch_millis_high
   (): [v:int] int v = "mac#bats_epoch_millis_high"
 extern fun _bats_epoch_millis_low
   (): [v:int] int v = "mac#bats_epoch_millis_low"
+extern fun _bats_js_timezone_offset
+  (): [v:int] int v = "mac#bats_js_timezone_offset"
 extern fun _bats_exit
   (): void = "mac#bats_exit"
 end
@@ -73,6 +83,10 @@ in
   else if low >= 1073741824 then @(0, 0)
   else @(high, low)
 end
+
+implement timezone_offset_minutes() = let
+  val v = _bats_js_timezone_offset()
+in if v < ~840 then 0 else if v > 720 then 0 else v end
 
 implement exit() = _bats_exit()
 
