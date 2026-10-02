@@ -72,8 +72,8 @@ fn emit_js_loadwasm_open {n:nat | n + 1250 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom {n:nat | n + 9470 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9470] $B.builder(m)): void = let
+fn emit_js_dom {n:nat | n + 9870 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9870] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM helpers ---\n")
   val () = $B.bput(b,"\n")
@@ -112,6 +112,15 @@ fn emit_js_dom {n:nat | n + 9470 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    if (refused && !attrRefusedLogged) { attrRefusedLogged = true; console.error('bats: attribute refused: ' + name); }\n")
   val () = $B.bput(b,"    return refused;\n")
   val () = $B.bput(b,"  }\n")
+  (* An element that runs or loads code, or changes how the page is read,
+     is never made (createElement lower-cases the name, so it is compared
+     lower-cased). The dom package's tag type has no constructor for one *)
+  val () = $B.bput(b,"  let tagRefusedLogged = false;\n")
+  val () = $B.bput(b,"  function tagRefused(tag) {\n")
+  val () = $B.bput(b,"    const refused = /^(script|iframe|frame|object|embed|base|link|meta|template|noscript|form)$/.test(tag.toLowerCase());\n")
+  val () = $B.bput(b,"    if (refused && !tagRefusedLogged) { tagRefusedLogged = true; console.error('bats: element refused: ' + tag); }\n")
+  val () = $B.bput(b,"    return refused;\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsDomFlush(bufPtr, len) {\n")
   val () = $B.bput(b,"    const mem = new Uint8Array(instance.exports.memory.buffer);\n")
@@ -128,10 +137,12 @@ fn emit_js_dom {n:nat | n + 9470 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"          const d2 = dataStart + 2 + pid.len;\n")
   val () = $B.bput(b,"          const tagLen = mem[bufPtr + d2];\n")
   val () = $B.bput(b,"          const tag = _dec.decode(mem.slice(bufPtr + d2 + 1, bufPtr + d2 + 1 + tagLen));\n")
-  val () = $B.bput(b,"          const el = document.createElement(tag);\n")
-  val () = $B.bput(b,"          el.id = nid.s;\n")
-  val () = $B.bput(b,"          const parent = getEl(pid.s);\n")
-  val () = $B.bput(b,"          if (parent) parent.appendChild(el);\n")
+  val () = $B.bput(b,"          if (!tagRefused(tag)) {\n")
+  val () = $B.bput(b,"            const el = document.createElement(tag);\n")
+  val () = $B.bput(b,"            el.id = nid.s;\n")
+  val () = $B.bput(b,"            const parent = getEl(pid.s);\n")
+  val () = $B.bput(b,"            if (parent) parent.appendChild(el);\n")
+  val () = $B.bput(b,"          }\n")
   val () = $B.bput(b,"          pos = d2 + 1 + tagLen;\n")
   val () = $B.bput(b,"          break;\n")
   val () = $B.bput(b,"        }\n")
@@ -1988,8 +1999,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 12490 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12490] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 12890 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12890] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_early(b)
   val () = emit_js_loadwasm_open(b)
@@ -2058,8 +2069,8 @@ fn _emit_9 {n:nat | n + 7330 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 30205 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 30205] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 30605 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 30605] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
