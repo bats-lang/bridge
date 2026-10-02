@@ -1,0 +1,6 @@
+wanted: requests 1, releases 0
+hidden: requests 1, releases 0
+shown: requests 2, releases 0
+shown again: requests 2, releases 0
+not wanted: requests 2, releases 1
+shown, not wanted: requests 2, releases 1
