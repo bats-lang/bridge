@@ -11,6 +11,11 @@
 #pub fun timer_set
   : (int) -> $P.promise_pending(Int)
 
+(* Resolves at the next animation frame (requestAnimationFrame), with
+   its time in ms (the gestures source's gestures_frame takes it, made
+   a stamp with gestures_stamp) *)
+#pub fun animation_frame (): $P.promise(Int, $P.Chained)
+
 (* Whole minutes since the Unix epoch, by the host's clock: JS's word, a
    host value for the caller to check (a clock can be set before 1970) *)
 #pub fun epoch_minutes(): [v:int] int v
@@ -50,6 +55,7 @@ static int bats_epoch_millis_high(void) {
 static int bats_epoch_millis_low(void) { return bats_epoch_millis_parts[1]; }
 extern int bats_js_timezone_offset(void);
 extern void bats_exit(void);
+extern void bats_js_animation_frame(int);
 %}
 extern fun _bats_set_timer
   (delay_ms: int, resolver_id: int): void = "mac#bats_set_timer"
@@ -63,6 +69,8 @@ extern fun _bats_js_timezone_offset
   (): [v:int] int v = "mac#bats_js_timezone_offset"
 extern fun _bats_exit
   (): void = "mac#bats_exit"
+extern fun _bats_js_animation_frame
+  (resolver_id: int): void = "mac#bats_js_animation_frame"
 end
 
 implement timer_set(delay_ms) = let
@@ -70,6 +78,12 @@ implement timer_set(delay_ms) = let
   val id = $P.stash(r)
   val () = _bats_set_timer(delay_ms, id)
 in p end
+
+implement animation_frame() = let
+  val @(p, r) = $P.create<Int>()
+  val id = $P.stash(r)
+  val () = _bats_js_animation_frame(id)
+in $P.vow(p) end
 
 implement epoch_minutes() = _bats_js_epoch_minutes()
 
