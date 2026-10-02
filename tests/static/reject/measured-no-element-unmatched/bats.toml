@@ -1,0 +1,9 @@
+[package]
+name = "measured-no-element-unmatched"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

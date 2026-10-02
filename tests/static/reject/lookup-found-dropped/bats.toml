@@ -1,0 +1,9 @@
+[package]
+name = "lookup-found-dropped"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

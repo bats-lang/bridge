@@ -13,10 +13,15 @@
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    x: int, y: int): void
 
+(* How a scroll moves *)
+#pub datatype scroll_behavior =
+  | Smooth
+  | Instant
+
 #pub fun scroll_into_view
   {li:agz}{ni:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
-   smooth: int): void
+   behavior: scroll_behavior): void
 
 #pub fun set_scroll_top
   {li:agz}{ni:pos}
@@ -53,9 +58,11 @@ implement scroll_to{li}{ni}(node_id, id_len, x, y) =
   _bats_js_scroll_to(
     $UNSAFE.castvwtp1{ptr}(node_id), id_len, x, y)
 
-implement scroll_into_view{li}{ni}(node_id, id_len, smooth) =
+(* JS's codes: 1 smooth, 0 instant *)
+implement scroll_into_view{li}{ni}(node_id, id_len, behavior) =
   _bats_js_scroll_into_view(
-    $UNSAFE.castvwtp1{ptr}(node_id), id_len, smooth)
+    $UNSAFE.castvwtp1{ptr}(node_id), id_len,
+    (case+ behavior of Smooth() => 1 | Instant() => 0): int)
 
 implement set_scroll_top{li}{ni}(node_id, id_len, value) =
   _bats_js_set_scroll_top(

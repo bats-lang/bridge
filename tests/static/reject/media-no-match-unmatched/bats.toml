@@ -1,0 +1,9 @@
+[package]
+name = "media-no-match-unmatched"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

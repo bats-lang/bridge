@@ -2,6 +2,7 @@
 
 #include "share/atspre_staload.hats"
 staload "./decompress.bats"
+staload "./idb.bats"
 
 #use array as A
 #use promise as P
@@ -44,22 +45,29 @@ staload "./decompress.bats"
   {l:agz}{n:pos}
   (!$A.borrow(byte, l, n), int n): infile(n)
 
+(* What file_idb_get found. A read that failed is FileUnreadable, never
+   FileAbsent, so a caller cannot take it for a missing file. Linear:
+   FileFound holds a file JS keeps until it is closed, so the one
+   consumer takes it apart with case+ ~ and closes the file; one no
+   consumer takes is closed by promise's dispose. *)
+#pub datavtype file_lookup =
+  | FileFound of ([n:nat] infile(n))
+  | FileAbsent       (* nothing is stored there *)
+  | FileUnreadable   (* it could not be read *)
+
 (* Stores f's bytes in IndexedDB under key, from the JS side (the bytes
-   never pass through wasm memory); the promise resolves with 0, or -1
-   when the store failed (as idb_put's) *)
+   never pass through wasm memory), as idb_put does *)
 #pub fun file_idb_put
   {lk:agz}{nk:pos}{n:nat}
   (key: !$A.borrow(byte, lk, nk), key_len: int nk, f: !infile(n))
-  : $P.promise_pending(Int)
+  : $P.promise(stored, $P.Chained)
 
 (* The bytes stored under key (by file_idb_put) as a file, from the JS
-   side; the promise resolves with a handle to claim with file_claim,
-   0 when nothing is stored there, or -1 when it could not be read
-   (file_claim of either is none) *)
+   side *)
 #pub fun file_idb_get
   {lk:agz}{nk:pos}
   (key: !$A.borrow(byte, lk, nk), key_len: int nk)
-  : $P.promise_pending(Int)
+  : $P.promise(file_lookup, $P.Chained)
 
 (* How many files are picked in the file input with that id (0 when
    there is no such input) *)
@@ -179,20 +187,37 @@ implement file_store{l}{n}(data, len) =
   @(_bats_js_file_store(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end, len), len)
 
+(* JS's codes for a read: a file's handle (positive), 0 nothing there,
+   anything else (its -1) unreadable. A handle JS did not hand out is
+   unreadable too *)
+fn _file_lookup (code: Int): file_lookup =
+  if code = 0 then FileAbsent()
+  else if code < 0 then FileUnreadable()
+  else (case+ file_claim(code) of
+    | ~$R.some(f) => FileFound(f)
+    | ~$R.none() => FileUnreadable())
+
+(* A file nobody took: closed. Before file_idb_get, its first use. *)
+implement $P.dispose<file_lookup>(found) =
+  case+ found of
+  | ~FileFound(f) => file_close(f)
+  | ~FileAbsent() => ()
+  | ~FileUnreadable() => ()
+
 implement file_idb_put{lk}{nk}{n}(key, key_len, f) = let
   val h = f.0
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_file_idb_put(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len, h, id)
-in p end
+in stored_decode(p) end
 
 implement file_idb_get{lk}{nk}(key, key_len) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_file_idb_get(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(key) end, key_len, id)
-in p end
+in $P.and_then<Int><file_lookup>(p, llam (code) => $P.ret<file_lookup>(_file_lookup(code))) end
 
 (* A count from JS, checked here once *)
 fn _count {c:int} (c: int c): [v:nat] int v =
