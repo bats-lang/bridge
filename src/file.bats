@@ -35,11 +35,15 @@ staload "./idb.bats"
   : {li:agz}{ni:pos}
   (!$A.borrow(byte, li, ni), int ni) -> $P.promise(opened, $P.Chained)
 
-(* The file an open promise resolved with, or none when the open failed
-   (handle 0) or the handle is not a file waiting to be claimed (JS
-   hands each file out once): JS's word is checked here, once *)
+(* A file JS holds, by its handle: only bridge's atoms give one. It is
+   not a number an app can write *)
+#pub abst@ype file_handle = int
+
+(* The file a handle names, or none when it names no file waiting to be
+   claimed (JS hands each file out once): JS's word is checked here,
+   once *)
 #pub fun file_claim
-  (handle: Int): $R.option([n:nat] infile(n))
+  (handle: file_handle): $R.option([n:nat] infile(n))
 
 #pub fun file_size {n:nat} (f: !infile(n)): int n
 
@@ -122,6 +126,17 @@ staload "./idb.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
+(* JS's code for a file, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_file (code: int): $R.option([n:nat] infile(n)) =
+  file_claim($UNSAFE begin $UNSAFE.cast{file_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern void bats_js_file_open(void*, int, int);
@@ -168,6 +183,7 @@ extern fun _bats_js_file_blob_url
 
 (* The JS handle and the size: flat, no cell to allocate *)
 assume infile(n) = @(int, int n)
+assume file_handle = [v:int] int v
 end
 
 (* JS's codes for an open: a file's handle (positive), 0 no such file,
@@ -176,7 +192,7 @@ end
 fn _opened (code: Int): opened =
   if code = 0 then NotOpened()
   else if code < 0 then OpenFailed()
-  else (case+ file_claim(code) of
+  else (case+ _claimed_file(code) of
     | ~$R.some(f) => Opened(f)
     | ~$R.none() => OpenFailed())
 
@@ -224,7 +240,7 @@ implement file_store{l}{n}(data, len) =
 fn _file_lookup (code: Int): file_lookup =
   if code = 0 then FileAbsent()
   else if code < 0 then FileUnreadable()
-  else (case+ file_claim(code) of
+  else (case+ _claimed_file(code) of
     | ~$R.some(f) => FileFound(f)
     | ~$R.none() => FileUnreadable())
 
@@ -273,10 +289,10 @@ implement dropped_open_at(i) = let
   val () = _bats_js_dropped_open_at(i, id)
 in _opened_promise(p) end
 
-implement file_name{n}(f) = blob_claim(_bats_js_file_name(f.0))
+implement file_name{n}(f) = _claimed_blob(_bats_js_file_name(f.0))
 
 implement file_blob_url{n}{o,k}{lm}{nm}(f, file_offset, len, mime, mime_len) =
-  blob_claim(_bats_js_file_blob_url(f.0, file_offset, len,
+  _claimed_blob(_bats_js_file_blob_url(f.0, file_offset, len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(mime) end, mime_len))
 
 implement on_file_open(resolver_id, handle) =

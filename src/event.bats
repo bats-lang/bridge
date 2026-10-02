@@ -122,7 +122,7 @@ extern fun _bats_js_prevent_default
 assume event_payload = [v:int] int v
 end
 
-implement event_take(payload) = blob_claim(payload)
+implement event_take(payload) = blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(payload) end)
 
 implement listen{li}{ni}{lb}{n}
   (node_id, id_len, event_type, type_len, listener_id, callback) = let

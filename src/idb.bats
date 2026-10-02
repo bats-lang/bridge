@@ -70,6 +70,12 @@ staload "./decompress.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern void bats_idb_js_put(void*, int, void*, int, int);
@@ -109,7 +115,7 @@ implement $P.dispose<stored>(_) = ()
 fn _lookup (code: Int): lookup =
   if code = 0 then Absent()
   else if code < 0 then Unreadable()
-  else (case+ blob_claim(code) of
+  else (case+ _claimed_blob(code) of
     | ~$R.some(blob) => Found(blob)
     | ~$R.none() => Unreadable())
 

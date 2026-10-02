@@ -5,7 +5,7 @@
 staload BF = "wasm.bats-packages.dev/bridge/src/file.sats"
 
 (* A read must lie inside the file: [1, n + 1) does not *)
-fn f (h: Int): int =
+fn f (h: $BF.file_handle): int =
   case+ $BF.file_claim(h) of
   | ~$R.none() => 0
   | ~$R.some(fl) => let

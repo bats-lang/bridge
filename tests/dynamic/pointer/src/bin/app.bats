@@ -116,7 +116,7 @@ fn on_raw (payload: $EV.event_payload): void =
 
 implement main0 () = let
   val st = gestures_new()
-  val () = gestures_region(st, 1, ~1, AxH(), false, false, DevAll())
+  val () = gestures_region(st, 1, NoRegion(), AxH(), false, false, DevAll())
   val () = give(Held(st, gestures_source_new()))
   val @(frozen, root) = $A.freeze<byte>(bytes("bats-root"))
   val () = $EV.listen_pointer(root, 9, 0, llam (payload) => let val () = on_raw(payload) in 0 end)

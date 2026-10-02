@@ -37,11 +37,15 @@
   (data: !$A.borrow(byte, lb, n), data_len: int n,
    method: compression): $P.promise(decompressed, $P.Chained)
 
-(* The blob of a handle JS passed (an event's payload, say), or none
-   when the handle is not a pending blob: JS's word is checked here,
-   once *)
+(* A blob JS holds, by its handle: only bridge's atoms give one (an
+   event's payload, a response's body, a value read from the page). It
+   is not a number an app can write *)
+#pub abst@ype blob_handle = int
+
+(* The blob a handle names, or none when it names no pending blob (JS
+   had none to give): JS's word is checked here, once *)
 #pub fun blob_claim
-  (handle: Int): $R.option([n:nat] dblob(n))
+  (handle: blob_handle): $R.option([n:nat] dblob(n))
 
 #pub fun blob_len {n:nat} (b: !dblob(n)): int n
 
@@ -81,6 +85,7 @@ extern fun _bats_js_blob_free
 
 datavtype blob_rep(int) = {n:nat} BlobRep(n) of (int, int n)
 assume dblob(n) = blob_rep(n)
+assume blob_handle = [v:int] int v
 end
 
 (* JS's codes for the methods: 0 stored, 1 gzip, 2 deflate, 8 raw deflate *)

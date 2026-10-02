@@ -99,6 +99,17 @@ staload "./file.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
+(* JS's code for a file, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_file (code: int): $R.option([n:nat] infile(n)) =
+  file_claim($UNSAFE begin $UNSAFE.cast{file_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern void bats_js_fetch(void*, int, int);
@@ -158,7 +169,7 @@ fn _fetched (code: Int): fetched =
     val status = _bats_js_fetch_status(code)
   in
     if status < 0 then NoResponse()
-    else (case+ blob_claim(code) of
+    else (case+ _claimed_blob(code) of
       | ~$R.some(body) => Responded(ResponseRep(code, status, body))
       | ~$R.none() => let
           val () = _bats_js_fetch_release(code)
@@ -173,7 +184,7 @@ fn _fetched_file (code: Int): fetched_file =
     val () = _bats_js_fetch_release(code)
   in
     if status < 0 then NoFileResponse()
-    else (case+ file_claim(_bats_js_fetch_file(code)) of
+    else (case+ _claimed_file(_bats_js_fetch_file(code)) of
       | ~$R.some(f) => RespondedFile(status, f)
       | ~$R.none() => NoFileResponse())
   end

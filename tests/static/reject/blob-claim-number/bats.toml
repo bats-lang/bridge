@@ -1,0 +1,8 @@
+[package]
+name = "blob-claim-number"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

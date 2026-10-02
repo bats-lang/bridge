@@ -47,6 +47,12 @@ staload "./decompress.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern void bats_js_clipboard_write_text(void*, int, int);
@@ -81,7 +87,7 @@ in $P.and_then<Int><copied>(p, llam (code) => $P.ret<copied>(_copied(code))) end
 fn _clip (code: Int): clip =
   if code = 0 then ClipEmpty()
   else if code < 0 then ClipRefused()
-  else (case+ blob_claim(code) of
+  else (case+ _claimed_blob(code) of
     | ~$R.some(blob) =>
       if blob_len(blob) > 0 then Clipped(blob)
       else let val () = blob_free(blob) in ClipRefused() end

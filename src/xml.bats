@@ -27,6 +27,12 @@ staload "./decompress.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern int bats_js_parse_html(void*, int);
@@ -35,7 +41,7 @@ extern fun _bats_js_parse_html
   (html: ptr, len: int): [v:int] int v = "mac#bats_js_parse_html"
 
 implement xml_parse{lb}{n}(html, len) =
-  blob_claim(_bats_js_parse_html(
+  _claimed_blob(_bats_js_parse_html(
     $UNSAFE.castvwtp1{ptr}(html),
     len))
 

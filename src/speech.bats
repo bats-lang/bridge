@@ -157,6 +157,12 @@ in loop(s) end
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern void bats_listener_set_decoded(int id, void *decoder, void *inner);
@@ -257,7 +263,7 @@ fun _voices_from {n:nat}{o:nat | o <= n} .<n - o>.
   end
 
 implement speech_voices() =
-  case+ blob_claim(_bats_js_speech_voices()) of
+  case+ _claimed_blob(_bats_js_speech_voices()) of
   | ~$R.none() => $R.none()
   | ~$R.some(b) => let
       val voices = _voices_from(b, blob_len(b), 0)
@@ -358,7 +364,7 @@ implement segment_sentences{lt}{nt}{ll}{nl}{kl}(text, text_len, lang, lang_len) 
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(text) end, text_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(lang) end, lang_len)
 in
-  case+ blob_claim(handle) of
+  case+ _claimed_blob(handle) of
   | ~$R.none() => $R.none()
   | ~$R.some(b) => let
       val n = blob_len(b)

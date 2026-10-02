@@ -5,7 +5,7 @@
 staload BD = "wasm.bats-packages.dev/bridge/src/decompress.sats"
 
 (* A blob is freed once *)
-fn f (h: Int): int =
+fn f (h: $BD.blob_handle): int =
   case+ $BD.blob_claim(h) of
   | ~$R.none() => 0
   | ~$R.some(b) => let

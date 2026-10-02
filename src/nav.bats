@@ -49,6 +49,12 @@ staload "./decompress.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern void bats_popstate_set(void *cb);
@@ -118,7 +124,7 @@ in
   if ptr_isnot_null(cbp) then let
     val () = $UNSAFE begin $extfcall(void, "bats_listener_enter") end
     val cb = $UNSAFE begin $UNSAFE.cast{($R.option([k:nat] dblob(k))) -<cloref1> int}(cbp) end
-    val _ = cb(blob_claim(url))
+    val _ = cb(_claimed_blob(url))
   in $UNSAFE begin $extfcall(void, "bats_listener_leave") end end
   else ()
 end

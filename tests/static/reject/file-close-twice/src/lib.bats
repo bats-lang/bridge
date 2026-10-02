@@ -4,7 +4,7 @@
 staload BF = "wasm.bats-packages.dev/bridge/src/file.sats"
 
 (* A file is closed once: a copy of it cannot outlive the close *)
-fn f (h: Int): int =
+fn f (h: $BF.file_handle): int =
   case+ $BF.file_claim(h) of
   | ~$R.none() => 0
   | ~$R.some(fl) => let

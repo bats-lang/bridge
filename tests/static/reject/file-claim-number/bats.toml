@@ -1,0 +1,8 @@
+[package]
+name = "file-claim-number"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
