@@ -1,0 +1,9 @@
+[package]
+name = "loader-guard"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""
