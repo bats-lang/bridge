@@ -47,11 +47,14 @@ end
 fn _persist_outcome (code: Int): persist_outcome =
   if code = 1 then Persisted() else NotPersisted()
 
+(* An outcome nobody took: nothing to free *)
+implement $P.dispose<persist_outcome>(_) = ()
+
 fn _storage_ask (persist: int): $P.promise(persist_outcome, $P.Chained) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_storage_ask(persist, id)
-in $P.and_then<Int><persist_outcome>(p, lam (code) =>
+in $P.and_then<Int><persist_outcome>(p, llam (code) =>
   $P.ret<persist_outcome>(_persist_outcome(code))) end
 
 implement storage_available() = _bats_js_storage_available() > 0

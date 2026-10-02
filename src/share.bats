@@ -98,13 +98,18 @@ implement share_available() = _bats_js_share_available() > 0
 
 implement share_file_available() = _bats_js_share_file_available() > 0
 
+(* Outcomes nobody took: nothing to free. ATS2 resolves a template's
+   instances in file order, so these come before their first use. *)
+implement $P.dispose<share_outcome>(_) = ()
+implement $P.dispose<file_share_outcome>(_) = ()
+
 implement share_text{lt}{nt}{kt}{lx}{nx}(title, title_len, text, text_len) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_share_text(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(title) end, title_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(text) end, text_len, id)
-in $P.and_then<Int><share_outcome>(p, lam (code) =>
+in $P.and_then<Int><share_outcome>(p, llam (code) =>
   $P.ret<share_outcome>(_share_outcome(code))) end
 
 implement share_file{ln}{nn}{lb}{nb}{lm}{nm}
@@ -115,7 +120,7 @@ implement share_file{ln}{nn}{lb}{nb}{lm}{nm}
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(name) end, name_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(bytes) end, len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(mime) end, mime_len, id)
-in $P.and_then<Int><file_share_outcome>(p, lam (code) =>
+in $P.and_then<Int><file_share_outcome>(p, llam (code) =>
   $P.ret<file_share_outcome>(_file_share_outcome(code))) end
 
 end (* #target wasm *)

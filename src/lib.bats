@@ -56,12 +56,68 @@ int bats_bridge_measure_get(int slot) {
   return 0;
 }
 
-/* Listener table -- max 128 */
+/* Closures let go. A listener is a linear closure (lincloptr1, made
+   with llam), freed as cloptr_free frees one when its slot is set
+   again or unlistened. A listener may be let go while one is running
+   (its own unlisten, inside its callback): then it is only retired,
+   and freed once the outermost listener has returned, so no listener
+   runs on freed memory. */
+static int _bridge_running = 0;
+static void **_bridge_retired = 0;
+static int _bridge_retired_count = 0;
+static int _bridge_retired_cap = 0;
+
+static void _bridge_closure_let_go(void *closure) {
+  if (!closure) return;
+  if (_bridge_running == 0) { atspre_cloptr_free(closure); return; }
+  if (_bridge_retired_count == _bridge_retired_cap) {
+    int cap = _bridge_retired_cap ? 2 * _bridge_retired_cap : 16;
+    void **grown = (void **)malloc(cap * (int)sizeof(void *));
+    if (_bridge_retired_cap) {
+      memcpy(grown, _bridge_retired, _bridge_retired_cap * sizeof(void *));
+      free(_bridge_retired);
+    }
+    _bridge_retired = grown;
+    _bridge_retired_cap = cap;
+  }
+  _bridge_retired[_bridge_retired_count++] = closure;
+}
+
+/* Around each call of a listener: the closures retired while it ran
+   are freed when the outermost one returns */
+void bats_listener_enter(void) { _bridge_running++; }
+
+void bats_listener_leave(void) {
+  int i;
+  _bridge_running--;
+  if (_bridge_running > 0) return;
+  for (i = 0; i < _bridge_retired_count; i++) atspre_cloptr_free(_bridge_retired[i]);
+  _bridge_retired_count = 0;
+}
+
+/* Listener table -- max 128. A slot holds the closure on_event calls
+   and, for a listener bridge decodes for, the caller's closure, which
+   the decoder calls (held here so that it is freed with the slot). */
 #define _BRIDGE_MAX_LISTENERS 128
 static void *_bridge_listener_table[_BRIDGE_MAX_LISTENERS] = {0};
+static void *_bridge_listener_inner[_BRIDGE_MAX_LISTENERS] = {0};
 
+/* Sets slot id to cb (null: empties it), letting go of what it held */
 void bats_listener_set(int id, void *cb) {
-  if (id >= 0 && id < _BRIDGE_MAX_LISTENERS) _bridge_listener_table[id] = cb;
+  if (id >= 0 && id < _BRIDGE_MAX_LISTENERS) {
+    _bridge_closure_let_go(_bridge_listener_table[id]);
+    _bridge_closure_let_go(_bridge_listener_inner[id]);
+    _bridge_listener_table[id] = cb;
+    _bridge_listener_inner[id] = (void*)0;
+  }
+}
+
+/* Sets slot id to a decoder and the caller's closure it calls */
+void bats_listener_set_decoded(int id, void *decoder, void *inner) {
+  if (id >= 0 && id < _BRIDGE_MAX_LISTENERS) {
+    bats_listener_set(id, decoder);
+    _bridge_listener_inner[id] = inner;
+  }
 }
 
 void *bats_listener_get(int id) {
@@ -69,10 +125,14 @@ void *bats_listener_get(int id) {
   return (void*)0;
 }
 
-/* The popstate callback -- one, set by set_popstate_callback */
+/* The popstate callback -- one, set by set_popstate_callback, which
+   lets go of the one before */
 static void *_bridge_popstate_cb = (void*)0;
 
-void bats_popstate_set(void *cb) { _bridge_popstate_cb = cb; }
+void bats_popstate_set(void *cb) {
+  _bridge_closure_let_go(_bridge_popstate_cb);
+  _bridge_popstate_cb = cb;
+}
 
 void *bats_popstate_get(void) { return _bridge_popstate_cb; }
 %}

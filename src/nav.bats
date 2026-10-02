@@ -36,9 +36,10 @@
 
 (* The callback gets a handle to the new URL, a blob to claim with
    blob_claim (decompress.bats) during the callback; JS drops it when
-   the callback returns *)
+   the callback returns. It is a linear closure (llam): the one set
+   before it is freed. *)
 #pub fun set_popstate_callback
-  (cb: (Int) -<cloref1> int): void
+  (cb: (Int) -<lincloptr1> int): void
 
 (* ============================================================
    WASM implementation
@@ -49,6 +50,8 @@ $UNSAFE begin
 %{
 extern void bats_popstate_set(void *cb);
 extern void *bats_popstate_get(void);
+extern void bats_listener_enter(void);
+extern void bats_listener_leave(void);
 extern int bats_js_get_url(void*, int);
 extern int bats_js_get_url_hash(void*, int);
 extern void bats_js_set_url_hash(void*, int);
@@ -111,9 +114,10 @@ implement on_popstate(url) = let
   val cbp = $UNSAFE begin $extfcall(ptr, "bats_popstate_get") end
 in
   if ptr_isnot_null(cbp) then let
+    val () = $UNSAFE begin $extfcall(void, "bats_listener_enter") end
     val cb = $UNSAFE begin $UNSAFE.cast{(Int) -<cloref1> int}(cbp) end
     val _ = cb(url)
-  in () end
+  in $UNSAFE begin $extfcall(void, "bats_listener_leave") end end
   else ()
 end
 

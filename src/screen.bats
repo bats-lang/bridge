@@ -22,8 +22,11 @@ staload "./event.bats"
 
 (* The screen's brightness, as brightness_get reads it. JS's answer is
    decoded here, once: anything outside 0 to 100 that is not the
-   system's own is BrightnessUnreadable. *)
-#pub datatype brightness_reading =
+   system's own is BrightnessUnreadable. Linear: Brightness is boxed and
+   there is no garbage collector, so the one consumer takes it apart
+   with case+ ~, which frees it; a reading no consumer takes is freed by
+   promise's dispose. *)
+#pub datavtype brightness_reading =
   | Brightness of [n:nat | n <= 100] int n  (* percent *)
   | SystemBrightness      (* the app leaves it to the system *)
   | BrightnessUnreadable  (* it cannot be read here (not the app) *)
@@ -61,7 +64,7 @@ staload "./event.bats"
    hidden or shown the bars. *)
 #pub fun listen_fullscreen
   (listener_id: listener_id,
-   callback: (fullscreen_change) -<cloref1> void): void
+   callback: (fullscreen_change) -<lincloptr1> void): void
 
 (* Whether the rotation can be locked here and now. Browser:
    screen.orientation.lock, where a browser allows it (the app installed,
@@ -95,7 +98,7 @@ staload "./event.bats"
 #target wasm begin
 $UNSAFE begin
 %{
-extern void bats_listener_set(int id, void *cb);
+extern void bats_listener_set_decoded(int id, void *decoder, void *inner);
 extern int bats_js_fullscreen_available(void);
 extern int bats_js_fullscreen_active(void);
 extern void bats_js_fullscreen_set(int);
@@ -138,14 +141,19 @@ implement fullscreen_exit() = _bats_js_fullscreen_set(0)
 implement fullscreen_active() = _bats_js_fullscreen_active() > 0
 
 (* The event carries no payload: full screen's state is read as it
-   comes, so there is nothing to decode that could be wrong *)
+   comes, so there is nothing to decode that could be wrong. The slot
+   holds the decoder and the callback, and frees both (the decoder
+   holds only the callback's pointer). *)
 implement listen_fullscreen(listener_id, callback) = let
-  val decode = lam (_: event_payload): int =<cloref1> let
-    val () = callback(if fullscreen_active()
+  val inner = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val decode = llam (_: event_payload): int =<lincloptr1> let
+    val call = $UNSAFE begin $UNSAFE.cast{(fullscreen_change) -<cloref1> void}(inner) end
+    val () = call(if fullscreen_active()
       then FullscreenEntered() else FullscreenLeft())
   in 0 end
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
-  val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
+  val decoder = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
+  val () = $UNSAFE begin
+    $extfcall(void, "bats_listener_set_decoded", listener_id, decoder, inner) end
 in _bats_js_listen_fullscreen(listener_id) end
 
 implement orientation_available() = _bats_js_orientation_available() > 0
@@ -154,11 +162,14 @@ implement orientation_available() = _bats_js_orientation_available() > 0
 fn _lock_outcome (code: Int): lock_outcome =
   if code = 1 then Locked() else LockRefused()
 
+(* An outcome nobody took: nothing to free *)
+implement $P.dispose<lock_outcome>(_) = ()
+
 implement orientation_lock_current() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_orientation_lock(id)
-in $P.and_then<Int><lock_outcome>(p, lam (code) =>
+in $P.and_then<Int><lock_outcome>(p, llam (code) =>
   $P.ret<lock_outcome>(_lock_outcome(code))) end
 
 implement orientation_unlock() = _bats_js_orientation_unlock()
@@ -172,11 +183,19 @@ fn _brightness_reading (code: Int): brightness_reading =
   else if code > 100 then BrightnessUnreadable()
   else Brightness(code)
 
+(* A reading nobody took: freed. ATS2 resolves a template's instances
+   in file order, so this comes before brightness_get, its first use. *)
+implement $P.dispose<brightness_reading>(reading) =
+  case+ reading of
+  | ~Brightness(_) => ()
+  | ~SystemBrightness() => ()
+  | ~BrightnessUnreadable() => ()
+
 implement brightness_get() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_brightness_get(id)
-in $P.and_then<Int><brightness_reading>(p, lam (code) =>
+in $P.and_then<Int><brightness_reading>(p, llam (code) =>
   $P.ret<brightness_reading>(_brightness_reading(code))) end
 
 (* JS's codes: 0 to 100 percent, -1 the system's own *)

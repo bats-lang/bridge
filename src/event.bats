@@ -18,25 +18,30 @@
    listen_media), so it is proven to be in range. *)
 #pub typedef listener_id = [i:nat | i < 128] int i
 
+(* A listener is a linear closure, made with llam: bridge keeps it in
+   its slot and frees it when the slot is set again or unlistened (only
+   once no listener is running, so a listener may unlisten itself).
+   wasm has no garbage collector: a lam closure could never be freed. *)
+
 #pub fun listen
   {li:agz}{ni:pos}{lb:agz}{n:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    event_type: !$A.borrow(byte, lb, n), type_len: int n,
    listener_id: listener_id,
-   callback: (event_payload) -<cloref1> int): void
+   callback: (event_payload) -<lincloptr1> int): void
 
 #pub fun listen_document
   {lb:agz}{n:pos}
   (event_type: !$A.borrow(byte, lb, n), type_len: int n,
    listener_id: listener_id,
-   callback: (event_payload) -<cloref1> int): void
+   callback: (event_payload) -<lincloptr1> int): void
 
 (* A listener on the window (resize fires there, not on the document) *)
 #pub fun listen_window
   {lb:agz}{n:pos}
   (event_type: !$A.borrow(byte, lb, n), type_len: int n,
    listener_id: listener_id,
-   callback: (event_payload) -<cloref1> int): void
+   callback: (event_payload) -<lincloptr1> int): void
 
 (* A listener for files handed to the app from outside it: an Android
    intent to open or share a file (the native app's
@@ -49,7 +54,7 @@
    set. *)
 #pub fun listen_external_files
   (listener_id: listener_id,
-   callback: (event_payload) -<cloref1> int): void
+   callback: (event_payload) -<lincloptr1> int): void
 
 (* Pointer events for the gestures package, on node_id (a stable root:
    an element a DOM diff does not replace): down, move, up and cancel
@@ -66,8 +71,9 @@
   {li:agz}{ni:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    listener_id: listener_id,
-   callback: (event_payload) -<cloref1> int): void
+   callback: (event_payload) -<lincloptr1> int): void
 
+(* Removes the listener, and frees its closure *)
 #pub fun unlisten
   (listener_id: listener_id): void
 
@@ -85,6 +91,8 @@ $UNSAFE begin
 %{
 extern void bats_listener_set(int id, void *cb);
 extern void *bats_listener_get(int id);
+extern void bats_listener_enter(void);
+extern void bats_listener_leave(void);
 extern void bats_js_add_event_listener(void*, int, void*, int, int);
 extern void bats_js_add_document_listener(void*, int, int);
 extern void bats_js_remove_event_listener(int);
@@ -154,13 +162,16 @@ in _bats_js_remove_event_listener(listener_id) end
 
 implement prevent_default() = _bats_js_prevent_default()
 
+(* The slot keeps the closure: it is called through the pointer, and
+   freed only when the slot lets it go *)
 implement on_event(listener_id, payload) = let
   val cbp = $UNSAFE begin $extfcall(ptr, "bats_listener_get", listener_id) end
 in
   if ptr_isnot_null(cbp) then let
+    val () = $UNSAFE begin $extfcall(void, "bats_listener_enter") end
     val cb = $UNSAFE begin $UNSAFE.cast{(event_payload) -<cloref1> int}(cbp) end
     val _ = cb(payload)
-  in () end
+  in $UNSAFE begin $extfcall(void, "bats_listener_leave") end end
   else ()
 end
 

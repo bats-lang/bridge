@@ -47,7 +47,7 @@ staload "./event.bats"
    to it: ask install_prompt_available. *)
 #pub fun listen_install_prompt
   (listener_id: listener_id,
-   callback: (install_offer) -<cloref1> void): void
+   callback: (install_offer) -<lincloptr1> void): void
 
 (* ============================================================
    WASM implementation
@@ -56,7 +56,7 @@ staload "./event.bats"
 #target wasm begin
 $UNSAFE begin
 %{
-extern void bats_listener_set(int id, void *cb);
+extern void bats_listener_set_decoded(int id, void *decoder, void *inner);
 extern int bats_js_is_native_platform(void);
 extern int bats_js_is_ios_browser(void);
 extern int bats_js_install_prompt_available(void);
@@ -87,22 +87,30 @@ fn _install_outcome (code: Int): install_outcome =
   else if code = 0 then InstallDismissed()
   else InstallUnavailable()
 
+(* An outcome nobody took: nothing to free *)
+implement $P.dispose<install_outcome>(_) = ()
+
 implement install_prompt() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_install_prompt(id)
-in $P.and_then<Int><install_outcome>(p, lam (code) =>
+in $P.and_then<Int><install_outcome>(p, llam (code) =>
   $P.ret<install_outcome>(_install_outcome(code))) end
 
 (* The event carries no payload: whether there is an offer is read as it
-   comes, so there is nothing to decode that could be wrong *)
+   comes, so there is nothing to decode that could be wrong. The slot
+   holds the decoder and the callback, and frees both (the decoder
+   holds only the callback's pointer). *)
 implement listen_install_prompt(listener_id, callback) = let
-  val decode = lam (_: event_payload): int =<cloref1> let
-    val () = callback(if install_prompt_available()
+  val inner = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val decode = llam (_: event_payload): int =<lincloptr1> let
+    val call = $UNSAFE begin $UNSAFE.cast{(install_offer) -<cloref1> void}(inner) end
+    val () = call(if install_prompt_available()
       then InstallOffered() else InstallWithdrawn())
   in 0 end
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
-  val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
+  val decoder = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
+  val () = $UNSAFE begin
+    $extfcall(void, "bats_listener_set_decoded", listener_id, decoder, inner) end
 in _bats_js_listen_install_prompt(listener_id) end
 
 end (* #target wasm *)
