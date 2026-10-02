@@ -83,6 +83,16 @@ implement plugin_version (p) =
   | PluginFilesystem() => "^8.1.3"
   | PluginGoogleSignIn() => "^0.1.4"
 
+(* The Kotlin standard library the app needs: the newest any plugin's
+   Android code is compiled with (Filesystem 8.1.3's, 2.2.20; the others
+   are Java). An older one the app forces makes a plugin's code fail as
+   it runs, missing a class of the newer library (SpillingKt, quire#223).
+   A plugin added or updated here that is compiled with a newer Kotlin
+   moves it *)
+#pub fn plugins_kotlin (): [s:pos | s <= 16] string s
+
+implement plugins_kotlin () = "2.2.20"
+
 (* ============================================================
    Writing it out
    ============================================================ *)

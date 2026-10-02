@@ -181,6 +181,12 @@ end (* #target wasm *)
 
 implement produce_plugin_dependencies (b, indent) = put_plugin_dependencies(b, indent)
 
+(* The Kotlin standard library's version the native app needs for the
+   plugins (plugins.bats): the newest any of them is compiled with *)
+#pub fun produce_kotlin_version (): [s:pos | s <= 16] string s
+
+implement produce_kotlin_version () = plugins_kotlin()
+
 (* The app manifest's backup rules: Android's Auto Backup keeps the
    directory of backed-up files (backup_file.bats) and nothing else of
    the app's. For android:fullBackupContent (Android 11 and lower) *)
