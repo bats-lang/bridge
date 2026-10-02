@@ -11,6 +11,7 @@
 #use result as R
 
 staload "./js_emitter.bats"
+staload "./plugins.bats"
 staload "./stash.bats"
 staload "./decompress.bats"
 staload "./event.bats"
@@ -163,6 +164,16 @@ end (* #target wasm *)
 #pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 2600 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2600] $B.builder(m),
    wasm_name: string nw): void
+
+(* The Capacitor plugins the atoms use (plugins.bats), each as a
+   package.json dependency line after indent, all but the last ending in
+   a comma: what the native app installs, so it has every plugin an atom
+   may call *)
+#pub fun produce_plugin_dependencies {n:nat | n + 480 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 480] $B.builder(m),
+   indent: [s:nat | s <= 8] string s): void
+
+implement produce_plugin_dependencies (b, indent) = put_plugin_dependencies(b, indent)
 
 implement produce_bridge(b) = emit_js_all(b)
 

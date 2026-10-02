@@ -5,6 +5,8 @@
 
 #use builder as B
 
+staload "./plugins.bats"
+
 (* ============================================================
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
@@ -1650,8 +1652,8 @@ fn emit_js_early {n:nat | n + 1350 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"};\n")
 in end
 
-fn emit_js_screen {n:nat | n + 4120 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4120] $B.builder(m)): void = let
+fn emit_js_screen {n:nat | n + 4400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Platform: the browser's APIs, or the app's (Capacitor) plugins ---\n")
   val () = $B.bput(b,"  function capNative() {\n")
@@ -1683,21 +1685,26 @@ fn emit_js_screen {n:nat | n + 4120 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  const view = root.ownerDocument.defaultView || globalThis;\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Full screen: the Fullscreen API in a browser; in the app, the status\n")
-  val () = $B.bput(b,"  // bar (and the navigation bar, when its plugin is there) hidden\n")
+  val () = $B.bput(b,"  // bar hidden\n")
   val () = $B.bput(b,"  let fsListener = -1, fsApp = false;\n")
   val () = $B.bput(b,"  function batsJsFullscreenAvailable() {\n")
-  val () = $B.bput(b,"    return capPlugin('StatusBar') || document.fullscreenEnabled ? 1 : 0;\n")
+  val () = $B.bput(b,"    return ")
+  val () = put_plugin_call(b, PluginStatusBar())
+  val () = $B.bput(b," || document.fullscreenEnabled ? 1 : 0;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsFullscreenActive() {\n")
-  val () = $B.bput(b,"    return (capPlugin('StatusBar') ? fsApp : !!document.fullscreenElement) ? 1 : 0;\n")
+  val () = $B.bput(b,"    return (")
+  val () = put_plugin_call(b, PluginStatusBar())
+  val () = $B.bput(b," ? fsApp : !!document.fullscreenElement) ? 1 : 0;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  // No payload: bridge reads the state as the event comes\n")
   val () = $B.bput(b,"  function fsFire() { if (fsListener >= 0) instance.exports.bats_on_event(fsListener, 0); }\n")
   val () = $B.bput(b,"  document.addEventListener('fullscreenchange', fsFire);\n")
   val () = $B.bput(b,"  function batsJsFullscreenSet(on) {\n")
-  val () = $B.bput(b,"    const s = capPlugin('StatusBar'), n = capPlugin('NavigationBar');\n")
+  val () = $B.bput(b,"    const s = ")
+  val () = put_plugin_call(b, PluginStatusBar())
+  val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    if (s) {\n")
-  val () = $B.bput(b,"      if (n) quiet(on ? n.hide() : n.show());\n")
   val () = $B.bput(b,"      Promise.resolve().then(() => on ? s.hide() : s.show()).then(() => { fsApp = on !== 0; fsFire(); }, () => {});\n")
   val () = $B.bput(b,"      return;\n")
   val () = $B.bput(b,"    }\n")
@@ -1715,37 +1722,49 @@ fn emit_js_screen {n:nat | n + 4120 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    return !!(o && o.lock) && (!!document.fullscreenElement ||\n")
   val () = $B.bput(b,"      view.matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches);\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsOrientationAvailable() { return orWeb() || capPlugin('ScreenOrientation') ? 1 : 0; }\n")
+  val () = $B.bput(b,"  function batsJsOrientationAvailable() { return orWeb() || ")
+  val () = put_plugin_call(b, PluginScreenOrientation())
+  val () = $B.bput(b," ? 1 : 0; }\n")
   val () = $B.bput(b,"  function orNow() {\n")
   val () = $B.bput(b,"    const o = view.screen && view.screen.orientation;\n")
   val () = $B.bput(b,"    return (o && o.type) || (view.innerWidth > view.innerHeight ? 'landscape-primary' : 'portrait-primary');\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsOrientationLock(id) {\n")
-  val () = $B.bput(b,"    const p = capPlugin('ScreenOrientation'), web = orWeb();\n")
+  val () = $B.bput(b,"    const p = ")
+  val () = put_plugin_call(b, PluginScreenOrientation())
+  val () = $B.bput(b,", web = orWeb();\n")
   val () = $B.bput(b,"    settleBy(id, () => web ? view.screen.orientation.lock(orNow()) : p.lock({ orientation: orNow() }), () => 1, () => 0);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsOrientationUnlock() {\n")
-  val () = $B.bput(b,"    const p = capPlugin('ScreenOrientation'), o = view.screen && view.screen.orientation;\n")
+  val () = $B.bput(b,"    const p = ")
+  val () = put_plugin_call(b, PluginScreenOrientation())
+  val () = $B.bput(b,", o = view.screen && view.screen.orientation;\n")
   val () = $B.bput(b,"    try { if (o && o.unlock) o.unlock(); } catch (e) {}\n")
   val () = $B.bput(b,"    if (p) quiet(p.unlock());\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // The screen's brightness, in the app only (ScreenBrightness): 0 to 100,\n")
   val () = $B.bput(b,"  // or -1 for the system's own\n")
-  val () = $B.bput(b,"  function batsJsBrightnessAvailable() { return capPlugin('ScreenBrightness') ? 1 : 0; }\n")
+  val () = $B.bput(b,"  function batsJsBrightnessAvailable() { return ")
+  val () = put_plugin_call(b, PluginScreenBrightness())
+  val () = $B.bput(b," ? 1 : 0; }\n")
   val () = $B.bput(b,"  function batsJsBrightnessGet(id) {\n")
-  val () = $B.bput(b,"    const p = capPlugin('ScreenBrightness');\n")
+  val () = $B.bput(b,"    const p = ")
+  val () = put_plugin_call(b, PluginScreenBrightness())
+  val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    settleBy(id, () => p.getBrightness(),\n")
   val () = $B.bput(b,"      r => { const v = +r.brightness; return v < 0 ? -1 : Math.round(Math.min(v, 1) * 100); }, () => -2);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsBrightnessSet(level) {\n")
-  val () = $B.bput(b,"    const p = capPlugin('ScreenBrightness');\n")
+  val () = $B.bput(b,"    const p = ")
+  val () = put_plugin_call(b, PluginScreenBrightness())
+  val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    if (p) quiet(p.setBrightness({ brightness: level < 0 ? -1 : level / 100 }));\n")
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_share {n:nat | n + 3930 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3930] $B.builder(m)): void = let
+fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4200] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Sharing: navigator.share in a browser, else the app's Share (a file\n")
   val () = $B.bput(b,"  // through its Filesystem). 0 shared, 1 cancelled, 2 failed, 3 a file\n")
@@ -1754,13 +1773,21 @@ fn emit_js_share {n:nat | n + 3930 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function shareFiles(f) {\n")
   val () = $B.bput(b,"    try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: f })); } catch (e) { return false; }\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsShareAvailable() { return navigator.share || capPlugin('Share') ? 1 : 0; }\n")
+  val () = $B.bput(b,"  function batsJsShareAvailable() { return navigator.share || ")
+  val () = put_plugin_call(b, PluginShare())
+  val () = $B.bput(b," ? 1 : 0; }\n")
   val () = $B.bput(b,"  function batsJsShareFileAvailable() {\n")
   val () = $B.bput(b,"    return shareFiles([new File(['.'], 'a.txt', { type: 'text/plain' })]) ||\n")
-  val () = $B.bput(b,"      (capPlugin('Share') && capPlugin('Filesystem')) ? 1 : 0;\n")
+  val () = $B.bput(b,"      (")
+  val () = put_plugin_call(b, PluginShare())
+  val () = $B.bput(b," && ")
+  val () = put_plugin_call(b, PluginFilesystem())
+  val () = $B.bput(b,") ? 1 : 0;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsShareText(tp, tl, xp, xl, id) {\n")
-  val () = $B.bput(b,"    const d = { text: readString(xp, xl) }, c = capPlugin('Share');\n")
+  val () = $B.bput(b,"    const d = { text: readString(xp, xl) }, c = ")
+  val () = put_plugin_call(b, PluginShare())
+  val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    if (tl > 0) d.title = readString(tp, tl);\n")
   val () = $B.bput(b,"    settleBy(id, () => navigator.share ? navigator.share(d) : c.share(d), () => 0, shareEnd);\n")
   val () = $B.bput(b,"  }\n")
@@ -1772,7 +1799,11 @@ fn emit_js_share {n:nat | n + 3930 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function batsJsShareFile(np, nl, bp, bl, mp, ml, id) {\n")
   val () = $B.bput(b,"    const name = readString(np, nl), bytes = readBytes(bp, bl);\n")
   val () = $B.bput(b,"    const f = [new File([bytes], name, { type: readString(mp, ml) })];\n")
-  val () = $B.bput(b,"    const c = capPlugin('Share'), fs = capPlugin('Filesystem');\n")
+  val () = $B.bput(b,"    const c = ")
+  val () = put_plugin_call(b, PluginShare())
+  val () = $B.bput(b,", fs = ")
+  val () = put_plugin_call(b, PluginFilesystem())
+  val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    if (shareFiles(f)) return settleBy(id, () => navigator.share({ files: f, title: name }), () => 0, shareEnd);\n")
   val () = $B.bput(b,"    if (!c || !fs) return settle(id, 3);\n")
   val () = $B.bput(b,"    settleBy(id, () => fs.writeFile({ path: name.replace(/[\\/\\\\]/g, '_'), data: base64(bytes), directory: 'CACHE' })\n")
@@ -1997,8 +2028,8 @@ fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 11990 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11990] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 12540 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12540] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
 in emit_js_speech(b) end
@@ -2018,8 +2049,8 @@ fn _emit_first_half {n:nat | n + 30090 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 41360 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 41360] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 41910 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 41910] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

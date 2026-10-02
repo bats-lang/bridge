@@ -40,8 +40,7 @@ staload "./event.bats"
 
 (* Whether full screen can be had here. Browser: the Fullscreen API
    (document.fullscreenEnabled). App (Capacitor): the StatusBar plugin,
-   which hides the status bar (and the NavigationBar plugin, when the app
-   has it, the navigation bar). *)
+   which hides the status bar. *)
 #pub fun fullscreen_available(): bool
 
 (* Goes into full screen. Browser: the document element's

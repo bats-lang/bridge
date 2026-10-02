@@ -24,6 +24,21 @@ for a in "$TMP/repo/$PKG"/*.bats; do
 done
 
 fail=0
+
+# Plugin names: the JS gets a Capacitor plugin's name only from the table
+# in src/plugins.bats (put_plugin_call), so no atom can use a plugin the
+# native app does not install (pwa writes its package.json from the same
+# table). A capPlugin('...') written anywhere else is rejected; the
+# fixture under tests/static/plugin-names must be.
+plugin_names() { # dir -> the capPlugin('...') written outside the table
+  grep -rn "capPlugin('" "$1" --include='*.bats' | grep -v "/plugins\.bats:" || true
+}
+if [ -n "$(plugin_names "$ROOT/src")" ]; then
+  echo "FAIL plugin-names: a plugin named outside src/plugins.bats:"; plugin_names "$ROOT/src"; fail=1
+else echo "ok   plugin-names"; fi
+if [ -n "$(plugin_names "$ROOT/tests/static/plugin-names")" ]; then echo "ok   plugin-names/reject"
+else echo "FAIL plugin-names/reject: should be rejected"; fail=1; fi
+
 check() { # dir -> runs lock + check, log in $TMP/<name>.log
   w="$TMP/w-$(basename "$1")"
   rm -rf "$w"; cp -R "$1" "$w"
