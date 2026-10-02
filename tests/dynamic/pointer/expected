@@ -1,0 +1,17 @@
+touch down
+moves
+frame
+[bats:info] pan
+[bats:info] pan
+far move
+up
+[bats:info] pan
+[bats:info] commit
+frame
+mouse down
+mouse moves 6 px
+[bats:info] capture
+frame
+hidden
+frame
+captured: 2

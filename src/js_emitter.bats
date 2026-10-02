@@ -1312,98 +1312,48 @@ fn emit_js_scroll {n:nat | n + 710 <= $B.BUILDER_CAP}
 in end
 
 
-fn emit_js_gestures {n:nat | n + 4470 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4470] $B.builder(m)): void = let
-  val () = $B.bput(b,"  // --- Gestures: pointer events for the gestures package ---\n")
-  val () = $B.bput(b,"  // Records of 8 int32 LE: kind, then its fields (gestures' decode.bats).\n")
-  val () = $B.bput(b,"  // Batched and delivered once per animation frame (an up or cancel at\n")
-  val () = $B.bput(b,"  // once); a tick each frame while a pointer is down. Positions in 1/16\n")
-  val () = $B.bput(b,"  // CSS px, times in ms.\n")
+fn emit_js_gestures {n:nat | n + 2500 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2500] $B.builder(m)): void = let
+  (* Pointer atoms: each event forwarded as a raw record as it comes,
+     a pointer captured, an animation frame's time. Batching, ticks,
+     capture and cancelling are the gestures package's pointer source *)
   val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  function batsJsListenGestures(idPtr, idLen, listenerId) {\n")
+  val () = $B.bput(b,"  // --- Pointer events: one raw record each (gestures' RAW_RECORD) ---\n")
+  val () = $B.bput(b,"  function batsJsListenPointer(idPtr, idLen, l) {\n")
   val () = $B.bput(b,"    const node = getEl(readIdFromPtr(idPtr, idLen));\n")
   val () = $B.bput(b,"    if (!node) return;\n")
-  val () = $B.bput(b,"    const doc = root.ownerDocument;\n")
-  val () = $B.bput(b,"    const win = doc.defaultView || window;\n")
-  val () = $B.bput(b,"    const recs = [];\n")
-  val () = $B.bput(b,"    const down = new Set();\n")
-  val () = $B.bput(b,"    // a mouse is captured to the root once it has moved 4 px: a click\n")
-  val () = $B.bput(b,"    // (no drag) keeps its own target\n")
-  val () = $B.bput(b,"    const mouseAt = new Map();\n")
-  val () = $B.bput(b,"    let frame = 0;\n")
+  val () = $B.bput(b,"    const doc = root.ownerDocument, win = doc.defaultView || window;\n")
   val () = $B.bput(b,"    const px = (v) => Math.round((v || 0) * 16);\n")
   val () = $B.bput(b,"    const regionEl = (el) => (el && el.closest) ? el.closest('[data-gesture-region]') : null;\n")
   val () = $B.bput(b,"    const regionOf = (el) => { const r = regionEl(el); return r ? (parseInt(r.getAttribute('data-gesture-region'), 10) | 0) : -1; };\n")
+  val () = $B.bput(b,"    const send = (f) => { const b = new Uint8Array(48), d = new DataView(b.buffer); f.forEach((v, i) => d.setInt32(i * 4, v | 0, true)); fireBytes(l, b); };\n")
   val () = $B.bput(b,"    const kindOf = (e) => e.pointerType === 'mouse' ? 1 : (e.pointerType === 'pen' ? 2 : 0);\n")
-  val () = $B.bput(b,"    function flush(now) {\n")
-  val () = $B.bput(b,"      frame = 0;\n")
-  val () = $B.bput(b,"      if (down.size > 0 && now >= 0) recs.push([4, 0, 0, 0, Math.round(now), 0, 0, 0]);\n")
-  val () = $B.bput(b,"      if (recs.length > 0) {\n")
-  val () = $B.bput(b,"        const buf = new ArrayBuffer(recs.length * 32);\n")
-  val () = $B.bput(b,"        const dv = new DataView(buf);\n")
-  val () = $B.bput(b,"        recs.forEach((r, i) => r.forEach((v, j) => dv.setInt32(i * 32 + j * 4, v | 0, true)));\n")
-  val () = $B.bput(b,"        recs.length = 0;\n")
-  val () = $B.bput(b,"        const handle = nextBlobHandle++;\n")
-  val () = $B.bput(b,"        pendingBlobs.set(handle, new Uint8Array(buf));\n")
-  val () = $B.bput(b,"        instance.exports.bats_on_event(listenerId, handle);\n")
-  val () = $B.bput(b,"        pendingBlobs.delete(handle);\n")
-  val () = $B.bput(b,"      }\n")
-  val () = $B.bput(b,"      if (down.size > 0) schedule();\n")
-  val () = $B.bput(b,"    }\n")
-  val () = $B.bput(b,"    function schedule() { if (!frame) frame = win.requestAnimationFrame(flush); }\n")
-  val () = $B.bput(b,"    function push(r) { recs.push(r); schedule(); }\n")
-  val () = $B.bput(b,"    // an up or cancel goes at once: its gesture ends before the click that follows it\n")
-  val () = $B.bput(b,"    function now(r) { recs.push(r); if (frame) { win.cancelAnimationFrame(frame); frame = 0; } flush(-1); }\n")
-  val () = $B.bput(b,"    function cancelAll() { if (down.size > 0) { down.clear(); push([5, 0, 0, 0, 0, 0, 0, 0]); } }\n")
+  val () = $B.bput(b,"    const at = (k, e) => [k, e.pointerId, px(e.clientX), px(e.clientY), Math.round(e.timeStamp)];\n")
   val () = $B.bput(b,"    node.addEventListener('pointerdown', (e) => {\n")
-  val () = $B.bput(b,"      if (e.pointerType === 'mouse' && e.button !== 0) return;\n")
-  val () = $B.bput(b,"      const reg = regionOf(e.target);\n")
   val () = $B.bput(b,"      const rel = regionEl(e.target);\n")
-  val () = $B.bput(b,"      if (rel && rel.getAnimations && rel.getAnimations().some((a) => a.transitionProperty)) {\n")
-  val () = $B.bput(b,"        const tf = win.getComputedStyle(rel).transform;\n")
-  val () = $B.bput(b,"        const m = (tf && tf !== 'none') ? new DOMMatrixReadOnly(tf) : null;\n")
-  val () = $B.bput(b,"        push([6, 0, m ? px(m.m41) : 0, m ? px(m.m42) : 0, 0, 0, reg, 0]);\n")
-  val () = $B.bput(b,"      }\n")
-  val () = $B.bput(b,"      down.add(e.pointerId);\n")
-  val () = $B.bput(b,"      if (e.pointerType === 'mouse') mouseAt.set(e.pointerId, [e.clientX, e.clientY]);\n")
-  val () = $B.bput(b,"      push([0, e.pointerId, px(e.clientX), px(e.clientY), Math.round(e.timeStamp), kindOf(e), reg, px(win.innerWidth)]);\n")
+  val () = $B.bput(b,"      const moving = !!(rel && rel.getAnimations && rel.getAnimations().some((a) => a.transitionProperty));\n")
+  val () = $B.bput(b,"      const tf = moving ? win.getComputedStyle(rel).transform : 'none';\n")
+  val () = $B.bput(b,"      const m = (tf && tf !== 'none') ? new DOMMatrixReadOnly(tf) : null;\n")
+  val () = $B.bput(b,"      send([...at(0, e), kindOf(e), e.button, regionOf(e.target), px(win.innerWidth), moving ? 1 : 0, m ? px(m.m41) : 0, m ? px(m.m42) : 0]);\n")
   val () = $B.bput(b,"    });\n")
-  val () = $B.bput(b,"    node.addEventListener('pointermove', (e) => {\n")
-  val () = $B.bput(b,"      if (!down.has(e.pointerId)) return;\n")
-  val () = $B.bput(b,"      const m = mouseAt.get(e.pointerId);\n")
-  val () = $B.bput(b,"      if (m && Math.abs(e.clientX - m[0]) + Math.abs(e.clientY - m[1]) > 4) {\n")
-  val () = $B.bput(b,"        mouseAt.delete(e.pointerId);\n")
-  val () = $B.bput(b,"        if (node.setPointerCapture) node.setPointerCapture(e.pointerId);\n")
-  val () = $B.bput(b,"      }\n")
-  val () = $B.bput(b,"      push([1, e.pointerId, px(e.clientX), px(e.clientY), Math.round(e.timeStamp), 0, 0, 0]);\n")
-  val () = $B.bput(b,"    });\n")
-  val () = $B.bput(b,"    node.addEventListener('pointerup', (e) => {\n")
-  val () = $B.bput(b,"      if (!down.has(e.pointerId)) return;\n")
-  val () = $B.bput(b,"      down.delete(e.pointerId);\n")
-  val () = $B.bput(b,"      mouseAt.delete(e.pointerId);\n")
-  val () = $B.bput(b,"      now([2, e.pointerId, px(e.clientX), px(e.clientY), Math.round(e.timeStamp), 0, 0, 0]);\n")
-  val () = $B.bput(b,"    });\n")
-  val () = $B.bput(b,"    node.addEventListener('pointercancel', (e) => {\n")
-  val () = $B.bput(b,"      if (!down.has(e.pointerId)) return;\n")
-  val () = $B.bput(b,"      down.delete(e.pointerId);\n")
-  val () = $B.bput(b,"      mouseAt.delete(e.pointerId);\n")
-  val () = $B.bput(b,"      now([3, e.pointerId, 0, 0, 0, 0, 0, 0]);\n")
-  val () = $B.bput(b,"    });\n")
-  val () = $B.bput(b,"    node.addEventListener('lostpointercapture', (e) => { if (down.has(e.pointerId)) cancelAll(); });\n")
-  val () = $B.bput(b,"    doc.addEventListener('visibilitychange', cancelAll);\n")
-  val () = $B.bput(b,"    win.addEventListener('blur', cancelAll);\n")
-  val () = $B.bput(b,"    node.addEventListener('scrollend', (e) => {\n")
-  val () = $B.bput(b,"      const reg = regionOf(e.target);\n")
-  val () = $B.bput(b,"      if (reg >= 0) push([7, 0, px(e.target.scrollLeft), px(e.target.scrollTop), 0, 0, reg, 0]);\n")
-  val () = $B.bput(b,"    }, true);\n")
-  val () = $B.bput(b,"    const ended = (k) => (e) => {\n")
-  val () = $B.bput(b,"      if (regionEl(e.target) !== e.target) return;\n")
-  val () = $B.bput(b,"      push([k, 0, 0, 0, 0, 0, regionOf(e.target), 0]);\n")
-  val () = $B.bput(b,"    };\n")
-  val () = $B.bput(b,"    node.addEventListener('transitionend', ended(8), true);\n")
-  val () = $B.bput(b,"    node.addEventListener('transitioncancel', ended(9), true);\n")
+  val () = $B.bput(b,"    node.addEventListener('pointermove', (e) => send(at(1, e)));\n")
+  val () = $B.bput(b,"    node.addEventListener('pointerup', (e) => send(at(2, e)));\n")
+  val () = $B.bput(b,"    node.addEventListener('pointercancel', (e) => send([3, e.pointerId]));\n")
+  val () = $B.bput(b,"    node.addEventListener('lostpointercapture', (e) => send([4, e.pointerId]));\n")
+  val () = $B.bput(b,"    doc.addEventListener('visibilitychange', () => send([5]));\n")
+  val () = $B.bput(b,"    win.addEventListener('blur', () => send([5]));\n")
+  val () = $B.bput(b,"    node.addEventListener('scrollend', (e) => send([6, regionOf(e.target), px(e.target.scrollLeft), px(e.target.scrollTop)]), true);\n")
+  val () = $B.bput(b,"    const ended = (k) => (e) => { if (regionEl(e.target) === e.target) send([k, regionOf(e.target)]); };\n")
+  val () = $B.bput(b,"    node.addEventListener('transitionend', ended(7), true);\n")
+  val () = $B.bput(b,"    node.addEventListener('transitioncancel', ended(8), true);\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsPointerCapture(idPtr, idLen, p) {\n")
+  val () = $B.bput(b,"    const node = getEl(readIdFromPtr(idPtr, idLen));\n")
+  val () = $B.bput(b,"    if (node && node.setPointerCapture) { try { node.setPointerCapture(p); } catch (e) {} }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsAnimationFrame(id) {\n")
+  val () = $B.bput(b,"    (root.ownerDocument.defaultView || window).requestAnimationFrame((t) => settle(id, Math.round(t)));\n")
+  val () = $B.bput(b,"  }\n")
 in end
 
 fn emit_js_extra {n:nat | n + 4360 <= $B.BUILDER_CAP}
@@ -1520,8 +1470,8 @@ fn emit_js_extra {n:nat | n + 4360 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 5020 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5020] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5130 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5130] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1590,7 +1540,9 @@ fn emit_js_imports {n:nat | n + 5020 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_file_name: batsJsFileName,\n")
   val () = $B.bput(b,"      bats_js_listen_external_files: batsJsListenExternalFiles,\n")
   val () = $B.bput(b,"      bats_js_add_window_listener: batsJsAddWindowListener,\n")
-  val () = $B.bput(b,"      bats_js_listen_gestures: batsJsListenGestures,\n")
+  val () = $B.bput(b,"      bats_js_listen_pointer: batsJsListenPointer,\n")
+  val () = $B.bput(b,"      bats_js_pointer_capture: batsJsPointerCapture,\n")
+  val () = $B.bput(b,"      bats_js_animation_frame: batsJsAnimationFrame,\n")
   val () = $B.bput(b,"      bats_js_mark_range: batsJsMarkRange,\n")
   val () = $B.bput(b,"      bats_js_clear_marks: batsJsClearMarks,\n")
   val () = $B.bput(b,"      bats_js_element_at_point: batsJsElementAtPoint,\n")
@@ -2045,8 +1997,8 @@ fn _emit_8 {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_10 {n:nat | n + 8830 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8830] $B.builder(m)): void = let
+fn _emit_10 {n:nat | n + 6860 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6860] $B.builder(m)): void = let
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
@@ -2056,8 +2008,8 @@ fn _emit_11 {n:nat | n + 11970 <= $B.BUILDER_CAP}
   val () = emit_js_share(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 7370 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7370] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 7480 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7480] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2071,8 +2023,8 @@ fn _emit_first_half {n:nat | n + 29990 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 43090 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43090] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 41230 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 41230] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
