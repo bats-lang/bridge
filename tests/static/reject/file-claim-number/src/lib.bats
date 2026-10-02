@@ -3,8 +3,8 @@
 #use wasm.bats-packages.dev/bridge as B
 staload BF = "wasm.bats-packages.dev/bridge/src/file.sats"
 
-(* A claimed file must be closed, so JS lets go of its bytes *)
-fn f (h: $BF.file_handle): int =
-  case+ $BF.file_claim(h) of
+(* A handle is not a number: 0 does not name a file *)
+fn f (): int =
+  case+ $BF.file_claim(0) of
   | ~$R.none() => 0
-  | ~$R.some(fl) => $BF.file_size(fl)
+  | ~$R.some(fl) => let val () = $BF.file_close(fl) in 1 end

@@ -90,6 +90,12 @@ staload "./decompress.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern int bats_bridge_measure_get(int slot);
@@ -147,7 +153,7 @@ fn _measure_set (slot: int, v: int): void =
   $UNSAFE begin $extfcall(void, "bats_measure_set", slot, v) end
 
 implement query_selector{lb}{n}(sel, sel_len) =
-  blob_claim(_bats_js_query_selector(
+  _claimed_blob(_bats_js_query_selector(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(sel) end,
     sel_len))
 
@@ -157,10 +163,10 @@ implement caret_position_from_point(x, y) = let
 in if offset >= 0 then $R.some(offset) else $R.none() end
 
 implement element_at_point(x, y) =
-  blob_claim(_bats_js_element_at_point(x, y))
+  _claimed_blob(_bats_js_element_at_point(x, y))
 
 implement read_text_content{li}{ni}(node_id, id_len) =
-  blob_claim(_bats_js_read_text_content(
+  _claimed_blob(_bats_js_read_text_content(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len))
 
 implement measure_text_offset{li}{ni}(node_id, id_len, offset) =
@@ -168,7 +174,7 @@ implement measure_text_offset{li}{ni}(node_id, id_len, offset) =
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, offset))
 
 implement get_selection_text() =
-  blob_claim(_bats_js_get_selection_text())
+  _claimed_blob(_bats_js_get_selection_text())
 
 implement get_selection_rect() =
   _bats_js_get_selection_rect()
@@ -179,12 +185,12 @@ implement get_selection_range() = let
   val () = _measure_set(2, 0)
   val () = _measure_set(3, 0)
   val () = _bats_js_get_selection_range()
-  val s = blob_claim(get_measure_w())
-  val e = blob_claim(get_measure_h())
+  val s = _claimed_blob(get_measure_w())
+  val e = _claimed_blob(get_measure_h())
 in @(s, e) end
 
 implement read_input_value{li}{ni}(node_id, id_len) =
-  blob_claim(_bats_js_read_input_value(
+  _claimed_blob(_bats_js_read_input_value(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len))
 
 end (* #target wasm *)

@@ -37,6 +37,17 @@ staload "./fetch.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
+(* JS's code for a file, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_file (code: int): $R.option([n:nat] infile(n)) =
+  file_claim($UNSAFE begin $UNSAFE.cast{file_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern void bats_js_external_next(int);
@@ -70,7 +81,7 @@ datavtype url_bytes =
   | NoUrl
 
 fn _url_bytes (key: int): url_bytes =
-  case+ blob_claim(_bats_js_external_url(key)) of
+  case+ _claimed_blob(_bats_js_external_url(key)) of
   | ~$R.none() => NoUrl()
   | ~$R.some(blob) => let
       val n = blob_len(blob)
@@ -89,7 +100,7 @@ fn _url_bytes (key: int): url_bytes =
 fn _fetched (key: int): $P.promise(external, $P.Chained) = let
   (* the URL first: reading the name lets JS forget the delivery *)
   val url_read = _url_bytes(key)
-  val name = blob_claim(_bats_js_external_name(key))
+  val name = _claimed_blob(_bats_js_external_name(key))
 in
   case+ url_read of
   | ~NoUrl() => $P.ret<external>(ExternalUnreadable(name))
@@ -115,7 +126,7 @@ implement external_next() = let
   val () = _bats_js_external_next(id)
 in $P.and_then<Int><external>($P.vow(p), llam (code) =>
   if code < 0 then _fetched(~code)
-  else (case+ file_claim(code) of
+  else (case+ _claimed_file(code) of
     | ~$R.some(f) => let
         val name = file_name(f)
       in $P.ret<external>(External(f, name)) end

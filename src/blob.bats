@@ -32,6 +32,12 @@ staload "./decompress.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern int bats_js_create_blob_url(void*, int, void*, int);
@@ -48,7 +54,7 @@ extern fun _bats_js_download_blob
    name: ptr, name_len: int): void = "mac#bats_js_download_blob"
 
 implement create_blob_url{ld}{nd}{lm}{nm}(data, data_len, mime, mime_len) =
-  blob_claim(_bats_js_create_blob_url(
+  _claimed_blob(_bats_js_create_blob_url(
     $UNSAFE.castvwtp1{ptr}(data), data_len,
     $UNSAFE.castvwtp1{ptr}(mime), mime_len))
 

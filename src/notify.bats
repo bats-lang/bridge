@@ -56,6 +56,12 @@ staload "./decompress.bats"
    ============================================================ *)
 
 #target wasm begin
+
+(* JS's code for a blob, as a handle: bridge's own atoms are the only
+   ones that give one *)
+fn _claimed_blob (code: int): $R.option([n:nat] dblob(n)) =
+  blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(code) end)
+
 $UNSAFE begin
 %{
 extern void bats_js_notification_request_permission(int);
@@ -102,7 +108,7 @@ implement notify_show{lb}{n}(title, title_len) =
 fn _subscription (code: Int): subscription =
   if code = 0 then NotSubscribed()
   else if code < 0 then SubscribeFailed()
-  else (case+ blob_claim(code) of
+  else (case+ _claimed_blob(code) of
     | ~$R.some(blob) =>
       if blob_len(blob) > 0 then Subscribed(blob)
       else let val () = blob_free(blob) in SubscribeFailed() end

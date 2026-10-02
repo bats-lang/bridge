@@ -19,7 +19,7 @@ in
   | ~$R.some(u) => let val () = $BD.blob_free(u) in 1 end
 end
 
-fn f (h: Int): int =
+fn f (h: $BF.file_handle): int =
   case+ $BF.file_claim(h) of
   | ~$R.none() => 0
   | ~$R.some(fl) => let
