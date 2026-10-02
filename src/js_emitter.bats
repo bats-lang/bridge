@@ -411,8 +411,8 @@ fn emit_js_idb {n:nat | n + 3380 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_window {n:nat | n + 1470 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1470] $B.builder(m)): void = let
+fn emit_js_window {n:nat | n + 1300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1300] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Window ---\n")
   val () = $B.bput(b,"\n")
@@ -432,29 +432,27 @@ fn emit_js_window {n:nat | n + 1470 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const label = labels[level] || 'log';\n")
   val () = $B.bput(b,"    console.log(`[bats:${label}] ${msg}`);\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  // The screen kept awake while the app asks it (keep_awake): the\n")
-  val () = $B.bput(b,"  // browser drops a wake lock when the page is hidden, so it is taken\n")
-  val () = $B.bput(b,"  // again when the page is shown\n")
-  val () = $B.bput(b,"  let wakeWanted = false, wakeLock = null, wakePending = false;\n")
-  val () = $B.bput(b,"  function wakeTake() {\n")
-  val () = $B.bput(b,"    if (!wakeWanted || wakeLock || wakePending || !navigator.wakeLock) return;\n")
-  val () = $B.bput(b,"    if (document.visibilityState !== 'visible') return;\n")
-  val () = $B.bput(b,"    wakePending = true;\n")
+  (* Wake lock atoms, each answered through settle (an existing export,
+     so the compiler's list of exports is unchanged): request a lock,
+     release the one held, wait for it to be lost, and wait for the
+     page's visibility to change. When to take a lock is window.bats's
+     (keep_awake) *)
+  val () = $B.bput(b,"  let wakeLock = null, wakeLost = [];\n")
+  val () = $B.bput(b,"  function batsJsWakeLockRequest(id) {\n")
+  val () = $B.bput(b,"    if (!navigator.wakeLock) { settle(id, 0); return; }\n")
   val () = $B.bput(b,"    navigator.wakeLock.request('screen').then(l => {\n")
-  val () = $B.bput(b,"      wakePending = false;\n")
-  val () = $B.bput(b,"      if (!wakeWanted) { l.release().catch(() => {}); return; }\n")
   val () = $B.bput(b,"      wakeLock = l;\n")
-  val () = $B.bput(b,"      l.addEventListener('release', () => { if (wakeLock === l) wakeLock = null; });\n")
-  val () = $B.bput(b,"    }, () => { wakePending = false; });\n")
+  val () = $B.bput(b,"      l.addEventListener('release', () => {\n")
+  val () = $B.bput(b,"        if (wakeLock === l) wakeLock = null;\n")
+  val () = $B.bput(b,"        const waiting = wakeLost; wakeLost = []; waiting.forEach(w => settle(w, 1));\n")
+  val () = $B.bput(b,"      });\n")
+  val () = $B.bput(b,"      settle(id, 1);\n")
+  val () = $B.bput(b,"    }, () => settle(id, 0));\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  document.addEventListener('visibilitychange', wakeTake);\n")
-  val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  function batsJsKeepAwake(on) {\n")
-  val () = $B.bput(b,"    wakeWanted = on !== 0;\n")
-  val () = $B.bput(b,"    if (wakeWanted) { wakeTake(); return; }\n")
-  val () = $B.bput(b,"    const l = wakeLock;\n")
-  val () = $B.bput(b,"    wakeLock = null;\n")
-  val () = $B.bput(b,"    if (l) l.release().catch(() => {});\n")
+  val () = $B.bput(b,"  function batsJsWakeLockLost(id) { if (wakeLock) wakeLost.push(id); else settle(id, 1); }\n")
+  val () = $B.bput(b,"  function batsJsWakeLockRelease() { if (wakeLock) wakeLock.release().catch(() => {}); }\n")
+  val () = $B.bput(b,"  function batsJsVisibilityNext(id) {\n")
+  val () = $B.bput(b,"    document.addEventListener('visibilitychange', () => settle(id, document.visibilityState === 'hidden' ? 1 : 0), { once: true });\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -1522,8 +1520,8 @@ fn emit_js_extra {n:nat | n + 4360 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 4850 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4850] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5020 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5020] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1546,7 +1544,10 @@ fn emit_js_imports {n:nat | n + 4850 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_focus_window: batsJsFocusWindow,\n")
   val () = $B.bput(b,"      bats_js_get_visibility_state: batsJsGetVisibilityState,\n")
   val () = $B.bput(b,"      bats_js_log: batsJsLog,\n")
-  val () = $B.bput(b,"      bats_js_keep_awake: batsJsKeepAwake,\n")
+  val () = $B.bput(b,"      bats_js_wake_lock_request: batsJsWakeLockRequest,\n")
+  val () = $B.bput(b,"      bats_js_wake_lock_release: batsJsWakeLockRelease,\n")
+  val () = $B.bput(b,"      bats_js_wake_lock_lost: batsJsWakeLockLost,\n")
+  val () = $B.bput(b,"      bats_js_visibility_next: batsJsVisibilityNext,\n")
   val () = $B.bput(b,"      // Navigation\n")
   val () = $B.bput(b,"      bats_js_get_url: batsJsGetUrl,\n")
   val () = $B.bput(b,"      bats_js_get_url_hash: batsJsGetUrlHash,\n")
@@ -2000,8 +2001,8 @@ fn _emit_1 {n:nat | n + 12780 <= $B.BUILDER_CAP}
   val () = emit_js_dom(b)
 in end
 
-fn _emit_2 {n:nat | n + 5020 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5020] $B.builder(m)): void = let
+fn _emit_2 {n:nat | n + 4850 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4850] $B.builder(m)): void = let
   val () = emit_js_timer(b)
   val () = emit_js_idb(b)
   val () = emit_js_window(b)
@@ -2055,23 +2056,23 @@ fn _emit_11 {n:nat | n + 11970 <= $B.BUILDER_CAP}
   val () = emit_js_share(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 7200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7200] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 7370 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7370] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 30160 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 30160] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 29990 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29990] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 42920 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 42920] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 43090 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43090] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
