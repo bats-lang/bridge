@@ -15,6 +15,7 @@ staload "./stash.bats"
 staload "./decompress.bats"
 staload "./event.bats"
 staload "./file.bats"
+staload "./external.bats"
 staload "./blob.bats"
 staload "./clipboard.bats"
 staload "./dom.bats"
@@ -158,7 +159,7 @@ end (* #target wasm *)
    manifest's share_target: a multipart POST of the field file to
    share-target) is kept in the cache bats-shared and the app opened at
    ?shared=, where the bridge hands it to the app as an external file
-   (listen_external_files) *)
+   (external_next, in external.bats) *)
 #pub fun produce_service_worker {nw:nat | nw < 200}{n:nat | n + 2600 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2600] $B.builder(m),
    wasm_name: string nw): void

@@ -1350,8 +1350,8 @@ fn emit_js_gestures {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_extra {n:nat | n + 4360 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4360] $B.builder(m)): void = let
+fn emit_js_extra {n:nat | n + 4640 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4640] $B.builder(m)): void = let
   val () = $B.bput(b,"  // --- Window listeners, clock, picked, dropped and external files ---\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  let droppedFiles = [];\n")
@@ -1400,25 +1400,29 @@ fn emit_js_extra {n:nat | n + 4360 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    return pendBlob(new TextEncoder().encode(name));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  // Files handed to the app from outside it (an Android intent): each is\n")
-  val () = $B.bput(b,"  // a pending file, its handle passed to the listener as its payload\n")
-  val () = $B.bput(b,"  const externalFiles = [];\n")
-  val () = $B.bput(b,"  let externalListener = -1;\n")
-  val () = $B.bput(b,"  function batsJsFlushExternal() {\n")
-  val () = $B.bput(b,"    while (externalListener >= 0 && externalFiles.length > 0) {\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_event(externalListener, externalFiles.shift());\n")
-  val () = $B.bput(b,"    }\n")
+  val () = $B.bput(b,"  // Files handed to the app from outside it, kept in their order until\n")
+  val () = $B.bput(b,"  // the app asks for the next (external_next, external.bats): a file's\n")
+  val () = $B.bput(b,"  // bytes (a pending file, its handle given) or a URL to fetch (its key\n")
+  val () = $B.bput(b,"  // given, below 0; external_url and external_name read it)\n")
+  val () = $B.bput(b,"  const deliveries = [], asking = [], urlDeliveries = new Map();\n")
+  val () = $B.bput(b,"  let nextUrlDelivery = 1;\n")
+  val () = $B.bput(b,"  function externalHand(id, d) {\n")
+  val () = $B.bput(b,"    if (d.url !== undefined) { const k = nextUrlDelivery++; urlDeliveries.set(k, d); settle(id, -k); return; }\n")
+  val () = $B.bput(b,"    const h = nextFileHandle++;\n")
+  val () = $B.bput(b,"    pendingFiles.set(h, d.bytes); fileNames.set(h, d.name || '');\n")
+  val () = $B.bput(b,"    settle(id, h);\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsDeliverFile(bytes, name) {\n")
-  val () = $B.bput(b,"    const handle = nextFileHandle++;\n")
-  val () = $B.bput(b,"    pendingFiles.set(handle, bytes);\n")
-  val () = $B.bput(b,"    fileNames.set(handle, name || '');\n")
-  val () = $B.bput(b,"    externalFiles.push(handle);\n")
-  val () = $B.bput(b,"    batsJsFlushExternal();\n")
+  val () = $B.bput(b,"  function externalDeliver(d) { const id = asking.shift(); if (id !== undefined) externalHand(id, d); else deliveries.push(d); }\n")
+  val () = $B.bput(b,"  function batsJsExternalNext(id) { const d = deliveries.shift(); if (d) externalHand(id, d); else asking.push(id); }\n")
+  val () = $B.bput(b,"  function batsJsExternalUrl(k) { const d = urlDeliveries.get(k); return d ? pendBlob(new TextEncoder().encode(d.url)) : 0; }\n")
+  val () = $B.bput(b,"  function batsJsExternalName(k) {\n")
+  val () = $B.bput(b,"    const d = urlDeliveries.get(k); urlDeliveries.delete(k);\n")
+  val () = $B.bput(b,"    return d && d.name ? pendBlob(new TextEncoder().encode(d.name)) : 0;\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  globalThis.batsFetchExternal = (url, name) =>\n")
-  val () = $B.bput(b,"    fetch(url).then(r => r.ok ? r.arrayBuffer().then(buf => batsDeliverFile(new Uint8Array(buf), name))\n")
-  val () = $B.bput(b,"      : console.warn('a file handed to the app could not be read: ' + r.status));\n")
+  val () = $B.bput(b,"  // URLs the native app handed over before the bridge loaded\n")
+  val () = $B.bput(b,"  globalThis.batsExternalDeliver = externalDeliver;\n")
+  val () = $B.bput(b,"  (globalThis.batsExternalEarly || []).forEach(externalDeliver);\n")
+  val () = $B.bput(b,"  globalThis.batsExternalEarly = [];\n")
   val () = $B.bput(b,"  // Marks: text ranges shown through the CSS Custom Highlight API (no\n")
   val () = $B.bput(b,"  // DOM change), one highlight per kind; none where it is missing\n")
   val () = $B.bput(b,"  function textNodeOf(el) {\n")
@@ -1455,17 +1459,10 @@ fn emit_js_extra {n:nat | n + 4360 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const el = getEl(readIdFromPtr(idPtr, idLen));\n")
   val () = $B.bput(b,"    if (el && el.focus) el.focus();\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsListenExternalFiles(listenerId) {\n")
-  val () = $B.bput(b,"    externalListener = listenerId;\n")
-  val () = $B.bput(b,"    const queued = globalThis.batsQueuedUrls || [];\n")
-  val () = $B.bput(b,"    globalThis.batsQueuedUrls = [];\n")
-  val () = $B.bput(b,"    for (const q of queued) globalThis.batsFetchExternal(q[0], q[1]);\n")
-  val () = $B.bput(b,"    batsJsFlushExternal();\n")
-  val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 5130 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5130] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5210 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5210] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1532,7 +1529,9 @@ fn emit_js_imports {n:nat | n + 5130 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_dropped_count: batsJsDroppedCount,\n")
   val () = $B.bput(b,"      bats_js_dropped_open_at: batsJsDroppedOpenAt,\n")
   val () = $B.bput(b,"      bats_js_file_name: batsJsFileName,\n")
-  val () = $B.bput(b,"      bats_js_listen_external_files: batsJsListenExternalFiles,\n")
+  val () = $B.bput(b,"      bats_js_external_next: batsJsExternalNext,\n")
+  val () = $B.bput(b,"      bats_js_external_url: batsJsExternalUrl,\n")
+  val () = $B.bput(b,"      bats_js_external_name: batsJsExternalName,\n")
   val () = $B.bput(b,"      bats_js_add_window_listener: batsJsAddWindowListener,\n")
   val () = $B.bput(b,"      bats_js_listen_pointer: batsJsListenPointer,\n")
   val () = $B.bput(b,"      bats_js_pointer_capture: batsJsPointerCapture,\n")
@@ -1619,8 +1618,8 @@ in end
    native app's entry points (batsNative), and the files the system opens
    the app with or shares with it, handed over as external files: the
    browser's APIs, or the Capacitor app's plugins *)
-fn emit_js_early {n:nat | n + 1290 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1290] $B.builder(m)): void = let
+fn emit_js_early {n:nat | n + 1350 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1350] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"// An offer to install the app can come before the app is loaded: it is\n")
   val () = $B.bput(b,"// kept from the start (the browser's own banner is held back), for\n")
@@ -1632,14 +1631,15 @@ fn emit_js_early {n:nat | n + 1290 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"}\n")
   val () = $B.bput(b,"// The native app's (Capacitor's) entry points, defined as the bridge\n")
   val () = $B.bput(b,"// loads: deliverFile(url, name) hands the app a file at a URL its web\n")
-  val () = $B.bput(b,"// view can fetch (an external file; kept until the app listens);\n")
+  val () = $B.bput(b,"// view can fetch (an external file; kept until the app asks for it);\n")
   val () = $B.bput(b,"// key(name) sends the page the keydown a browser would send (a volume\n")
   val () = $B.bput(b,"// key: AudioVolumeUp, AudioVolumeDown), true when the page took it\n")
   val () = $B.bput(b,"// (preventDefault)\n")
   val () = $B.bput(b,"globalThis.batsNative = {\n")
   val () = $B.bput(b,"  deliverFile(url, name) {\n")
-  val () = $B.bput(b,"    if (globalThis.batsFetchExternal) globalThis.batsFetchExternal(url, name);\n")
-  val () = $B.bput(b,"    else (globalThis.batsQueuedUrls = globalThis.batsQueuedUrls || []).push([url, name]);\n")
+  val () = $B.bput(b,"    const d = { url: String(url), name: String(name || '') };\n")
+  val () = $B.bput(b,"    if (globalThis.batsExternalDeliver) globalThis.batsExternalDeliver(d);\n")
+  val () = $B.bput(b,"    else (globalThis.batsExternalEarly = globalThis.batsExternalEarly || []).push(d);\n")
   val () = $B.bput(b,"    return true;\n")
   val () = $B.bput(b,"  },\n")
   val () = $B.bput(b,"  key(name) {\n")
@@ -1743,8 +1743,8 @@ fn emit_js_screen {n:nat | n + 4120 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_share {n:nat | n + 3910 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3910] $B.builder(m)): void = let
+fn emit_js_share {n:nat | n + 3930 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3930] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Sharing: navigator.share in a browser, else the app's Share (a file\n")
   val () = $B.bput(b,"  // through its Filesystem). 0 shared, 1 cancelled, 2 failed, 3 a file\n")
@@ -1808,7 +1808,7 @@ fn emit_js_share {n:nat | n + 3910 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  // worker in bats-shared, the app opened at ?shared=): external files,\n")
   val () = $B.bput(b,"  // one at a time in their order\n")
   val () = $B.bput(b,"  let launched = Promise.resolve();\n")
-  val () = $B.bput(b,"  const launch = (get, name) => { launched = launched.then(get).then(b => batsDeliverFile(new Uint8Array(b), name())).catch(() => {}); };\n")
+  val () = $B.bput(b,"  const launch = (get, name) => { launched = launched.then(get).then(b => externalDeliver({ bytes: new Uint8Array(b), name: name() })).catch(() => {}); };\n")
   val () = $B.bput(b,"  if (globalThis.launchQueue && launchQueue.setConsumer) launchQueue.setConsumer(p => {\n")
   val () = $B.bput(b,"    for (const h of p.files || []) { let f = null; launch(() => h.getFile().then(x => (f = x).arrayBuffer()), () => f.name); }\n")
   val () = $B.bput(b,"  });\n")
@@ -1939,8 +1939,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 12780 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12780] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 12840 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12840] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_early(b)
   val () = emit_js_loadwasm_open(b)
@@ -1991,34 +1991,34 @@ fn _emit_8 {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_10 {n:nat | n + 6860 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6860] $B.builder(m)): void = let
+fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7140] $B.builder(m)): void = let
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 11970 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11970] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 11990 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11990] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 7480 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7480] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 7560 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7560] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 29990 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29990] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 30050 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 30050] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 40930 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 40930] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 41310 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 41310] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
