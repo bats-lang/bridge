@@ -9,13 +9,16 @@
    Public API
    ============================================================ *)
 
+(* The page's URL in out: its length, at most max_len (a longer one is
+   cut) *)
 #pub fun get_url
   {l:agz}{n:pos}
-  (out: !$A.arr(byte, l, n), max_len: int n): $R.result(int, int)
+  (out: !$A.arr(byte, l, n), max_len: int n): [v:nat | v <= n] int v
 
+(* The URL's hash ("#..." or empty) in out, as get_url *)
 #pub fun get_hash
   {l:agz}{n:pos}
-  (out: !$A.arr(byte, l, n), max_len: int n): $R.result(int, int)
+  (out: !$A.arr(byte, l, n), max_len: int n): [v:nat | v <= n] int v
 
 #pub fun set_hash
   {lb:agz}{n:nat}
@@ -60,9 +63,9 @@ extern void bats_js_push_state(void*, int);
 extern void bats_js_reload(void);
 %}
 extern fun _bats_js_get_url
-  (out: ptr, max_len: int): int = "mac#bats_js_get_url"
+  (out: ptr, max_len: int): [v:int] int v = "mac#bats_js_get_url"
 extern fun _bats_js_get_url_hash
-  (out: ptr, max_len: int): int = "mac#bats_js_get_url_hash"
+  (out: ptr, max_len: int): [v:int] int v = "mac#bats_js_get_url_hash"
 extern fun _bats_js_set_url_hash
   (hash: ptr, hash_len: int): void = "mac#bats_js_set_url_hash"
 extern fun _bats_js_replace_state
@@ -73,21 +76,20 @@ extern fun _bats_js_reload
   (): void = "mac#bats_js_reload"
 end
 
-implement get_url{l}{n}(out, max_len) = let
-  val r = _bats_js_get_url(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
-    max_len)
-in
-  if r >= 0 then $R.ok(r) else $R.err(r)
-end
+(* A length JS wrote, bounded here once: JS writes at most max_len
+   bytes, and 0 when it cannot read the URL *)
+fn _written {n:pos}{r:int} (r: int r, max_len: int n): [v:nat | v <= n] int v =
+  if r < 0 then 0 else if r > max_len then max_len else r
 
-implement get_hash{l}{n}(out, max_len) = let
-  val r = _bats_js_get_url_hash(
+implement get_url{l}{n}(out, max_len) =
+  _written(_bats_js_get_url(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
-    max_len)
-in
-  if r >= 0 then $R.ok(r) else $R.err(r)
-end
+    max_len), max_len)
+
+implement get_hash{l}{n}(out, max_len) =
+  _written(_bats_js_get_url_hash(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end,
+    max_len), max_len)
 
 implement set_hash{lb}{n}(hash, hash_len) =
   _bats_js_set_url_hash(

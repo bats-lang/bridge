@@ -1036,8 +1036,8 @@ fn emit_js_decompress {n:nat | n + 2400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_notify {n:nat | n + 2090 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2090] $B.builder(m)): void = let
+fn emit_js_notify {n:nat | n + 2120 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2120] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Notification/Push ---\n")
   val () = $B.bput(b,"\n")
@@ -1047,7 +1047,7 @@ fn emit_js_notify {n:nat | n + 2090 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      return;\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    Notification.requestPermission().then((perm) => {\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_permission_result(resolverId, perm === 'granted' ? 1 : 0);\n")
+  val () = $B.bput(b,"      instance.exports.bats_on_permission_result(resolverId, perm === 'granted' ? 1 : perm === 'default' ? 2 : 0);\n")
   val () = $B.bput(b,"    }).catch(() => {\n")
   val () = $B.bput(b,"      instance.exports.bats_on_permission_result(resolverId, 0);\n")
   val () = $B.bput(b,"    });\n")
@@ -2032,8 +2032,8 @@ fn _emit_5 {n:nat | n + 4080 <= $B.BUILDER_CAP}
   val () = emit_js_file(b)
 in end
 
-fn _emit_6 {n:nat | n + 4490 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4490] $B.builder(m)): void = let
+fn _emit_6 {n:nat | n + 4520 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4520] $B.builder(m)): void = let
   val () = emit_js_decompress(b)
   val () = emit_js_notify(b)
 in end
@@ -2077,8 +2077,8 @@ fn _emit_first_half {n:nat | n + 30605 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 43140 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43140] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 43170 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43170] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

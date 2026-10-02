@@ -1,0 +1,9 @@
+[package]
+name = "play-unplayable-unmatched"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

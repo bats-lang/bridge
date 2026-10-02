@@ -1,0 +1,9 @@
+[package]
+name = "copied-not-copied-unmatched"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

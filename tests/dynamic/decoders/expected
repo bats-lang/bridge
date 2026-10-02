@@ -1,0 +1,43 @@
+audio-1-time: ms 250
+audio-2-time: none
+audio-3-play: playing
+audio-4-play: refused
+audio-5-play: unplayable
+caret-1: offset 003
+caret-2: none
+clipboard-1: copied
+clipboard-2: not copied
+decompress-1-stored: bytes 003
+decompress-2-raw: failed
+element: text
+file-1-get: found 002
+file-2-get-absent: absent
+file-3-get-failed: unreadable
+idb-1-put: stored
+idb-2-get: found 002
+idb-3-get-absent: absent
+idb-4-get-failed: unreadable
+idb-5-keys: found 004
+idb-6-put-failed: not stored
+idb-7-delete: stored
+measure-1: measured
+measure-2: no element
+measure-3-text: measured
+measure-4-text: no element
+media-1: matches
+media-2: no match
+media-3-change: no match
+permission-1: granted
+permission-2: not asked
+permission-3: denied
+player: audio
+refusing: audio
+url-1: length 022
+url-2-cut: length 005
+url-3-hash: length 005
+visibility-1: visible
+visibility-2: hidden
+scroll element smooth
+scroll element instant
+[bats:warn] hello
+[bats:error] hello

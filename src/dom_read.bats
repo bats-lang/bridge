@@ -10,9 +10,17 @@ staload "./decompress.bats"
    Public API
    ============================================================ *)
 
+(* Whether a measure found its element. JS's answer is decoded here,
+   once: anything but its 1 is NoElement (the slots then hold 0s). *)
+#pub datatype measured =
+  | Measured
+  | NoElement
+
+(* The element's box (slots 0 to 3: x, y, width, height) and its scroll
+   size (4, 5), read with get_measure_* *)
 #pub fun measure
   {li:agz}{ni:pos}
-  (node_id: !$A.borrow(byte, li, ni), id_len: int ni): $R.result(int, int)
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni): measured
 
 (* The last measure's values, as the page reported them: any int *)
 #pub fun get_measure_x(): [v:int] int v
@@ -34,8 +42,10 @@ staload "./decompress.bats"
   (sel: !$A.borrow(byte, lb, n), sel_len: int n)
   : $R.option([k:nat] dblob(k))
 
+(* The offset of the caret at viewport point (x, y) in its text node;
+   none when there is none *)
 #pub fun caret_position_from_point
-  (x: int, y: int): int
+  (x: int, y: int): $R.option([v:nat] int v)
 
 (* The node's text content as a blob; none when there is no such node
    or its text is empty *)
@@ -49,10 +59,13 @@ staload "./decompress.bats"
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni)
   : $R.option([k:nat] dblob(k))
 
+(* Where the offset-th character of the element's first text node is
+   (slots 0 and 1: x, y); NoElement when there is no such element or
+   text *)
 #pub fun measure_text_offset
   {li:agz}{ni:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
-   offset: int): int
+   offset: int): measured
 
 (* The selected text as a blob; none when the selection is empty *)
 #pub fun get_selection_text(): $R.option([k:nat] dblob(k))
@@ -97,7 +110,7 @@ extern fun _bats_js_measure_node
 extern fun _bats_js_query_selector
   (selector: ptr, selector_len: int): [v:int] int v = "mac#bats_js_query_selector"
 extern fun _bats_js_caret_position_from_point
-  (x: int, y: int): int = "mac#bats_js_caret_position_from_point"
+  (x: int, y: int): [v:int] int v = "mac#bats_js_caret_position_from_point"
 extern fun _bats_js_read_text_content
   (id: ptr, id_len: int): [v:int] int v = "mac#bats_js_read_text_content"
 extern fun _bats_js_measure_text_offset
@@ -114,12 +127,14 @@ extern fun _bats_js_read_input_value
   (id: ptr, id_len: int): [v:int] int v = "mac#bats_js_read_input_value"
 end
 
-implement measure{li}{ni}(node_id, id_len) = let
-  val r = _bats_js_measure_node(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len)
-in
-  if r >= 0 then $R.ok(r) else $R.err(r)
-end
+(* JS's codes: 1 measured; 0 (measure) or -1 (measure_text_offset) no
+   element *)
+fn _measured (code: int): measured =
+  if code = 1 then Measured() else NoElement()
+
+implement measure{li}{ni}(node_id, id_len) =
+  _measured(_bats_js_measure_node(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len))
 
 implement get_measure_x() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 0) end
 implement get_measure_y() = $UNSAFE begin $extfcall([v:int] int v, "bats_bridge_measure_get", 1) end
@@ -136,8 +151,10 @@ implement query_selector{lb}{n}(sel, sel_len) =
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(sel) end,
     sel_len))
 
-implement caret_position_from_point(x, y) =
-  _bats_js_caret_position_from_point(x, y)
+(* JS's -1 (or any negative) is none *)
+implement caret_position_from_point(x, y) = let
+  val offset = _bats_js_caret_position_from_point(x, y)
+in if offset >= 0 then $R.some(offset) else $R.none() end
 
 implement element_at_point(x, y) =
   blob_claim(_bats_js_element_at_point(x, y))
@@ -147,8 +164,8 @@ implement read_text_content{li}{ni}(node_id, id_len) =
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len))
 
 implement measure_text_offset{li}{ni}(node_id, id_len, offset) =
-  _bats_js_measure_text_offset(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, offset)
+  _measured(_bats_js_measure_text_offset(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, offset))
 
 implement get_selection_text() =
   blob_claim(_bats_js_get_selection_text())

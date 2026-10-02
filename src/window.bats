@@ -10,7 +10,20 @@
 
 #pub fun focus(): void
 
-#pub fun get_visibility(): int
+(* Whether the page is shown. JS's answer is decoded here, once:
+   anything but its hidden is Visible. *)
+#pub datatype visibility =
+  | Visible
+  | Hidden
+
+(* A log line's level *)
+#pub datatype log_level =
+  | Debug
+  | Info
+  | Warn
+  | Error
+
+#pub fun get_visibility(): visibility
 
 (* Keeps the screen from sleeping while on is true (a Screen Wake Lock,
    taken again whenever the page is shown); false lets it sleep again *)
@@ -18,7 +31,7 @@
 
 #pub fun log
   {lb:agz}{n:nat}
-  (level: int, msg: !$A.borrow(byte, lb, n), msg_len: int n): void
+  (level: log_level, msg: !$A.borrow(byte, lb, n), msg_len: int n): void
 
 (* ============================================================
    WASM implementation
@@ -43,12 +56,22 @@ extern fun _bats_js_log
 
 implement focus() = _bats_js_focus_window()
 
-implement get_visibility() = _bats_js_get_visibility_state()
+(* JS's codes: 1 hidden, 0 visible *)
+implement get_visibility() =
+  if _bats_js_get_visibility_state() = 1 then Hidden() else Visible()
 
 implement keep_awake(on) = _bats_js_keep_awake(if on then 1 else 0)
 
+(* JS's codes: 0 debug, 1 info, 2 warn, 3 error *)
+fn _log_level_code (level: log_level): int =
+  case+ level of
+  | Debug() => 0
+  | Info() => 1
+  | Warn() => 2
+  | Error() => 3
+
 implement log{lb}{n}(level, msg, msg_len) =
-  _bats_js_log(level,
+  _bats_js_log(_log_level_code(level),
     $UNSAFE.castvwtp1{ptr}(msg),
     msg_len)
 

@@ -15,10 +15,18 @@
    type, so they cannot fail. *)
 #pub absvtype dblob(n:int) = ptr
 
+(* How data is compressed: stored as it is, gzip, zlib's deflate, or
+   raw deflate (a zip entry's) *)
+#pub datatype compression =
+  | Uncompressed
+  | Gzip
+  | Deflate
+  | DeflateRaw
+
 #pub fun decompress_req
   {lb:agz}{n:pos}
   (data: !$A.borrow(byte, lb, n), data_len: int n,
-   method: int, resolver_id: int): void
+   method: compression, resolver_id: int): void
 
 (* The blob a decompress promise resolved with, or none when it failed
    (handle 0) or the handle is not a pending blob: JS's word is checked
@@ -66,10 +74,18 @@ datavtype blob_rep(int) = {n:nat} BlobRep(n) of (int, int n)
 assume dblob(n) = blob_rep(n)
 end
 
+(* JS's codes for the methods: 0 stored, 1 gzip, 2 deflate, 8 raw deflate *)
+fn _compression_code (method: compression): int =
+  case+ method of
+  | Uncompressed() => 0
+  | Gzip() => 1
+  | Deflate() => 2
+  | DeflateRaw() => 8
+
 implement decompress_req{lb}{n}(data, data_len, method, resolver_id) =
   _bats_js_decompress(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end,
-    data_len, method, resolver_id)
+    data_len, _compression_code(method), resolver_id)
 
 implement blob_claim(handle) = let
   val n = _bats_js_blob_claim(handle)

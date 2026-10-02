@@ -9,8 +9,15 @@
    Public API
    ============================================================ *)
 
+(* The answer to asking for notifications. JS's answer is decoded here,
+   once: anything it sends that is not one of its codes is Denied. *)
+#pub datatype permission =
+  | Granted
+  | Denied     (* refused, or notifications are not available here *)
+  | NotAsked   (* the question was dismissed, so it can be asked again *)
+
 #pub fun notify_request_permission
-  : () -> $P.promise_pending(Int)
+  : () -> $P.promise(permission, $P.Chained)
 
 #pub fun notify_show
   {lb:agz}{n:pos}
@@ -56,11 +63,22 @@ extern fun _bats_js_push_get_subscription
   (resolver_id: int): void = "mac#bats_js_push_get_subscription"
 end
 
+(* JS's codes: 1 granted, 2 not asked (dismissed), 0 denied *)
+fn _permission (code: Int): permission =
+  if code = 1 then Granted()
+  else if code = 2 then NotAsked()
+  else Denied()
+
+(* An answer nobody took: nothing to free. Before
+   notify_request_permission, its first use. *)
+implement $P.dispose<permission>(_) = ()
+
 implement notify_request_permission() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_notification_request_permission(id)
-in p end
+in $P.and_then<Int><permission>(p, llam (code) =>
+  $P.ret<permission>(_permission(code))) end
 
 implement notify_show{lb}{n}(title, title_len) =
   _bats_js_notification_show(

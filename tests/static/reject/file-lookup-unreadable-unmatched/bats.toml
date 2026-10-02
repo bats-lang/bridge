@@ -1,0 +1,9 @@
+[package]
+name = "file-lookup-unreadable-unmatched"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
