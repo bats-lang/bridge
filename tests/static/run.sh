@@ -2,7 +2,8 @@
 # Static tests of bridge's typed handles and ids. Each package under
 # tests/static/accept/ must pass `bats check`; each under
 # tests/static/reject/ must fail it with the message in its `expect`
-# file (so it is rejected for the right reason).
+# file (so it is rejected for the right reason); each line of an
+# `expect` is a message it may fail with.
 # Fixtures depend on this checkout, which is uploaded to a scratch copy
 # of the repository first.
 #
