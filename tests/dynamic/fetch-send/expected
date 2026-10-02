@@ -1,7 +1,7 @@
 DELETE /c [If-Match="e2"]  cache=no-store
 GET /b []  cache=no-store
 PUT /a [Authorization=Basic dXNlcjpwYXNz If-Match="e1"] body cache=no-store
-[bats:info] 1 sent
-[bats:info] 2 sent
+[bats:info] 1 sent, tagged
+[bats:info] 2 sent, tagged
 [bats:info] 3 sent
 [bats:info] 4 failed

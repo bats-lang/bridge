@@ -146,7 +146,7 @@ implement fullscreen_active() = _bats_js_fullscreen_active() > 0
    holds only the callback's pointer). *)
 implement listen_fullscreen(listener_id, callback) = let
   val inner = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
-  val decode = llam (_: event_payload): int =<lincloptr1> let
+  val decode = llam (payload: event_payload): int =<lincloptr1> let
     val call = $UNSAFE begin $UNSAFE.cast{(fullscreen_change) -<cloref1> void}(inner) end
     val () = call(if fullscreen_active()
       then FullscreenEntered() else FullscreenLeft())

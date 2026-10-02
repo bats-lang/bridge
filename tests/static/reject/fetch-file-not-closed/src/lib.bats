@@ -4,8 +4,8 @@
 staload FE = "wasm.bats-packages.dev/bridge/src/fetch.sats"
 staload BF = "wasm.bats-packages.dev/bridge/src/file.sats"
 
-(* A fetched body claimed as a file must be closed, so JS lets go of it *)
-fn f (h: Int): int =
-  case+ $FE.fetch_claim_file(h) of
-  | ~$R.none() => 0
-  | ~$R.some(@(_, fl)) => $BF.file_size(fl)
+(* A body fetched as a file must be closed, so JS lets go of it *)
+fn f (got: $FE.fetched_file): int =
+  case+ got of
+  | ~$FE.NoFileResponse() => 0
+  | ~$FE.RespondedFile(_, fl) => $BF.file_size(fl)

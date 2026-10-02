@@ -13,7 +13,7 @@ in $A.free<byte>($A.thaw<byte>(frozen)) end
 
 (* A PUT with a body, an Authorization header and no If-Match (its
    length 0 inside a buffer of 1) *)
-fn send (): $P.promise_pending(Int) = let
+fn send (): $P.promise($FE.fetched, $P.Chained) = let
   val method = $A.alloc<byte>(3)
   val () = $A.write_text(method, 0, $A.text_lit("PUT"), 3)
   val url = $A.alloc<byte>(1)
@@ -42,17 +42,26 @@ fn last {l:agz}{etag_size:pos}{etag_len:nat | etag_len <= etag_size}
   (etag: !$A.arr(byte, l, etag_size), etag_len: int etag_len): int =
   if etag_len > 0 then byte2int0($A.get<byte>(etag, etag_len - 1)) else 0
 
-(* The response claimed with its ETag: the tag's length is inside the
-   buffer, so a read of it is too *)
-fn take {l:agz} (h: Int, etag: !$A.arr(byte, l, 64)): int =
-  case+ $FE.fetch_claim_tagged(h, etag, 64) of
-  | ~$R.none() => 0
-  | ~$R.some(@(_, etag_len, b)) => let
-      val () = $BD.blob_free(b)
-    in last(etag, etag_len) end
+(* The response's ETag, then its body let go: the tag's length is
+   inside the buffer, so a read of it is too *)
+fn take {l:agz} (got: $FE.fetched, etag: !$A.arr(byte, l, 64)): int =
+  case+ got of
+  | ~$FE.NoResponse() => 0
+  | ~$FE.Responded(r) => let
+      val name = $A.alloc<byte>(4)
+      val () = $A.write_text(name, 0, $A.text_lit("ETag"), 4)
+      val @(name_frozen, name_bytes) = $A.freeze<byte>(name)
+      val found = $FE.fetch_header(r, name_bytes, 4, etag, 64)
+      val () = release(name_frozen, name_bytes)
+      val () = $BD.blob_free($FE.fetch_body(r))
+    in
+      case+ found of
+      | ~$R.some(etag_len) => last(etag, etag_len)
+      | ~$R.none() => 0
+    end
 
-fn claim (h: Int): int = let
+fn claim (got: $FE.fetched): int = let
   val etag = $A.alloc<byte>(64)
-  val result = take(h, etag)
+  val result = take(got, etag)
   val () = $A.free<byte>(etag)
 in result end

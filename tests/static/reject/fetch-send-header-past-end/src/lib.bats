@@ -13,7 +13,7 @@ in $A.free<byte>($A.thaw<byte>(frozen)) end
 
 (* A header's length must lie inside its buffer: 2 in a buffer of 1
    does not *)
-fn send (): $P.promise_pending(Int) = let
+fn send (): $P.promise($FE.fetched, $P.Chained) = let
   val method = $A.alloc<byte>(3)
   val () = $A.write_text(method, 0, $A.text_lit("PUT"), 3)
   val url = $A.alloc<byte>(1)

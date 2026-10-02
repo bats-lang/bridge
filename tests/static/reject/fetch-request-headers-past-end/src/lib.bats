@@ -12,7 +12,7 @@ in $A.free<byte>($A.thaw<byte>(frozen)) end
 
 (* The header block's length must lie inside its buffer: 45 in a
    buffer of 44 does not *)
-fn send (): $P.promise_pending(Int) = let
+fn send (): $P.promise($FE.fetched, $P.Chained) = let
   val method = $A.alloc<byte>(4)
   val () = $A.write_text(method, 0, $A.text_lit("POST"), 4)
   val url = $A.alloc<byte>(1)

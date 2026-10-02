@@ -13,24 +13,40 @@ staload "./file.bats"
    Public API
    ============================================================ *)
 
-(* Fetches the URL; the promise resolves with a handle to the response,
-   0 when the request failed, to claim with fetch_claim (or
-   fetch_claim_file) *)
+(* A response the server sent, held by JS: its status, its headers and
+   its body. Linear: its body is taken once (fetch_body), which lets the
+   rest of it go *)
+#pub absvtype response = ptr
+
+(* What a request came to: a response (whatever its status), or none:
+   the network failed, the request was refused (CORS, a header the
+   browser refuses) or cut short *)
+#pub datavtype fetched =
+  | Responded of (response)
+  | NoResponse
+
+(* What a request for a file came to (fetch_file): the response's
+   status and its body as a file held by JS, or none, as fetched's *)
+#pub datavtype fetched_file =
+  | RespondedFile of ([s:int] int s, [n:nat] infile(n))
+  | NoFileResponse
+
+(* Fetches the URL (a GET) *)
 #pub fun fetch
   : {lb:agz}{n:pos}
-  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise(fetched, $P.Chained)
 
-(* The response a fetch promise resolved with: its HTTP status and its
-   body, a blob of its own size; none when the request failed or the
-   handle is not a pending response. Claimed once. *)
-#pub fun fetch_claim
-  (handle: Int): $R.option(@([s:int] int s, [k:nat] dblob(k)))
+(* Fetches the URL (a GET), its body kept by JS as a file: its bytes
+   never pass through wasm memory *)
+#pub fun fetch_file
+  : {lb:agz}{n:pos}
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise(fetched_file, $P.Chained)
 
 (* Sends a request: its method (GET, PUT and the like), the URL, the
    value of its Authorization header and of its If-Match header (each
-   left out when it is empty) and its body (none when it is empty).
-   The promise resolves as fetch's does, with a handle to claim with
-   fetch_claim or fetch_claim_tagged *)
+   left out when it is empty) and its body (none when it is empty). A
+   value with a line break in it would end its header, so the request
+   is not made: NoResponse *)
 #pub fun fetch_send
   : {method_loc:agz}{method_len:pos}{url_loc:agz}{url_len:pos}
     {authorization_loc:agz}{authorization_size:nat}{authorization_len:nat | authorization_len <= authorization_size}
@@ -40,16 +56,15 @@ staload "./file.bats"
    !$A.borrow(byte, url_loc, url_len), int url_len,
    !$A.borrow(byte, authorization_loc, authorization_size), int authorization_len,
    !$A.borrow(byte, match_loc, match_size), int match_len,
-   !$A.borrow(byte, body_loc, body_size), int body_len) -> $P.promise_pending(Int)
+   !$A.borrow(byte, body_loc, body_size), int body_len) -> $P.promise(fetched, $P.Chained)
 
 (* Sends a request: its method, the URL, its headers as a block of
    "Name: value" lines separated by newlines (any number; an empty line
    or one with no name is skipped, and each name and value is trimmed)
    and its body (none when it is empty). The headers and the body may
-   be empty: length 0 inside a buffer. The promise resolves as fetch's
-   does, with a handle to claim with fetch_claim or fetch_claim_tagged,
-   and 0 when the request failed, even at once (a header the browser
-   refuses). The response is not cached. *)
+   be empty: length 0 inside a buffer. NoResponse when the request
+   failed, even at once (a header the browser refuses). The response
+   is not cached. *)
 #pub fun fetch_request
   : {method_loc:agz}{method_len:pos}{url_loc:agz}{url_len:pos}
     {headers_loc:agz}{headers_size:nat}{headers_len:nat | headers_len <= headers_size}
@@ -57,31 +72,23 @@ staload "./file.bats"
   (!$A.borrow(byte, method_loc, method_len), int method_len,
    !$A.borrow(byte, url_loc, url_len), int url_len,
    !$A.borrow(byte, headers_loc, headers_size), int headers_len,
-   !$A.borrow(byte, body_loc, body_size), int body_len) -> $P.promise_pending(Int)
+   !$A.borrow(byte, body_loc, body_size), int body_len) -> $P.promise(fetched, $P.Chained)
 
-(* The named header of a pending response (one a fetch promise resolved
-   with, not yet claimed) written to out: its length, at most out_size,
-   and 0 when the response has no such header, it is longer, or the
-   server does not let the page read it (CORS) *)
+(* The response's HTTP status (0 for an opaque one) *)
+#pub fun fetch_status (r: !response): [s:int] int s
+
+(* The named header of a response written to out: its length (0 for
+   an empty value); none when the response has no such header, it is
+   longer than out_size, or the server does not let the page read it
+   (CORS) *)
 #pub fun fetch_header
   {name_loc:agz}{name_len:pos}{out_loc:agz}{out_size:pos}
-  (handle: Int, name: !$A.borrow(byte, name_loc, name_len), name_len: int name_len,
+  (r: !response, name: !$A.borrow(byte, name_loc, name_len), name_len: int name_len,
    out: !$A.arr(byte, out_loc, out_size), out_size: int out_size)
-  : [k:nat | k <= out_size] int k
+  : $R.option([k:nat | k <= out_size] int k)
 
-(* As fetch_claim, with the response's ETag header written to etag:
-   its length, at most etag_size, and 0 when the response has none, it
-   is longer, or the server does not let the page read it *)
-#pub fun fetch_claim_tagged
-  {etag_loc:agz}{etag_size:pos}
-  (handle: Int, etag: !$A.arr(byte, etag_loc, etag_size), etag_size: int etag_size)
-  : $R.option(@([s:int] int s, [k:nat | k <= etag_size] int k, [k:nat] dblob(k)))
-
-(* The body of a pending fetch response, as a file held by JS: its bytes
-   never pass through wasm memory. Consumes the response like a claim (the
-   status is taken first); none when the request failed. *)
-#pub fun fetch_claim_file
-  (handle: Int): $R.option(@([s:int] int s, [n:nat] infile(n)))
+(* The response's body, a blob of its own size; the response is gone *)
+#pub fun fetch_body (r: response): [k:nat] dblob(k)
 
 #pub fun on_fetch_complete
   (resolver_id: int, handle: Int)
@@ -96,31 +103,82 @@ $UNSAFE begin
 %{
 extern void bats_js_fetch(void*, int, int);
 extern int bats_js_fetch_status(int);
+extern void bats_js_fetch_release(int);
 extern void bats_js_fetch_request(void*, int, void*, int, void*, int, void*, int, int);
 extern int bats_js_fetch_header(int, void*, int, void*, int);
 extern int bats_js_fetch_file(int);
-/* The response's ETag header, as fetch_header reads it */
-static int bats_fetch_etag(int handle, void *out, int out_size) {
-  return bats_js_fetch_header(handle, (void*)"ETag", 4, out, out_size);
-}
 %}
 extern fun _bats_js_fetch
   (url: ptr, url_len: int, resolver_id: int): void = "mac#bats_js_fetch"
 extern fun _bats_js_fetch_status
   (handle: int): [s:int] int s = "mac#bats_js_fetch_status"
+extern fun _bats_js_fetch_release
+  (handle: int): void = "mac#bats_js_fetch_release"
 extern fun _bats_js_fetch_request
   (method: ptr, method_len: int, url: ptr, url_len: int,
    headers: ptr, headers_len: int, body: ptr, body_len: int,
    resolver_id: int): void = "mac#bats_js_fetch_request"
 extern fun _bats_js_fetch_header
-  (handle: int, name: ptr, name_len: int, out: ptr, out_size: int): int = "mac#bats_js_fetch_header"
+  (handle: int, name: ptr, name_len: int, out: ptr, out_size: int): [v:int] int v = "mac#bats_js_fetch_header"
 extern fun _bats_js_fetch_file
   (handle: int): [v:int] int v = "mac#bats_js_fetch_file"
-extern fun _bats_fetch_etag
-  (handle: int, etag: ptr, etag_size: int): int = "mac#bats_fetch_etag"
+
+(* A response: JS's handle to its headers, its status, and its body,
+   claimed when it came *)
+datavtype response_rep = {k:nat} ResponseRep of (int, [s:int] int s, dblob(k))
+assume response = response_rep
 end
 
-implement fetch{lb}{n}(url, url_len) = let
+implement fetch_status(r) = let
+  val+ ResponseRep(_, status, _) = r
+in status end
+
+implement fetch_body(r) = let
+  val+ ~ResponseRep(handle, _, body) = r
+  val () = _bats_js_fetch_release(handle)
+in body end
+
+(* A response nobody took: its body is freed. Before the requests, its
+   first use *)
+implement $P.dispose<fetched>(got) =
+  case+ got of
+  | ~Responded(r) => blob_free(fetch_body(r))
+  | ~NoResponse() => ()
+
+implement $P.dispose<fetched_file>(got) =
+  case+ got of
+  | ~RespondedFile(_, f) => file_close(f)
+  | ~NoFileResponse() => ()
+
+(* JS's code: a response's handle (positive; its status is -1 when JS
+   holds no such response), or 0 when the request failed *)
+fn _fetched (code: Int): fetched =
+  if code <= 0 then NoResponse()
+  else let
+    val status = _bats_js_fetch_status(code)
+  in
+    if status < 0 then NoResponse()
+    else (case+ blob_claim(code) of
+      | ~$R.some(body) => Responded(ResponseRep(code, status, body))
+      | ~$R.none() => let
+          val () = _bats_js_fetch_release(code)
+        in NoResponse() end)
+  end
+
+(* As _fetched, the body moved to a file *)
+fn _fetched_file (code: Int): fetched_file =
+  if code <= 0 then NoFileResponse()
+  else let
+    val status = _bats_js_fetch_status(code)
+    val () = _bats_js_fetch_release(code)
+  in
+    if status < 0 then NoFileResponse()
+    else (case+ file_claim(_bats_js_fetch_file(code)) of
+      | ~$R.some(f) => RespondedFile(status, f)
+      | ~$R.none() => NoFileResponse())
+  end
+
+fn _get {lb:agz}{n:pos} (url: !$A.borrow(byte, lb, n), url_len: int n): $P.promise(Int, $P.Pending) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_fetch(
@@ -128,14 +186,13 @@ implement fetch{lb}{n}(url, url_len) = let
     id)
 in p end
 
-implement fetch_claim(handle) = let
-  (* The status is taken first: JS drops it when the body is claimed *)
-  val status = _bats_js_fetch_status(handle)
-in
-  case+ blob_claim(handle) of
-  | ~$R.none() => $R.none()
-  | ~$R.some(b) => $R.some(@(status, b))
-end
+implement fetch{lb}{n}(url, url_len) =
+  $P.and_then<Int><fetched>($P.vow(_get(url, url_len)), llam (code) =>
+    $P.ret<fetched>(_fetched(code)))
+
+implement fetch_file{lb}{n}(url, url_len) =
+  $P.and_then<Int><fetched_file>($P.vow(_get(url, url_len)), llam (code) =>
+    $P.ret<fetched_file>(_fetched_file(code)))
 
 (* Whether src[i, k) has no line break (a header's value cannot hold
    one: it would end the header) *)
@@ -181,12 +238,6 @@ in
   else next
 end
 
-(* A request that is not made: its promise resolves 0, as a failed one's *)
-fn _fetch_failed (): $P.promise_pending(Int) = let
-  val @(p, r) = $P.create<Int>()
-  val () = $P.resolve<Int>(r, 0)
-in p end
-
 (* fetch_send is fetch_request with its two headers written as lines,
    each left out when its value is empty. A value with a line break in
    it would end its header and start another, so the request is not
@@ -196,9 +247,9 @@ implement fetch_send{method_loc}{method_len}{url_loc}{url_len}
   {match_loc}{match_size}{match_len}{body_loc}{body_size}{body_len}
   (method, method_len, url, url_len, authorization, authorization_len,
    match, match_len, body, body_len) =
-  if authorization_len + match_len > 1048000 then _fetch_failed()
-  else if not(_one_line(authorization, authorization_len, 0)) then _fetch_failed()
-  else if not(_one_line(match, match_len, 0)) then _fetch_failed()
+  if authorization_len + match_len > 1048000 then $P.ret<fetched>(NoResponse())
+  else if not(_one_line(authorization, authorization_len, 0)) then $P.ret<fetched>(NoResponse())
+  else if not(_one_line(match, match_len, 0)) then $P.ret<fetched>(NoResponse())
   else let
     val headers = $A.alloc<byte>(27 + authorization_len + match_len)
     val headers_len = _header_lines(headers, authorization, authorization_len, match, match_len)
@@ -207,22 +258,6 @@ implement fetch_send{method_loc}{method_len}{url_loc}{url_len}
     val () = $A.drop<byte>(headers_frozen, headers_borrow)
     val () = $A.free<byte>($A.thaw<byte>(headers_frozen))
   in sent end
-
-implement fetch_claim_tagged{etag_loc}{etag_size}(handle, etag, etag_size) = let
-  (* The ETag and the status are taken first: JS drops them when the
-     body is claimed *)
-  val etag_written = _bats_fetch_etag(handle,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(etag) end, etag_size)
-  val etag_len = g1ofg0(etag_written)
-  val status = _bats_js_fetch_status(handle)
-in
-  case+ blob_claim(handle) of
-  | ~$R.none() => $R.none()
-  | ~$R.some(b) =>
-    if etag_len < 0 then $R.some(@(status, 0, b))
-    else if etag_len > etag_size then $R.some(@(status, 0, b))
-    else $R.some(@(status, etag_len, b))
-end
 
 implement fetch_request{method_loc}{method_len}{url_loc}{url_len}
   {headers_loc}{headers_size}{headers_len}{body_loc}{body_size}{body_len}
@@ -235,27 +270,20 @@ implement fetch_request{method_loc}{method_len}{url_loc}{url_len}
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(headers) end, headers_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(body) end, body_len,
     id)
-in p end
+in $P.and_then<Int><fetched>($P.vow(p), llam (code) =>
+  $P.ret<fetched>(_fetched(code))) end
 
+(* JS's code: the header's length, or -1 when there is none to give *)
 implement fetch_header{name_loc}{name_len}{out_loc}{out_size}
-  (handle, name, name_len, out, out_size) = let
-  val written = g1ofg0(_bats_js_fetch_header(handle,
+  (r, name, name_len, out, out_size) = let
+  val+ ResponseRep(handle, _, _) = r
+  val written = _bats_js_fetch_header(handle,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(name) end, name_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end, out_size))
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(out) end, out_size)
 in
-  if written < 0 then 0
-  else if written > out_size then 0
-  else written
-end
-
-(* JS moves the body from the pending blobs to the pending files, under a
-   new file handle (0 when there is none), and file_claim checks it *)
-implement fetch_claim_file(handle) = let
-  val status = _bats_js_fetch_status(handle)
-in
-  case+ file_claim(_bats_js_fetch_file(handle)) of
-  | ~$R.none() => $R.none()
-  | ~$R.some(f) => $R.some(@(status, f))
+  if written < 0 then $R.none()
+  else if written > out_size then $R.none()
+  else $R.some(written)
 end
 
 implement on_fetch_complete(resolver_id, handle) =

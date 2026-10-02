@@ -1,6 +1,7 @@
 // Runs dist/pwa/app.wasm through the bridge.js that pwa generated, in
 // jsdom, with fetch recording each request's method, URL, headers and
-// body; prints them and what the app logged.
+// body (answering /a with an ETag, /b with an empty one, the rest with
+// none); prints them and what the app logged.
 import { JSDOM } from 'jsdom';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -17,7 +18,8 @@ global.fetch = async (url, init) => {
   const headers = (init.headers || []).map(([n, v]) => `${n}=${v}`).join(' ');
   const body = init.body ? new TextDecoder().decode(init.body) : '';
   lines.push(`${init.method} ${url} [${headers}] ${body} cache=${init.cache}`);
-  return { ok: true, status: 200, headers: { get: () => null }, arrayBuffer: async () => new ArrayBuffer(1) };
+  const etag = { '/a': '"e9"', '/b': '' }[url] ?? null;
+  return { ok: true, status: 200, headers: { get: h => (h === 'ETag' ? etag : null) }, arrayBuffer: async () => new ArrayBuffer(1) };
 };
 const consoleLog = console.log;
 console.log = (...parts) => lines.push(parts.join(' '));

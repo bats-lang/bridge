@@ -1,0 +1,8 @@
+[package]
+name = "event-payload-not-a-number"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

@@ -1,18 +1,24 @@
 (* event -- DOM event listener management for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./decompress.bats"
 
 #use array as A
+#use result as R
 
 (* ============================================================
    Public API
    ============================================================ *)
 
-(* The event's payload as JS passes it to a listener: a handle to claim
-   with blob_claim (decompress.bats) during the callback, 0 when the
-   event has none. Each event's payload is its own blob, and one not
-   claimed during its callback is dropped. *)
-#pub typedef event_payload = [v:int] int v
+(* The event's payload, given to its listener for the time of the call:
+   its bytes, when the event has any, are taken with event_take during
+   the call (JS drops them when it returns). It is not a number: it
+   cannot be compared or computed with *)
+#pub abst@ype event_payload = int
+
+(* The payload's bytes, a blob of their own size; none when the event
+   has none, or they were taken already *)
+#pub fun event_take (payload: event_payload): $R.option([k:nat] dblob(k))
 
 (* A listener id indexes bridge's listener table (128 slots, shared with
    listen_media), so it is proven to be in range. *)
@@ -73,7 +79,7 @@
 #pub fun prevent_default(): void
 
 #pub fun on_event
-  (listener_id: int, payload: event_payload): void = "ext#bats_on_event"
+  (listener_id: int, payload: Int): void = "ext#bats_on_event"
 
 (* ============================================================
    WASM implementation
@@ -111,7 +117,12 @@ extern fun _bats_js_remove_event_listener
   (listener_id: int): void = "mac#bats_js_remove_event_listener"
 extern fun _bats_js_prevent_default
   (): void = "mac#bats_js_prevent_default"
+
+(* JS's handle to the event's bytes, 0 when it has none *)
+assume event_payload = [v:int] int v
 end
+
+implement event_take(payload) = blob_claim(payload)
 
 implement listen{li}{ni}{lb}{n}
   (node_id, id_len, event_type, type_len, listener_id, callback) = let

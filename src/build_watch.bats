@@ -61,14 +61,16 @@ implement $P.dispose<stamp>(found) =
   | ~Stamp(bytes, _) => $A.free<byte>(bytes)
   | ~Unstamped() => ()
 
-(* The value of header name in a response held by its handle, or 0 *)
+(* The value of header name in a response, its length; 0 when it has
+   none *)
 fn _header {n:pos | n < 64}{l:agz}
-  (handle: Int, name: string n, out: !$A.arr(byte, l, STAMP_SIZE)): [k:nat | k <= STAMP_SIZE] int k = let
+  (r: !response, name: string n, out: !$A.arr(byte, l, STAMP_SIZE)): [k:nat | k <= STAMP_SIZE] int k = let
   val name_len = g1u2i(string1_length(name))
   val name_bytes = $A.alloc<byte>(name_len)
   val () = $A.write_text(name_bytes, 0, $A.text_lit(name), name_len)
   val @(name_frozen, name_borrow) = $A.freeze<byte>(name_bytes)
-  val k = fetch_header(handle, name_borrow, name_len, out, STAMP_SIZE)
+  val found = fetch_header(r, name_borrow, name_len, out, STAMP_SIZE)
+  val k = (case+ found of ~$R.some(k) => k | ~$R.none() => 0): [k:nat | k <= STAMP_SIZE] int k
   val () = $A.drop<byte>(name_frozen, name_borrow)
   val () = $A.free<byte>($A.thaw<byte>(name_frozen))
 in k end
@@ -82,21 +84,21 @@ fn _stamp_of {l:agz}{k:nat | k <= STAMP_SIZE}
 
 (* The response's ETag in out, else its Last-Modified: its length, 0
    when it has neither *)
-fn _stamp_header {l:agz} (handle: Int, out: !$A.arr(byte, l, STAMP_SIZE)): [k:nat | k <= STAMP_SIZE] int k = let
-  val etag_len = _header(handle, "etag", out)
-in if etag_len > 0 then etag_len else _header(handle, "last-modified", out) end
+fn _stamp_header {l:agz} (r: !response, out: !$A.arr(byte, l, STAMP_SIZE)): [k:nat | k <= STAMP_SIZE] int k = let
+  val etag_len = _header(r, "etag", out)
+in if etag_len > 0 then etag_len else _header(r, "last-modified", out) end
 
-(* The stamp of the response a handle holds; the response is let go
-   (its status is read, its body freed) *)
-fn _stamp_of_response (handle: Int): stamp = let
-  val out = $A.alloc<byte>(STAMP_SIZE)
-  val k = _stamp_header(handle, out)
-  val ok = (case+ fetch_claim(handle) of
-    | ~$R.some(@(status, body)) => let
-        val () = blob_free(body)
-      in status >= 200 && status < 300 end
-    | ~$R.none() => false): bool
-in _stamp_of(out, k, ok) end
+(* The stamp of what a request came to: a response's, when it was a
+   success and has one; its body is let go *)
+fn _stamp_of_response (got: fetched): stamp =
+  case+ got of
+  | ~NoResponse() => Unstamped()
+  | ~Responded(r) => let
+      val out = $A.alloc<byte>(STAMP_SIZE)
+      val k = _stamp_header(r, out)
+      val status = fetch_status(r)
+      val () = blob_free(fetch_body(r))
+    in _stamp_of(out, k, status >= 200 && status < 300) end
 
 (* The build's stamp: a HEAD request for url, not cached *)
 fn _stamp_read {lu:agz}{nu:pos} (url: !$A.borrow(byte, lu, nu), url_len: int nu): $P.promise(stamp, $P.Chained) = let
@@ -111,7 +113,7 @@ fn _stamp_read {lu:agz}{nu:pos} (url: !$A.borrow(byte, lu, nu), url_len: int nu)
   val () = $A.free<byte>($A.thaw<byte>(none_frozen))
   val () = $A.drop<byte>(method_frozen, method_borrow)
   val () = $A.free<byte>($A.thaw<byte>(method_frozen))
-in $P.and_then<Int><stamp>($P.vow(asked), llam (handle) => $P.ret<stamp>(_stamp_of_response(handle))) end
+in $P.and_then<fetched><stamp>(asked, llam (got) => $P.ret<stamp>(_stamp_of_response(got))) end
 
 (* Whether a[0, k) and b[0, k) are the same bytes *)
 fun _same {la,lb:agz}{k:nat | k <= STAMP_SIZE}{i:nat | i <= k} .<k - i>.
