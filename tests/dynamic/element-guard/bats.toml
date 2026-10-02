@@ -1,0 +1,8 @@
+[package]
+name = "element-guard"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""

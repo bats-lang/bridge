@@ -40,9 +40,9 @@ in put(buffer, after_name + 2, value) end
 
 (* Writes the flush's operations by hand, as code that does not go
    through the dom package's types could: event handlers (onclick,
-   ONLOAD) and javascript: URLs (with a space before, in mixed case, with
-   a tab inside) among attributes that are harmless. The flush must set
-   only the harmless ones *)
+   ONLOAD) and javascript: URLs (with a space before, in mixed case,
+   with a tab inside, as a button's formaction) among attributes that
+   are harmless. The flush must set only the harmless ones *)
 implement main0 () = let
   val buffer = $A.alloc<byte>(1024)
   val offset = create_op(buffer, 0, "d1", "bats-root", "div")
@@ -53,8 +53,8 @@ implement main0 () = let
   val offset = set_attr_op(buffer, offset, "a1", "href", " JavaScript:alert(1)")
   val offset = create_op(buffer, offset, "a2", "bats-root", "a")
   val offset = set_attr_op(buffer, offset, "a2", "href", "java\tscript:alert(1)")
-  val offset = create_op(buffer, offset, "f1", "bats-root", "form")
-  val offset = set_attr_op(buffer, offset, "f1", "action", "javascript:alert(1)")
+  val offset = create_op(buffer, offset, "f1", "bats-root", "button")
+  val offset = set_attr_op(buffer, offset, "f1", "formaction", "javascript:alert(1)")
   val offset = create_op(buffer, offset, "a3", "bats-root", "a")
   val offset = set_attr_op(buffer, offset, "a3", "href", "https://example.com/")
   val offset = create_op(buffer, offset, "i1", "bats-root", "img")

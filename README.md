@@ -34,5 +34,12 @@ it refuses with `console.error`. The dom package's types refuse both
 already; this is defence in depth for code that writes the flush's
 buffer itself (`tests/dynamic/attribute-guard`).
 
+Nor does it make an element that runs or loads code, or changes how
+the page is read: `script`, `iframe`, `frame`, `object`, `embed`,
+`base`, `link`, `meta`, `template`, `noscript` and `form` (in any case).
+The first one refused is logged with `console.error`. The dom package's
+`tag` type has no constructor for any of them
+(`tests/dynamic/element-guard`).
+
 
 `unsafe = true` — contains C runtime stubs for WASM host imports. The `produce_bridge` function is safe and works on both native and WASM targets. WASM-only functions are guarded with `#target wasm begin...end`.
