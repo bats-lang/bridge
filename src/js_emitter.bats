@@ -781,8 +781,8 @@ fn emit_js_event {n:nat | n + 5030 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_fetch {n:nat | n + 1830 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1830] $B.builder(m)): void = let
+fn emit_js_fetch {n:nat | n + 1570 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1570] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Fetch ---\n")
   val () = $B.bput(b,"\n")
@@ -826,12 +826,6 @@ fn emit_js_fetch {n:nat | n + 1830 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function fetchSend(mp, ml, up, ul, h, bp, bl, i) {\n")
   val () = $B.bput(b,"    fetchDeliver(readString(up, ul), { method: readString(mp, ml), headers: h,\n")
   val () = $B.bput(b,"      body: bl > 0 ? readBytes(bp, bl) : null, cache: 'no-store' }, i);\n")
-  val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsFetchSend(mp, ml, up, ul, ap, al, tp, tl, bp, bl, i) {\n")
-  val () = $B.bput(b,"    const h = [];\n")
-  val () = $B.bput(b,"    if (al > 0) h.push(['Authorization', readString(ap, al)]);\n")
-  val () = $B.bput(b,"    if (tl > 0) h.push(['If-Match', readString(tp, tl)]);\n")
-  val () = $B.bput(b,"    fetchSend(mp, ml, up, ul, h, bp, bl, i);\n")
   val () = $B.bput(b,"  }\n")
   (* Header lines, split at a newline (the template literal holds one),
      then at their first colon, each side trimmed; a line with no name
@@ -1526,8 +1520,8 @@ fn emit_js_extra {n:nat | n + 4360 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 5070 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5070] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5020 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5020] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1581,7 +1575,6 @@ fn emit_js_imports {n:nat | n + 5070 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      // Fetch\n")
   val () = $B.bput(b,"      bats_js_fetch: batsJsFetch,\n")
   val () = $B.bput(b,"      bats_js_fetch_status: batsJsFetchStatus,\n")
-  val () = $B.bput(b,"      bats_js_fetch_send: batsJsFetchSend,\n")
   val () = $B.bput(b,"      bats_js_fetch_header: batsJsFetchHeader,\n")
   val () = $B.bput(b,"      bats_js_fetch_request: batsJsFetchRequest,\n")
   val () = $B.bput(b,"      bats_js_fetch_file: batsJsFetchFile,\n")
@@ -2021,8 +2014,8 @@ fn _emit_3 {n:nat | n + 5760 <= $B.BUILDER_CAP}
   val () = emit_js_dom_read(b)
 in end
 
-fn _emit_4 {n:nat | n + 6860 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6860] $B.builder(m)): void = let
+fn _emit_4 {n:nat | n + 6600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6600] $B.builder(m)): void = let
   val () = emit_js_event(b)
   val () = emit_js_fetch(b)
 in end
@@ -2063,23 +2056,23 @@ fn _emit_11 {n:nat | n + 11970 <= $B.BUILDER_CAP}
   val () = emit_js_share(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 7420 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7420] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 7370 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7370] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 30250 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 30250] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 29990 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29990] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 43140 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43140] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 43090 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43090] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

@@ -96,7 +96,6 @@ $UNSAFE begin
 %{
 extern void bats_js_fetch(void*, int, int);
 extern int bats_js_fetch_status(int);
-extern void bats_js_fetch_send(void*, int, void*, int, void*, int, void*, int, void*, int, int);
 extern void bats_js_fetch_request(void*, int, void*, int, void*, int, void*, int, int);
 extern int bats_js_fetch_header(int, void*, int, void*, int);
 extern int bats_js_fetch_file(int);
@@ -109,10 +108,6 @@ extern fun _bats_js_fetch
   (url: ptr, url_len: int, resolver_id: int): void = "mac#bats_js_fetch"
 extern fun _bats_js_fetch_status
   (handle: int): [s:int] int s = "mac#bats_js_fetch_status"
-extern fun _bats_js_fetch_send
-  (method: ptr, method_len: int, url: ptr, url_len: int,
-   authorization: ptr, authorization_len: int, match: ptr, match_len: int,
-   body: ptr, body_len: int, resolver_id: int): void = "mac#bats_js_fetch_send"
 extern fun _bats_js_fetch_request
   (method: ptr, method_len: int, url: ptr, url_len: int,
    headers: ptr, headers_len: int, body: ptr, body_len: int,
@@ -142,21 +137,76 @@ in
   | ~$R.some(b) => $R.some(@(status, b))
 end
 
+(* Whether src[i, k) has no line break (a header's value cannot hold
+   one: it would end the header) *)
+fun _one_line {ls:agz}{size:nat}{k:nat | k <= size}{i:nat | i <= k} .<k - i>.
+  (src: !$A.borrow(byte, ls, size), k: int k, i: int i): bool =
+  if i >= k then true
+  else let
+    val c = byte2int0($A.read<byte>(src, i))
+  in if c = 10 || c = 13 then false else _one_line(src, k, i + 1) end
+
+(* dst[at + i, at + k) := src[i, k) *)
+fun _copy {ls,ld:agz}{size,m:nat}{k:nat | k <= size}{at:nat | at + k <= m}{i:nat | i <= k} .<k - i>.
+  (dst: !$A.arr(byte, ld, m), at: int at, src: !$A.borrow(byte, ls, size), k: int k, i: int i): void =
+  if i >= k then ()
+  else let
+    val () = $A.set<byte>(dst, at + i, $A.read<byte>(src, i))
+  in _copy(dst, at, src, k, i + 1) end
+
+(* dst[at, at + n) := s, n being s's length *)
+fn _put {ld:agz}{m:nat}{n:nat}{at:nat | at + n <= m}
+  (dst: !$A.arr(byte, ld, m), at: int at, s: string n): int(at + n) = let
+  val n = g1u2i(string1_length(s))
+  val () = $A.write_text(dst, at, $A.text_lit(s), n)
+in at + n end
+
+(* The lines "Authorization: <a>" and "If-Match: <t>" (each left out
+   when its value is empty) written in dst, at most 26 + a + t bytes:
+   their length *)
+fn _header_lines {la,lt,ld:agz}{sa,st:nat}{a:nat | a <= sa}{t:nat | t <= st}{m:int | m == 27 + a + t}
+  (dst: !$A.arr(byte, ld, m), authorization: !$A.borrow(byte, la, sa), a: int a,
+   match: !$A.borrow(byte, lt, st), t: int t): [e:nat | e <= 26 + a + t] int e = let
+  val next = (if a > 0 then let
+      val at = _put(dst, 0, "Authorization: ")
+      val () = _copy(dst, at, authorization, a, 0)
+      val () = $A.set<byte>(dst, at + a, $A.int2byte(10))
+    in at + a + 1 end
+    else 0): [n:nat | n <= 16 + a] int n
+in
+  if t > 0 then let
+    val at = _put(dst, next, "If-Match: ")
+    val () = _copy(dst, at, match, t, 0)
+  in at + t end
+  else next
+end
+
+(* A request that is not made: its promise resolves 0, as a failed one's *)
+fn _fetch_failed (): $P.promise_pending(Int) = let
+  val @(p, r) = $P.create<Int>()
+  val () = $P.resolve<Int>(r, 0)
+in p end
+
+(* fetch_send is fetch_request with its two headers written as lines,
+   each left out when its value is empty. A value with a line break in
+   it would end its header and start another, so the request is not
+   made: it fails, as the browser fails one whose header it refuses *)
 implement fetch_send{method_loc}{method_len}{url_loc}{url_len}
   {authorization_loc}{authorization_size}{authorization_len}
   {match_loc}{match_size}{match_len}{body_loc}{body_size}{body_len}
   (method, method_len, url, url_len, authorization, authorization_len,
-   match, match_len, body, body_len) = let
-  val @(p, r) = $P.create<Int>()
-  val id = $P.stash(r)
-  val () = _bats_js_fetch_send(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(method) end, method_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end, url_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(authorization) end, authorization_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(match) end, match_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(body) end, body_len,
-    id)
-in p end
+   match, match_len, body, body_len) =
+  if authorization_len + match_len > 1048000 then _fetch_failed()
+  else if not(_one_line(authorization, authorization_len, 0)) then _fetch_failed()
+  else if not(_one_line(match, match_len, 0)) then _fetch_failed()
+  else let
+    val headers = $A.alloc<byte>(27 + authorization_len + match_len)
+    val headers_len = _header_lines(headers, authorization, authorization_len, match, match_len)
+    val @(headers_frozen, headers_borrow) = $A.freeze<byte>(headers)
+    val sent = fetch_request(method, method_len, url, url_len, headers_borrow, headers_len, body, body_len)
+    val () = $A.drop<byte>(headers_frozen, headers_borrow)
+    val () = $A.free<byte>($A.thaw<byte>(headers_frozen))
+  in sent end
 
 implement fetch_claim_tagged{etag_loc}{etag_size}(handle, etag, etag_size) = let
   (* The ETag and the status are taken first: JS drops them when the

@@ -1,0 +1,10 @@
+[package]
+name = "fetch-send"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""
