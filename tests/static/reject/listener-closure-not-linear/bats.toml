@@ -1,0 +1,7 @@
+[package]
+name = "listener-closure-not-linear"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"wasm.bats-packages.dev/bridge" = ""

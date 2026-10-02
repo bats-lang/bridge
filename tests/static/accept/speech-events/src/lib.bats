@@ -3,7 +3,7 @@
 staload SP = "wasm.bats-packages.dev/bridge/src/speech.sats"
 
 (* Every speech event is matched, and each failure's reason *)
-fn f (): void = $SP.listen_speech(3, lam (event) =>
+fn f (): void = $SP.listen_speech(3, llam (event) =>
   case+ event of
   | ~$SP.SpeechStarted(utterance) => let val _ = utterance + 0 in () end
   | ~$SP.SpeechBoundary(utterance, offset) => let val _ = utterance + offset in () end

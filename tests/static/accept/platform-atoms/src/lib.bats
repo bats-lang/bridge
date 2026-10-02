@@ -36,20 +36,20 @@ fun weigh {k:nat} .<k>. (v: $SP.voices(k)): int =
    kept and the app offered for installing *)
 fn f (): int = let
   val () = (if $SC.fullscreen_available() then $SC.fullscreen_enter() else ())
-  val () = $SC.listen_fullscreen(1, lam (change) =>
+  val () = $SC.listen_fullscreen(1, llam (change) =>
     case+ change of
     | $SC.FullscreenEntered() => ()
     | $SC.FullscreenLeft() => ())
   val () = (if $SC.brightness_available() then let
       val () = $SC.brightness_set($SC.Level(50))
     in $SC.brightness_set($SC.FollowSystem()) end else ())
-  val () = $P.finish<$SC.brightness_reading>($SC.brightness_get(), lam (reading) =>
+  val () = $P.finish<$SC.brightness_reading>($SC.brightness_get(), llam (reading) =>
     case+ reading of
-    | $SC.Brightness(level) => let val _ = level + 0 in () end
-    | $SC.SystemBrightness() => ()
-    | $SC.BrightnessUnreadable() => ())
+    | ~$SC.Brightness(level) => let val _ = level + 0 in () end
+    | ~$SC.SystemBrightness() => ()
+    | ~$SC.BrightnessUnreadable() => ())
   val () = (if $SC.orientation_available() then
-    $P.finish<$SC.lock_outcome>($SC.orientation_lock_current(), lam (lock) =>
+    $P.finish<$SC.lock_outcome>($SC.orientation_lock_current(), llam (lock) =>
       case+ lock of
       | $SC.Locked() => ()
       | $SC.LockRefused() => ()) else ())
@@ -70,13 +70,13 @@ fn f (): int = let
     | ~$R.none() => 0
     | ~$R.some(v) => weigh(v)): int
   val () = (if $SH.share_available() then
-    $P.finish<$SH.share_outcome>($SH.share_text(lang, 0, borrowed, 5), lam (outcome) =>
+    $P.finish<$SH.share_outcome>($SH.share_text(lang, 0, borrowed, 5), llam (outcome) =>
       case+ outcome of
       | $SH.Shared() => ()
       | $SH.Cancelled() => ()
       | $SH.ShareFailed() => ()) else ())
   val () = (if $SH.share_file_available() then
-    $P.finish<$SH.file_share_outcome>($SH.share_file(borrowed, 5, voice, 5, lang, 5), lam (outcome) =>
+    $P.finish<$SH.file_share_outcome>($SH.share_file(borrowed, 5, voice, 5, lang, 5), llam (outcome) =>
       case+ outcome of
       | $SH.FileShared() => ()
       | $SH.FileShareCancelled() => ()
@@ -87,16 +87,16 @@ fn f (): int = let
   val () = $A.drop<byte>(frozen, borrowed)
   val () = $A.free<byte>($A.thaw<byte>(frozen))
   val () = (if $AP.is_native_platform() then () else
-    $P.finish<$ST.persist_outcome>($ST.storage_persist(), lam (kept) =>
+    $P.finish<$ST.persist_outcome>($ST.storage_persist(), llam (kept) =>
       case+ kept of
       | $ST.Persisted() => ()
       | $ST.NotPersisted() => ()))
-  val () = $AP.listen_install_prompt(2, lam (offer) =>
+  val () = $AP.listen_install_prompt(2, llam (offer) =>
     case+ offer of
     | $AP.InstallOffered() => ()
     | $AP.InstallWithdrawn() => ())
   val () = (if $AP.install_prompt_available() then
-    $P.finish<$AP.install_outcome>($AP.install_prompt(), lam (outcome) =>
+    $P.finish<$AP.install_outcome>($AP.install_prompt(), llam (outcome) =>
       case+ outcome of
       | $AP.InstallAccepted() => ()
       | $AP.InstallDismissed() => ()

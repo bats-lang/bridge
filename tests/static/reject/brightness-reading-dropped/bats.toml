@@ -1,0 +1,7 @@
+[package]
+name = "brightness-reading-dropped"
+kind = "lib"
+
+[dependencies]
+"promise" = ""
+"wasm.bats-packages.dev/bridge" = ""

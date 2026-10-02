@@ -112,7 +112,7 @@ staload "./decompress.bats"
    is checked here, once) is not passed on. *)
 #pub fun listen_speech
   (listener_id: listener_id,
-   callback: (speech_event) -<cloref1> void): void
+   callback: (speech_event) -<lincloptr1> void): void
 
 (* The sentences of text[0, text_len) (UTF-8), in language
    lang[0, lang_len) (the default when lang_len is 0), from the first
@@ -159,7 +159,7 @@ in loop(s) end
 #target wasm begin
 $UNSAFE begin
 %{
-extern void bats_listener_set(int id, void *cb);
+extern void bats_listener_set_decoded(int id, void *decoder, void *inner);
 extern int bats_js_speech_available(void);
 extern int bats_js_speech_voices(void);
 extern int bats_js_speech_speak(void*, int, void*, int, void*, int, int);
@@ -321,13 +321,20 @@ fn _speech_event (payload: event_payload): Option_vt(speech_event) =
       else None_vt()
     end
 
+(* The slot holds the decoder and the callback, and frees both (the
+   decoder holds only the callback's pointer) *)
 implement listen_speech(listener_id, callback) = let
-  val decode = lam (payload: event_payload): int =<cloref1>
+  val inner = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val decode = llam (payload: event_payload): int =<lincloptr1>
     case+ _speech_event(payload) of
-    | ~Some_vt(event) => let val () = callback(event) in 0 end
+    | ~Some_vt(event) => let
+        val call = $UNSAFE begin $UNSAFE.cast{(speech_event) -<cloref1> void}(inner) end
+        val () = call(event)
+      in 0 end
     | ~None_vt() => 0
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
-  val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
+  val decoder = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
+  val () = $UNSAFE begin
+    $extfcall(void, "bats_listener_set_decoded", listener_id, decoder, inner) end
 in _bats_js_listen_speech(listener_id) end
 
 (* JS's starts: int32 LE, in order. They are checked from the last back,
