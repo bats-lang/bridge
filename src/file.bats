@@ -19,9 +19,21 @@ staload "./idb.bats"
    consumes the only infile of it, so a closed file cannot be read. *)
 #pub absvt@ype infile(n:int) = @(int, int)
 
+(* What opening a file found. None and failed are told apart:
+   NotOpened is there being no such file (nothing picked, no input of
+   that id, no file i); OpenFailed is the browser failing to read one
+   that is there. Linear: Opened holds a file JS keeps until it is
+   closed, so the one consumer closes it; one no consumer takes is
+   closed by promise's dispose. *)
+#pub datavtype opened =
+  | Opened of ([n:nat] infile(n))
+  | NotOpened
+  | OpenFailed
+
+(* Reads the file picked in the file input with that id *)
 #pub fun file_open
   : {li:agz}{ni:pos}
-  (!$A.borrow(byte, li, ni), int ni) -> $P.promise_pending(Int)
+  (!$A.borrow(byte, li, ni), int ni) -> $P.promise(opened, $P.Chained)
 
 (* The file an open promise resolved with, or none when the open failed
    (handle 0) or the handle is not a file waiting to be claimed (JS
@@ -75,18 +87,17 @@ staload "./idb.bats"
   {li:agz}{ni:pos}
   (!$A.borrow(byte, li, ni), int ni): [v:nat] int v
 
-(* Reads file i of those picked in the file input with that id; the
-   promise resolves with a handle to claim (0 when there is no file i) *)
+(* Reads file i of those picked in the file input with that id *)
 #pub fun file_open_at
   {li:agz}{ni:pos}
-  (!$A.borrow(byte, li, ni), int ni, int): $P.promise_pending(Int)
+  (!$A.borrow(byte, li, ni), int ni, int): $P.promise(opened, $P.Chained)
 
 (* How many files the last drop event carried (set when a drop
    listener's payload is made) *)
 #pub fun dropped_count (): [v:nat] int v
 
 (* Reads file i of the last drop; as file_open_at *)
-#pub fun dropped_open_at (int): $P.promise_pending(Int)
+#pub fun dropped_open_at (int): $P.promise(opened, $P.Chained)
 
 (* The name the file had where it came from (a picked, dropped or
    external file), as a blob; none when it has none *)
@@ -159,12 +170,32 @@ extern fun _bats_js_file_blob_url
 assume infile(n) = @(int, int n)
 end
 
+(* JS's codes for an open: a file's handle (positive), 0 no such file,
+   anything else (its -1) a read that failed. A handle JS did not hand
+   out is a failure too *)
+fn _opened (code: Int): opened =
+  if code = 0 then NotOpened()
+  else if code < 0 then OpenFailed()
+  else (case+ file_claim(code) of
+    | ~$R.some(f) => Opened(f)
+    | ~$R.none() => OpenFailed())
+
+(* A file nobody took: closed. Before file_open, its first use. *)
+implement $P.dispose<opened>(found) =
+  case+ found of
+  | ~Opened(f) => file_close(f)
+  | ~NotOpened() => ()
+  | ~OpenFailed() => ()
+
+fn _opened_promise (p: $P.promise(Int, $P.Pending)): $P.promise(opened, $P.Chained) =
+  $P.and_then<Int><opened>(p, llam (code) => $P.ret<opened>(_opened(code)))
+
 implement file_open{li}{ni}(input_node_id, id_len) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_file_open(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(input_node_id) end, id_len, id)
-in p end
+in _opened_promise(p) end
 
 implement file_claim(handle) = let
   val n = _bats_js_file_claim(handle)
@@ -232,7 +263,7 @@ implement file_open_at{li}{ni}(input_node_id, id_len, i) = let
   val id = $P.stash(r)
   val () = _bats_js_file_open_at(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(input_node_id) end, id_len, i, id)
-in p end
+in _opened_promise(p) end
 
 implement dropped_count() = _count(_bats_js_dropped_count())
 
@@ -240,7 +271,7 @@ implement dropped_open_at(i) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_dropped_open_at(i, id)
-in p end
+in _opened_promise(p) end
 
 implement file_name{n}(f) = blob_claim(_bats_js_file_name(f.0))
 

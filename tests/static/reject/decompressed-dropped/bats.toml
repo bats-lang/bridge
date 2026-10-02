@@ -1,0 +1,9 @@
+[package]
+name = "decompressed-dropped"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

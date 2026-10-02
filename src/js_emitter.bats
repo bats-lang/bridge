@@ -848,8 +848,8 @@ fn emit_js_fetch {n:nat | n + 1845 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_clipboard {n:nat | n + 1380 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1380] $B.builder(m)): void = let
+fn emit_js_clipboard {n:nat | n + 1420 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1420] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Clipboard ---\n")
   val () = $B.bput(b,"\n")
@@ -878,15 +878,15 @@ fn emit_js_clipboard {n:nat | n + 1380 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        win.navigator.clipboard.readText().then(\n")
   val () = $B.bput(b,"          (text) => {\n")
   val () = $B.bput(b,"            const bytes = new TextEncoder().encode(text);\n")
-  val () = $B.bput(b,"            instance.exports.bats_on_clipboard_read_complete(resolverId, pendBlob(bytes));\n")
+  val () = $B.bput(b,"            instance.exports.bats_on_clipboard_read_complete(resolverId, bytes.length ? pendBlob(bytes) : 0);\n")
   val () = $B.bput(b,"          },\n")
-  val () = $B.bput(b,"          () => { instance.exports.bats_on_clipboard_read_complete(resolverId, 0); }\n")
+  val () = $B.bput(b,"          () => { instance.exports.bats_on_clipboard_read_complete(resolverId, -1); }\n")
   val () = $B.bput(b,"        );\n")
   val () = $B.bput(b,"      } else {\n")
-  val () = $B.bput(b,"        instance.exports.bats_on_clipboard_read_complete(resolverId, 0);\n")
+  val () = $B.bput(b,"        instance.exports.bats_on_clipboard_read_complete(resolverId, -1);\n")
   val () = $B.bput(b,"      }\n")
   val () = $B.bput(b,"    } catch(e) {\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_clipboard_read_complete(resolverId, 0);\n")
+  val () = $B.bput(b,"      instance.exports.bats_on_clipboard_read_complete(resolverId, -1);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"  }\n")
 in end
@@ -1036,8 +1036,8 @@ fn emit_js_decompress {n:nat | n + 2400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_notify {n:nat | n + 2120 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2120] $B.builder(m)): void = let
+fn emit_js_notify {n:nat | n + 2140 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2140] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Notification/Push ---\n")
   val () = $B.bput(b,"\n")
@@ -1072,10 +1072,10 @@ fn emit_js_notify {n:nat | n + 2120 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        const jsonBytes = new TextEncoder().encode(json);\n")
   val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, pendBlob(jsonBytes));\n")
   val () = $B.bput(b,"      }).catch(() => {\n")
-  val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, 0);\n")
+  val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, -1);\n")
   val () = $B.bput(b,"      });\n")
   val () = $B.bput(b,"    } catch(e) {\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_push_subscribe(resolverId, 0);\n")
+  val () = $B.bput(b,"      instance.exports.bats_on_push_subscribe(resolverId, -1);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
@@ -1092,10 +1092,10 @@ fn emit_js_notify {n:nat | n + 2120 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        const jsonBytes = new TextEncoder().encode(json);\n")
   val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, pendBlob(jsonBytes));\n")
   val () = $B.bput(b,"      }).catch(() => {\n")
-  val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, 0);\n")
+  val () = $B.bput(b,"        instance.exports.bats_on_push_subscribe(resolverId, -1);\n")
   val () = $B.bput(b,"      });\n")
   val () = $B.bput(b,"    } catch(e) {\n")
-  val () = $B.bput(b,"      instance.exports.bats_on_push_subscribe(resolverId, 0);\n")
+  val () = $B.bput(b,"      instance.exports.bats_on_push_subscribe(resolverId, -1);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"  }\n")
 in end
@@ -1440,7 +1440,7 @@ fn emit_js_extra {n:nat | n + 4370 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      fileNames.set(handle, f.name || '');\n")
   val () = $B.bput(b,"      instance.exports.bats_on_file_open(resolverId, handle);\n")
   val () = $B.bput(b,"    };\n")
-  val () = $B.bput(b,"    reader.onerror = () => instance.exports.bats_on_file_open(resolverId, 0);\n")
+  val () = $B.bput(b,"    reader.onerror = () => instance.exports.bats_on_file_open(resolverId, -1);\n")
   val () = $B.bput(b,"    reader.readAsArrayBuffer(f);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
@@ -2026,14 +2026,14 @@ fn _emit_4 {n:nat | n + 6885 <= $B.BUILDER_CAP}
   val () = emit_js_fetch(b)
 in end
 
-fn _emit_5 {n:nat | n + 4080 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4080] $B.builder(m)): void = let
+fn _emit_5 {n:nat | n + 4120 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4120] $B.builder(m)): void = let
   val () = emit_js_clipboard(b)
   val () = emit_js_file(b)
 in end
 
-fn _emit_6 {n:nat | n + 4520 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4520] $B.builder(m)): void = let
+fn _emit_6 {n:nat | n + 4540 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4540] $B.builder(m)): void = let
   val () = emit_js_decompress(b)
   val () = emit_js_notify(b)
 in end
@@ -2077,8 +2077,8 @@ fn _emit_first_half {n:nat | n + 30605 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 43170 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43170] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 43230 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 43230] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

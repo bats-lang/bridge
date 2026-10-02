@@ -23,14 +23,23 @@
   | Deflate
   | DeflateRaw
 
-#pub fun decompress_req
+(* What decompressing gave. There is no "nothing" here: data that
+   decompresses to no bytes is an empty blob. Linear: Decompressed holds
+   a blob JS keeps until it is freed; one no consumer takes is freed by
+   promise's dispose. *)
+#pub datavtype decompressed =
+  | Decompressed of ([n:nat] dblob(n))
+  | DecompressFailed  (* damaged data, or no decompressor here *)
+
+(* Decompresses data[0, data_len) *)
+#pub fun decompress
   {lb:agz}{n:pos}
   (data: !$A.borrow(byte, lb, n), data_len: int n,
-   method: compression, resolver_id: int): void
+   method: compression): $P.promise(decompressed, $P.Chained)
 
-(* The blob a decompress promise resolved with, or none when it failed
-   (handle 0) or the handle is not a pending blob: JS's word is checked
-   here, once *)
+(* The blob of a handle JS passed (an event's payload, say), or none
+   when the handle is not a pending blob: JS's word is checked here,
+   once *)
 #pub fun blob_claim
   (handle: Int): $R.option([n:nat] dblob(n))
 
@@ -82,10 +91,29 @@ fn _compression_code (method: compression): int =
   | Deflate() => 2
   | DeflateRaw() => 8
 
-implement decompress_req{lb}{n}(data, data_len, method, resolver_id) =
-  _bats_js_decompress(
+(* JS's codes: a blob's handle (positive), anything else (its 0)
+   failed. A handle JS did not hand out is a failure too *)
+fn _decompressed (code: Int): decompressed =
+  if code <= 0 then DecompressFailed()
+  else (case+ blob_claim(code) of
+    | ~$R.some(blob) => Decompressed(blob)
+    | ~$R.none() => DecompressFailed())
+
+(* A result nobody took: its blob is freed. Before decompress, its first
+   use. *)
+implement $P.dispose<decompressed>(result) =
+  case+ result of
+  | ~Decompressed(blob) => blob_free(blob)
+  | ~DecompressFailed() => ()
+
+implement decompress{lb}{n}(data, data_len, method) = let
+  val @(p, r) = $P.create<Int>()
+  val id = $P.stash(r)
+  val () = _bats_js_decompress(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(data) end,
-    data_len, _compression_code(method), resolver_id)
+    data_len, _compression_code(method), id)
+in $P.and_then<Int><decompressed>(p, llam (code) =>
+  $P.ret<decompressed>(_decompressed(code))) end
 
 implement blob_claim(handle) = let
   val n = _bats_js_blob_claim(handle)

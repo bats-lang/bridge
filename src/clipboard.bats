@@ -5,6 +5,7 @@ staload "./decompress.bats"
 
 #use array as A
 #use promise as P
+#use result as R
 
 (* ============================================================
    Public API
@@ -20,10 +21,20 @@ staload "./decompress.bats"
   : {lb:agz}{n:nat}
   (!$A.borrow(byte, lb, n), int n) -> $P.promise(copied, $P.Chained)
 
-(* Reads the clipboard's text: the promise resolves with a handle to
-   claim with blob_claim (decompress.bats), 0 when there is none *)
+(* What reading the clipboard found. Empty and refused are told apart:
+   ClipEmpty is a clipboard with no text; ClipRefused is a read the
+   browser refused (no permission, no clipboard here) or that failed.
+   Linear: Clipped holds a blob JS keeps until it is freed, so the one
+   consumer frees it; a clip no consumer takes is freed by promise's
+   dispose. *)
+#pub datavtype clip =
+  | Clipped of ([n:pos] dblob(n))
+  | ClipEmpty
+  | ClipRefused
+
+(* Reads the clipboard's text *)
 #pub fun clipboard_read
-  : () -> $P.promise_pending(Int)
+  : () -> $P.promise(clip, $P.Chained)
 
 #pub fun on_clipboard_complete
   (resolver_id: int, success: Int): void = "ext#bats_on_clipboard_complete"
@@ -64,11 +75,31 @@ implement clipboard_write{lb}{n}(text, text_len) = let
     id)
 in $P.and_then<Int><copied>(p, llam (code) => $P.ret<copied>(_copied(code))) end
 
+(* JS's codes: a blob's handle (positive), 0 no text, anything else
+   (its -1) refused. A handle JS did not hand out, or an empty blob, is
+   refused too: JS's word is checked here, once *)
+fn _clip (code: Int): clip =
+  if code = 0 then ClipEmpty()
+  else if code < 0 then ClipRefused()
+  else (case+ blob_claim(code) of
+    | ~$R.some(blob) =>
+      if blob_len(blob) > 0 then Clipped(blob)
+      else let val () = blob_free(blob) in ClipRefused() end
+    | ~$R.none() => ClipRefused())
+
+(* A clip nobody took: its blob is freed. Before clipboard_read, its
+   first use. *)
+implement $P.dispose<clip>(found) =
+  case+ found of
+  | ~Clipped(blob) => blob_free(blob)
+  | ~ClipEmpty() => ()
+  | ~ClipRefused() => ()
+
 implement clipboard_read() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_clipboard_read_text(id)
-in p end
+in $P.and_then<Int><clip>(p, llam (code) => $P.ret<clip>(_clip(code))) end
 
 implement on_clipboard_complete(resolver_id, success) =
   $P.fire(resolver_id, success)

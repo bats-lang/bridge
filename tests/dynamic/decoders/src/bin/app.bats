@@ -129,6 +129,37 @@ fn show_time {ni:pos | ni < 32} (name: string ni, time: $R.option([v:nat] int v)
   | ~$R.some(ms) => count(name, "ms", ms)
   | ~$R.none() => say(name, "none")
 
+fn show_decompressed {ni:pos | ni < 32} (name: string ni, result: $DC.decompressed): void =
+  case+ result of
+  | ~$DC.Decompressed(blob) => let
+      val () = count(name, "bytes", $DC.blob_len(blob))
+    in $DC.blob_free(blob) end
+  | ~$DC.DecompressFailed() => say(name, "failed")
+
+fn show_clip {ni:pos | ni < 32} (name: string ni, found: $CL.clip): void =
+  case+ found of
+  | ~$CL.Clipped(blob) => let
+      val () = count(name, "text", $DC.blob_len(blob))
+    in $DC.blob_free(blob) end
+  | ~$CL.ClipEmpty() => say(name, "empty")
+  | ~$CL.ClipRefused() => say(name, "refused")
+
+fn show_subscription {ni:pos | ni < 32} (name: string ni, found: $NO.subscription): void =
+  case+ found of
+  | ~$NO.Subscribed(blob) => let
+      val () = count(name, "subscribed", $DC.blob_len(blob))
+    in $DC.blob_free(blob) end
+  | ~$NO.NotSubscribed() => say(name, "none")
+  | ~$NO.SubscribeFailed() => say(name, "failed")
+
+fn show_opened {ni:pos | ni < 32} (name: string ni, found: $BF.opened): void =
+  case+ found of
+  | ~$BF.Opened(f) => let
+      val () = count(name, "opened", $BF.file_size(f))
+    in $BF.file_close(f) end
+  | ~$BF.NotOpened() => say(name, "none")
+  | ~$BF.OpenFailed() => say(name, "failed")
+
 (* The reads and writes to IndexedDB: put, get, a key never put, the
    keys listed, a delete, and (check.mjs makes key "bad" fail) a read
    and a write that fail. Each waits for the one before it *)
@@ -267,24 +298,41 @@ implement main0 () = let
   (* decompression: stored bytes come back as they are, and raw deflate
      of bytes that are not deflate fails (so the method reached JS) *)
   val @(plain_frozen, plain) = $A.freeze<byte>(bytes("abc"))
-  val @(decompressed, resolver) = $P.create<Int>()
-  val () = $DC.decompress_req(plain, 3, $DC.Uncompressed(), $P.stash(resolver))
-  val () = $P.finish<Int>(decompressed, llam (handle) =>
-    case+ $DC.blob_claim(handle) of
-    | ~$R.some(blob) => let
-        val () = count("decompress-1-stored", "bytes", $DC.blob_len(blob))
-      in $DC.blob_free(blob) end
-    | ~$R.none() => say("decompress-1-stored", "failed"))
-  val @(failed, resolver) = $P.create<Int>()
-  val () = $DC.decompress_req(plain, 3, $DC.DeflateRaw(), $P.stash(resolver))
-  val () = $P.finish<Int>(failed, llam (handle) =>
-    case+ $DC.blob_claim(handle) of
-    | ~$R.some(blob) => let
-        val () = count("decompress-2-raw", "bytes", $DC.blob_len(blob))
-      in $DC.blob_free(blob) end
-    | ~$R.none() => say("decompress-2-raw", "failed"))
+  val () = $P.finish<$DC.decompressed>($DC.decompress(plain, 3, $DC.Uncompressed()), llam (result) =>
+    show_decompressed("decompress-1-stored", result))
+  val () = $P.finish<$DC.decompressed>($DC.decompress(plain, 3, $DC.DeflateRaw()), llam (result) =>
+    show_decompressed("decompress-2-raw", result))
   val () = $A.drop<byte>(plain_frozen, plain)
   val () = $A.free<byte>($A.thaw<byte>(plain_frozen))
+  (* the clipboard read: check.mjs answers "hello", then "", then refuses *)
+  val () = $P.finish<$CL.clip>($CL.clipboard_read(), llam (found) => let
+    val () = show_clip("clipboard-3-read", found)
+  in $P.finish<$CL.clip>($CL.clipboard_read(), llam (found) => let
+    val () = show_clip("clipboard-4-read-empty", found)
+  in $P.finish<$CL.clip>($CL.clipboard_read(), llam (found) =>
+    show_clip("clipboard-5-read-refused", found)) end) end)
+  (* push: check.mjs has no subscription, then subscribes, then fails *)
+  val () = $P.finish<$NO.subscription>($NO.notify_push_get_subscription(), llam (found) => let
+    val () = show_subscription("push-1-get", found)
+    val @(vapid_frozen, vapid) = $A.freeze<byte>(bytes("key"))
+    val subscribing = $NO.notify_push_subscribe(vapid, 3)
+    val () = $A.drop<byte>(vapid_frozen, vapid)
+    val () = $A.free<byte>($A.thaw<byte>(vapid_frozen))
+  in $P.finish<$NO.subscription>(subscribing, llam (found) => let
+    val () = show_subscription("push-2-subscribe", found)
+  in $P.finish<$NO.subscription>($NO.notify_push_get_subscription(), llam (found) =>
+    show_subscription("push-3-get-failed", found)) end) end)
+  (* files: input "picker" holds "a.txt" and "bad" (which cannot be
+     read); there is no drop *)
+  val () = say("picker", "input")
+  val @(picker_frozen, picker) = $A.freeze<byte>(bytes("picker"))
+  val () = $P.finish<$BF.opened>($BF.file_open(picker, 6), llam (found) => show_opened("file-4-open", found))
+  val () = $P.finish<$BF.opened>($BF.file_open_at(picker, 6, 1), llam (found) => show_opened("file-5-open-failed", found))
+  val () = $P.finish<$BF.opened>($BF.file_open_at(picker, 6, 2), llam (found) => show_opened("file-6-open-none", found))
+  val () = $P.finish<$BF.opened>($BF.file_open(missing, 7), llam (found) => show_opened("file-7-open-no-input", found))
+  val () = $P.finish<$BF.opened>($BF.dropped_open_at(0), llam (found) => show_opened("file-8-dropped-none", found))
+  val () = $A.drop<byte>(picker_frozen, picker)
+  val () = $A.free<byte>($A.thaw<byte>(picker_frozen))
   val () = storage()
   val () = $A.drop<byte>(missing_frozen, missing)
   val () = $A.free<byte>($A.thaw<byte>(missing_frozen))

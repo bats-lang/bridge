@@ -7,12 +7,20 @@ caret-1: offset 003
 caret-2: none
 clipboard-1: copied
 clipboard-2: not copied
+clipboard-3-read: text 005
+clipboard-4-read-empty: empty
+clipboard-5-read-refused: refused
 decompress-1-stored: bytes 003
 decompress-2-raw: failed
 element: text
 file-1-get: found 002
 file-2-get-absent: absent
 file-3-get-failed: unreadable
+file-4-open: opened 003
+file-5-open-failed: failed
+file-6-open-none: none
+file-7-open-no-input: none
+file-8-dropped-none: none
 idb-1-put: stored
 idb-2-get: found 002
 idb-3-get-absent: absent
@@ -30,7 +38,11 @@ media-3-change: no match
 permission-1: granted
 permission-2: not asked
 permission-3: denied
+picker: input
 player: audio
+push-1-get: none
+push-2-subscribe: subscribed 016
+push-3-get-failed: failed
 refusing: audio
 url-1: length 022
 url-2-cut: length 005
