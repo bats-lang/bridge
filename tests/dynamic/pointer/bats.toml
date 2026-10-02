@@ -1,0 +1,11 @@
+[package]
+name = "pointer"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"gestures" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""

@@ -1,0 +1,9 @@
+[package]
+name = "build-watch"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""

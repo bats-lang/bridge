@@ -43,22 +43,28 @@
    listener_id: listener_id,
    callback: (event_payload) -<lincloptr1> int): void
 
-(* Pointer events for the gestures package, on node_id (a stable root:
-   an element a DOM diff does not replace): down, move, up and cancel
-   (moves only for a pointer down; a mouse only while its primary button
-   is held, and captured to the root once it has moved 4 px, so a plain
-   click keeps its own target), a cancel of all on
-   visibilitychange, window blur or a lost capture, a region's rendered
-   offset on a down while its transition is in flight, and scrollend,
-   transitionend and transitioncancel of a region (an element with
-   data-gesture-region). They are batched and passed once per animation
-   frame, with a tick each frame while a pointer is down, as one blob of
-   32-byte records (gestures' decode.bats) *)
-#pub fun listen_gestures
+(* Pointer events on node_id (a stable root: an element a DOM diff does
+   not replace), one raw record each as it comes (the gestures package's
+   RAW_RECORD: twelve int32 LE, read by its gestures_raw): down, move,
+   up and cancel (a mouse only with its button), its lost capture, the
+   page hidden or the window's focus lost, and scrollend, transitionend
+   and transitioncancel inside it. A down carries the innermost
+   data-gesture-region hit (-1 for none), the viewport's width, and
+   whether that region has a transition running and its translate then;
+   a transition's end is sent only for a region's own element. Positions
+   are in 1/16 CSS px, times in ms. Batching, ticks, capture and
+   cancelling are the gestures package's (its pointer source) *)
+#pub fun listen_pointer
   {li:agz}{ni:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
    listener_id: listener_id,
    callback: (event_payload) -<lincloptr1> int): void
+
+(* Captures pointer id to node_id (setPointerCapture), as the gestures
+   source asks (CapturePointer) *)
+#pub fun pointer_capture
+  {li:agz}{ni:pos}
+  (node_id: !$A.borrow(byte, li, ni), id_len: int ni, pointer_id: int): void
 
 (* Removes the listener, and frees its closure *)
 #pub fun unlisten
@@ -84,7 +90,8 @@ extern void bats_js_add_event_listener(void*, int, void*, int, int);
 extern void bats_js_add_document_listener(void*, int, int);
 extern void bats_js_remove_event_listener(int);
 extern void bats_js_add_window_listener(void*, int, int);
-extern void bats_js_listen_gestures(void*, int, int);
+extern void bats_js_listen_pointer(void*, int, int);
+extern void bats_js_pointer_capture(void*, int, int);
 extern void bats_js_prevent_default(void);
 %}
 extern fun _bats_js_add_event_listener
@@ -96,8 +103,10 @@ extern fun _bats_js_add_document_listener
 extern fun _bats_js_add_window_listener
   (event_type: ptr, type_len: int, listener_id: int)
   : void = "mac#bats_js_add_window_listener"
-extern fun _bats_js_listen_gestures
-  (id: ptr, id_len: int, listener_id: int): void = "mac#bats_js_listen_gestures"
+extern fun _bats_js_listen_pointer
+  (id: ptr, id_len: int, listener_id: int): void = "mac#bats_js_listen_pointer"
+extern fun _bats_js_pointer_capture
+  (id: ptr, id_len: int, pointer_id: int): void = "mac#bats_js_pointer_capture"
 extern fun _bats_js_remove_event_listener
   (listener_id: int): void = "mac#bats_js_remove_event_listener"
 extern fun _bats_js_prevent_default
@@ -129,11 +138,15 @@ in _bats_js_add_window_listener(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(event_type) end,
     type_len, listener_id) end
 
-implement listen_gestures{li}{ni}(node_id, id_len, listener_id, callback) = let
+implement listen_pointer{li}{ni}(node_id, id_len, listener_id, callback) = let
   val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
   val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
-in _bats_js_listen_gestures(
+in _bats_js_listen_pointer(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, listener_id) end
+
+implement pointer_capture{li}{ni}(node_id, id_len, pointer_id) =
+  _bats_js_pointer_capture(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(node_id) end, id_len, pointer_id)
 
 implement unlisten(listener_id) = let
   val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, the_null_ptr) end
