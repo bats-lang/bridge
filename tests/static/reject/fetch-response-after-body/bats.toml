@@ -1,5 +1,5 @@
 [package]
-name = "fetch-claim"
+name = "fetch-response-after-body"
 kind = "lib"
 
 [dependencies]

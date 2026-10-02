@@ -95,13 +95,13 @@ in
   | ~NoUrl() => $P.ret<external>(ExternalUnreadable(name))
   | ~UrlBytes(bytes, n) => let
       val @(frozen, url) = $A.freeze<byte>(bytes)
-      val asked = fetch(url, n)
+      val asked = fetch_file(url, n)
       val () = $A.drop<byte>(frozen, url)
       val () = $A.free<byte>($A.thaw<byte>(frozen))
-    in $P.and_then<Int><external>($P.vow(asked), llam (handle) =>
-      case+ fetch_claim_file(handle) of
-      | ~$R.none() => $P.ret<external>(ExternalUnreadable(name))
-      | ~$R.some(@(status, f)) =>
+    in $P.and_then<fetched_file><external>(asked, llam (got) =>
+      case+ got of
+      | ~NoFileResponse() => $P.ret<external>(ExternalUnreadable(name))
+      | ~RespondedFile(status, f) =>
         if status >= 200 && status < 300 then $P.ret<external>(External(f, name))
         else let val () = file_close(f) in $P.ret<external>(ExternalUnreadable(name)) end)
     end

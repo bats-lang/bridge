@@ -92,8 +92,8 @@ and on_frame {fuel:nat} .<fuel, 0>. (t: stamp, fuel: int fuel): void =
     in act(asked, fuel - 1) end
   | ~Nothing() => ()
 
-fn on_raw (handle: $EV.event_payload): void =
-  case+ $DC.blob_claim(handle) of
+fn on_raw (payload: $EV.event_payload): void =
+  case+ $EV.event_take(payload) of
   | ~$R.none() => ()
   | ~$R.some(blob) => let
       val k = $DC.blob_len(blob)
@@ -119,6 +119,6 @@ implement main0 () = let
   val () = gestures_region(st, 1, ~1, AxH(), false, false, DevAll())
   val () = give(Held(st, gestures_source_new()))
   val @(frozen, root) = $A.freeze<byte>(bytes("bats-root"))
-  val () = $EV.listen_pointer(root, 9, 0, llam (handle) => let val () = on_raw(handle) in 0 end)
+  val () = $EV.listen_pointer(root, 9, 0, llam (payload) => let val () = on_raw(payload) in 0 end)
   val () = $A.drop<byte>(frozen, root)
 in $A.free<byte>($A.thaw<byte>(frozen)) end

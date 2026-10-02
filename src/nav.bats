@@ -1,6 +1,7 @@
 (* nav -- browser navigation: URL, hash, history for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./decompress.bats"
 
 #use array as A
 #use result as R
@@ -37,12 +38,11 @@
 #pub fun on_popstate
   (url: Int): void = "ext#bats_on_popstate"
 
-(* The callback gets a handle to the new URL, a blob to claim with
-   blob_claim (decompress.bats) during the callback; JS drops it when
-   the callback returns. It is a linear closure (llam): the one set
+(* The callback gets the new URL, as a blob (none when JS could not
+   read it), and frees it. It is a linear closure (llam): the one set
    before it is freed. *)
 #pub fun set_popstate_callback
-  (cb: (Int) -<lincloptr1> int): void
+  (cb: ($R.option([k:nat] dblob(k))) -<lincloptr1> int): void
 
 (* ============================================================
    WASM implementation
@@ -117,8 +117,8 @@ implement on_popstate(url) = let
 in
   if ptr_isnot_null(cbp) then let
     val () = $UNSAFE begin $extfcall(void, "bats_listener_enter") end
-    val cb = $UNSAFE begin $UNSAFE.cast{(Int) -<cloref1> int}(cbp) end
-    val _ = cb(url)
+    val cb = $UNSAFE begin $UNSAFE.cast{($R.option([k:nat] dblob(k))) -<cloref1> int}(cbp) end
+    val _ = cb(blob_claim(url))
   in $UNSAFE begin $extfcall(void, "bats_listener_leave") end end
   else ()
 end

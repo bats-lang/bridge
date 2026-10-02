@@ -33,11 +33,22 @@ fn say {n:pos | n < 256} (line: string n): void = let
   val () = $A.drop<byte>(frozen, borrowed)
 in $A.free<byte>($A.thaw<byte>(frozen)) end
 
+(* Whether the response has an ETag header (its value read into 16
+   bytes) *)
+fn tagged (r: !$FE.response): bool = let
+  val @(name_frozen, name) = $A.freeze<byte>(exact("ETag"))
+  val out = $A.alloc<byte>(16)
+  val found = $FE.fetch_header(r, name, 4, out, 16)
+  val () = $A.free<byte>(out)
+  val () = $A.drop<byte>(name_frozen, name)
+  val () = $A.free<byte>($A.thaw<byte>(name_frozen))
+in case+ found of ~$R.some(_) => true | ~$R.none() => false end
+
 (* Sends method url with these headers' values and body; logs whether a
-   response came back *)
-fn send {nm,nu:pos | nm < 256; nu < 256}{na,nt,nb:nat | na < 256; nt < 256; nb < 256}{ns,nf:pos | ns < 256; nf < 256}
+   response came back, and whether it has an ETag *)
+fn send {nm,nu:pos | nm < 256; nu < 256}{na,nt,nb:nat | na < 256; nt < 256; nb < 256}{ns,ng,nf:pos | ns < 256; ng < 256; nf < 256}
   (method: string nm, url: string nu, authorization: string na, match: string nt, body: string nb,
-   sent: string ns, failed: string nf): void = let
+   sent: string ns, sent_tagged: string ng, failed: string nf): void = let
   val @(method_frozen, method_bytes) = $A.freeze<byte>(exact(method))
   val @(url_frozen, url_bytes) = $A.freeze<byte>(exact(url))
   val @(authorization_frozen, authorization_bytes) = $A.freeze<byte>(bytes(authorization))
@@ -56,16 +67,20 @@ fn send {nm,nu:pos | nm < 256; nu < 256}{na,nt,nb:nat | na < 256; nt < 256; nb <
   val () = $A.free<byte>($A.thaw<byte>(url_frozen))
   val () = $A.drop<byte>(method_frozen, method_bytes)
   val () = $A.free<byte>($A.thaw<byte>(method_frozen))
-in $P.finish<Int>(asked, llam (handle) =>
-  case+ $FE.fetch_claim(handle) of
-  | ~$R.some(@(_, blob)) => let val () = $DC.blob_free(blob) in say(sent) end
-  | ~$R.none() => say(failed)) end
+in $P.finish<$FE.fetched>(asked, llam (got) =>
+  case+ got of
+  | ~$FE.Responded(r) => let
+      val with_tag = tagged(r)
+      val () = $DC.blob_free($FE.fetch_body(r))
+    in if with_tag then say(sent_tagged) else say(sent) end
+  | ~$FE.NoResponse() => say(failed)) end
 
-(* A PUT with both headers, a GET with neither, a DELETE with only
-   If-Match, and a request whose Authorization holds a line break (not
+(* A PUT with both headers (answered with an ETag), a GET with neither
+   (answered with an empty one), a DELETE with only If-Match (answered
+   with none), and a request whose Authorization holds a line break (not
    made) *)
 implement main0 () = let
-  val () = send("PUT", "/a", "Basic dXNlcjpwYXNz", "\"e1\"", "body", "1 sent", "1 failed")
-  val () = send("GET", "/b", "", "", "", "2 sent", "2 failed")
-  val () = send("DELETE", "/c", "", "\"e2\"", "", "3 sent", "3 failed")
-in send("GET", "/d", "Basic a\nX-Injected: yes", "", "", "4 sent", "4 failed") end
+  val () = send("PUT", "/a", "Basic dXNlcjpwYXNz", "\"e1\"", "body", "1 sent", "1 sent, tagged", "1 failed")
+  val () = send("GET", "/b", "", "", "", "2 sent", "2 sent, tagged", "2 failed")
+  val () = send("DELETE", "/c", "", "\"e2\"", "", "3 sent", "3 sent, tagged", "3 failed")
+in send("GET", "/d", "Basic a\nX-Injected: yes", "", "", "4 sent", "4 sent, tagged", "4 failed") end

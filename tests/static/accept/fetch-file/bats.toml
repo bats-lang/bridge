@@ -1,5 +1,5 @@
 [package]
-name = "fetch-claim-file"
+name = "fetch-file"
 kind = "lib"
 
 [dependencies]

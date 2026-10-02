@@ -5,9 +5,11 @@
 staload FE = "wasm.bats-packages.dev/bridge/src/fetch.sats"
 staload BD = "wasm.bats-packages.dev/bridge/src/decompress.sats"
 
-(* A response must be let go (its body taken): reading its status is
-   not enough *)
+(* Taking the body lets the response go: its status cannot be read
+   after *)
 fn f (got: $FE.fetched): int =
   case+ got of
   | ~$FE.NoResponse() => 0
-  | ~$FE.Responded(r) => $FE.fetch_status(r)
+  | ~$FE.Responded(r) => let
+      val () = $BD.blob_free($FE.fetch_body(r))
+    in $FE.fetch_status(r) end

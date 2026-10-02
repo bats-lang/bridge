@@ -103,7 +103,7 @@ in $P.and_then<Int><install_outcome>(p, llam (code) =>
    holds only the callback's pointer). *)
 implement listen_install_prompt(listener_id, callback) = let
   val inner = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
-  val decode = llam (_: event_payload): int =<lincloptr1> let
+  val decode = llam (payload: event_payload): int =<lincloptr1> let
     val call = $UNSAFE begin $UNSAFE.cast{(install_offer) -<cloref1> void}(inner) end
     val () = call(if install_prompt_available()
       then InstallOffered() else InstallWithdrawn())

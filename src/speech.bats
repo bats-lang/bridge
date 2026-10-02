@@ -298,7 +298,7 @@ fn _speech_failure (code: int): speech_failure =
    for 4) and a value (int32 LE): a boundary's offset, a failure's code.
    Anything else is not an event. *)
 fn _speech_event (payload: event_payload): Option_vt(speech_event) =
-  case+ blob_claim(payload) of
+  case+ event_take(payload) of
   | ~$R.none() => None_vt()
   | ~$R.some(b) =>
     if blob_len(b) < 9 then let val () = blob_free(b) in None_vt() end

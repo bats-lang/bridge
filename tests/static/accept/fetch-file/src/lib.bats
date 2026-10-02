@@ -5,11 +5,11 @@
 staload FE = "wasm.bats-packages.dev/bridge/src/fetch.sats"
 staload BF = "wasm.bats-packages.dev/bridge/src/file.sats"
 
-(* A fetched body claimed as a file is read whole, then closed *)
-fn f (h: Int): int =
-  case+ $FE.fetch_claim_file(h) of
-  | ~$R.none() => 0
-  | ~$R.some(@(_, fl)) => let
+(* A body fetched as a file is read whole, then closed *)
+fn f (got: $FE.fetched_file): int =
+  case+ got of
+  | ~$FE.NoFileResponse() => 0
+  | ~$FE.RespondedFile(_, fl) => let
       val n = $BF.file_size(fl)
     in
       if n <= 0 then let val () = $BF.file_close(fl) in 0 end

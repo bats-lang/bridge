@@ -12,7 +12,7 @@ in $A.free<byte>($A.thaw<byte>(frozen)) end
 
 (* A POST with a body and two header lines, "Dropbox-API-Arg: {}" and
    "Content-Type: text/plain", separated by a newline (byte 10) *)
-fn send (): $P.promise_pending(Int) = let
+fn send (): $P.promise($FE.fetched, $P.Chained) = let
   val method = $A.alloc<byte>(4)
   val () = $A.write_text(method, 0, $A.text_lit("POST"), 4)
   val url = $A.alloc<byte>(1)
@@ -37,16 +37,20 @@ in pending end
 
 (* The response's Dropbox-API-Result header read into 64 bytes: its
    length is inside the buffer, so a read of its last byte is too *)
-fn result_last {l:agz} (h: Int, out: !$A.arr(byte, l, 64)): int = let
+fn result_last {l:agz} (r: !$FE.response, out: !$A.arr(byte, l, 64)): int = let
   val name = $A.alloc<byte>(18)
   val () = $A.write_text(name, 0, $A.text_lit("Dropbox-API-Result"), 18)
   val @(name_frozen, name_bytes) = $A.freeze<byte>(name)
-  val len = $FE.fetch_header(h, name_bytes, 18, out, 64)
+  val found = $FE.fetch_header(r, name_bytes, 18, out, 64)
   val () = release(name_frozen, name_bytes)
-in if len > 0 then byte2int0($A.get<byte>(out, len - 1)) else 0 end
+in
+  case+ found of
+  | ~$R.some(len) => if len > 0 then byte2int0($A.get<byte>(out, len - 1)) else 0
+  | ~$R.none() => 0
+end
 
-fn result (h: Int): int = let
+fn result (r: !$FE.response): int = let
   val out = $A.alloc<byte>(64)
-  val last = result_last(h, out)
+  val last = result_last(r, out)
   val () = $A.free<byte>(out)
 in last end
