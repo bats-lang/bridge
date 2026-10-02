@@ -43,19 +43,6 @@
    listener_id: listener_id,
    callback: (event_payload) -<lincloptr1> int): void
 
-(* A listener for files handed to the app from outside it: an Android
-   intent to open or share a file (the native app's
-   batsNative.deliverFile), a file the system opens the installed web
-   app with (a manifest's file_handlers, through launchQueue), or one
-   shared with it (a manifest's share_target, kept by the service
-   worker: produce_service_worker). Each file's handle is the payload,
-   to claim with file_claim (file.bats); file_name gives its name. Files
-   that came before the listener are passed to it as soon as it is
-   set. *)
-#pub fun listen_external_files
-  (listener_id: listener_id,
-   callback: (event_payload) -<lincloptr1> int): void
-
 (* Pointer events for the gestures package, on node_id (a stable root:
    an element a DOM diff does not replace): down, move, up and cancel
    (moves only for a pointer down; a mouse only while its primary button
@@ -97,7 +84,6 @@ extern void bats_js_add_event_listener(void*, int, void*, int, int);
 extern void bats_js_add_document_listener(void*, int, int);
 extern void bats_js_remove_event_listener(int);
 extern void bats_js_add_window_listener(void*, int, int);
-extern void bats_js_listen_external_files(int);
 extern void bats_js_listen_gestures(void*, int, int);
 extern void bats_js_prevent_default(void);
 %}
@@ -112,8 +98,6 @@ extern fun _bats_js_add_window_listener
   : void = "mac#bats_js_add_window_listener"
 extern fun _bats_js_listen_gestures
   (id: ptr, id_len: int, listener_id: int): void = "mac#bats_js_listen_gestures"
-extern fun _bats_js_listen_external_files
-  (listener_id: int): void = "mac#bats_js_listen_external_files"
 extern fun _bats_js_remove_event_listener
   (listener_id: int): void = "mac#bats_js_remove_event_listener"
 extern fun _bats_js_prevent_default
@@ -144,11 +128,6 @@ implement listen_window{lb}{n}
 in _bats_js_add_window_listener(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(event_type) end,
     type_len, listener_id) end
-
-implement listen_external_files(listener_id, callback) = let
-  val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
-  val () = $UNSAFE begin $extfcall(void, "bats_listener_set", listener_id, cbp) end
-in _bats_js_listen_external_files(listener_id) end
 
 implement listen_gestures{li}{ni}(node_id, id_len, listener_id, callback) = let
   val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
