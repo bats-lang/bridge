@@ -168,7 +168,14 @@ implement produce_bridge(b) = emit_js_all(b)
 
 (* The page's loader: the wasm is fetched and run, and the service
    worker registered. Whether a new build is served, and when to load
-   it, is the app's (build_watch, build_watch.bats) *)
+   it, is the app's (build_watch, build_watch.bats).
+
+   A load that fails (no network and nothing cached, a server error, a
+   damaged file) is the one failure JS must handle itself, since no wasm
+   runs to say it: the root is replaced by a plain message, in an alert,
+   and a Try again button that reloads, and the error is logged. A load
+   cut short because the page is going away (a reload, a navigation:
+   pagehide) shows nothing *)
 fn _produce_app_tail {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 2000 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2000] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void = let
@@ -178,9 +185,24 @@ fn _produce_app_tail {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 2000 <= 
   val () = $B.bput(b, "const batsWasmName = '")
   val () = $B.bput(b, wasm_name)
   val () = $B.bput(b, "';\n")
-  val () = $B.bput(b, "const resp = await fetch(batsWasmName);\n")
-  val () = $B.bput(b, "const bytes = await resp.arrayBuffer();\n")
-  val () = $B.bput(b, "await loadWASM(bytes, root, {});\n")
+  val () = $B.bput(b, "let batsLeaving = false;\n")
+  val () = $B.bput(b, "window.addEventListener('pagehide', () => { batsLeaving = true; });\n")
+  val () = $B.bput(b, "try {\n")
+  val () = $B.bput(b, "  const resp = await fetch(batsWasmName);\n")
+  val () = $B.bput(b, "  if (!resp.ok) throw new Error(batsWasmName + ': HTTP ' + resp.status);\n")
+  val () = $B.bput(b, "  await loadWASM(await resp.arrayBuffer(), root, {});\n")
+  val () = $B.bput(b, "} catch (e) {\n")
+  val () = $B.bput(b, "  if (!batsLeaving && !(e && e.name === 'AbortError')) {\n")
+  val () = $B.bput(b, "    console.error(e);\n")
+  val () = $B.bput(b, "    const said = document.createElement('p');\n")
+  val () = $B.bput(b, "    said.setAttribute('role', 'alert');\n")
+  val () = $B.bput(b, "    said.textContent = 'The app could not be loaded. Check your connection and try again.';\n")
+  val () = $B.bput(b, "    const again = document.createElement('button');\n")
+  val () = $B.bput(b, "    again.textContent = 'Try again';\n")
+  val () = $B.bput(b, "    again.addEventListener('click', () => location.reload());\n")
+  val () = $B.bput(b, "    root.replaceChildren(said, again);\n")
+  val () = $B.bput(b, "  }\n")
+  val () = $B.bput(b, "}\n")
   val () = $B.bput(b, "if ('serviceWorker' in navigator) {\n")
   val () = $B.bput(b, "  navigator.serviceWorker.register('service-worker.js');\n")
   val () = $B.bput(b, "}\n")

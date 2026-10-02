@@ -1,0 +1,11 @@
+[bats:info] started
+loads: Loading (errors logged: 0)
+offline: <p role="alert">The app could not be loaded. Check your connection and try again.</p><button>Try again</button> (errors logged: 1)
+offline: Try again reloads 1
+not found: <p role="alert">The app could not be loaded. Check your connection and try again.</p><button>Try again</button> (errors logged: 1)
+not found: Try again reloads 1
+damaged: <p role="alert">The app could not be loaded. Check your connection and try again.</p><button>Try again</button> (errors logged: 1)
+damaged: Try again reloads 1
+aborted: Loading (errors logged: 0)
+page going away: Loading (errors logged: 0)
+escaped: 0
