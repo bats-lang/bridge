@@ -1,0 +1,4 @@
+[bats:info] plain: watch ended
+hidden: app.wasm 1 checks, plain.wasm 1
+[bats:info] app: new build
+shown: app.wasm 3 checks, plain.wasm 1
