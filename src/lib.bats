@@ -12,6 +12,8 @@
 
 staload "./js_emitter.bats"
 staload "./plugins.bats"
+staload "./google_account.bats"
+staload "./backup_file.bats"
 staload "./stash.bats"
 staload "./decompress.bats"
 staload "./event.bats"
@@ -174,6 +176,20 @@ end (* #target wasm *)
    indent: [s:nat | s <= 8] string s): void
 
 implement produce_plugin_dependencies (b, indent) = put_plugin_dependencies(b, indent)
+
+(* The app manifest's backup rules: Android's Auto Backup keeps the
+   directory of backed-up files (backup_file.bats) and nothing else of
+   the app's. For android:fullBackupContent (Android 11 and lower) *)
+#pub fun produce_full_backup_content {n:nat | n + 200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 200] $B.builder(m)): void
+
+implement produce_full_backup_content (b) = put_full_backup_content(b)
+
+(* The same, for android:dataExtractionRules (Android 12 and higher) *)
+#pub fun produce_data_extraction_rules {n:nat | n + 400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 400] $B.builder(m)): void
+
+implement produce_data_extraction_rules (b) = put_data_extraction_rules(b)
 
 implement produce_bridge(b) = emit_js_all(b)
 

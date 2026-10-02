@@ -6,6 +6,7 @@
 #use builder as B
 
 staload "./plugins.bats"
+staload "./backup_file.bats"
 
 (* ============================================================
    String builder helpers (visible to lib.bats via module)
@@ -1852,6 +1853,69 @@ fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
+fn emit_js_account {n:nat | n + 3600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3600] $B.builder(m)): void = let
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // A Google access token for the account on the device: the app's\n")
+  val () = $B.bput(b,"  // GoogleSignIn. -1 no account, -2 canceled, -3 refused, -4 no plugin;\n")
+  val () = $B.bput(b,"  // the account's address kept by request, for bats_js_google_account\n")
+  val () = $B.bput(b,"  const googleAccounts = new Map();\n")
+  val () = $B.bput(b,"  function batsJsGoogleTokenAvailable() { return ")
+  val () = put_plugin_call(b, PluginGoogleSignIn())
+  val () = $B.bput(b," ? 1 : 0; }\n")
+  val () = $B.bput(b,"  function batsJsGoogleToken(cp, cl, sp, sl, id) {\n")
+  val () = $B.bput(b,"    const g = ")
+  val () = put_plugin_call(b, PluginGoogleSignIn())
+  val () = $B.bput(b,";\n")
+  val () = $B.bput(b,"    if (!g) return settle(id, -4);\n")
+  val () = $B.bput(b,"    const clientId = readString(cp, cl), scope = readString(sp, sl);\n")
+  val () = $B.bput(b,"    settleBy(id, () => g.initialize({ clientId, scopes: [scope] }).then(() => g.signIn()), r => {\n")
+  val () = $B.bput(b,"      const t = r && r.accessToken;\n")
+  val () = $B.bput(b,"      if (!t) return -3;\n")
+  val () = $B.bput(b,"      if (r.email) googleAccounts.set(id, pendBlob(utf8.encode(r.email)));\n")
+  val () = $B.bput(b,"      return pendBlob(utf8.encode(t));\n")
+  val () = $B.bput(b,"    }, e => { const c = e && e.code; return c === 'NO_CREDENTIAL_AVAILABLE' ? -1 : c === 'SIGN_IN_CANCELED' ? -2 : -3; });\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsGoogleAccount(id) { const h = googleAccounts.get(id) || 0; googleAccounts.delete(id); return h; }\n")
+  val () = $B.bput(b,"  function batsJsGoogleSignOut(id) {\n")
+  val () = $B.bput(b,"    const g = ")
+  val () = put_plugin_call(b, PluginGoogleSignIn())
+  val () = $B.bput(b,";\n")
+  val () = $B.bput(b,"    if (!g) return settle(id, 1);\n")
+  val () = $B.bput(b,"    settleBy(id, () => g.signOut(), () => 0, () => 1);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // Files the system backs up: the app's Filesystem, in a directory of\n")
+  val () = $B.bput(b,"  // its files directory (DATA) that the manifest's backup rules name.\n")
+  val () = $B.bput(b,"  // A read: the file's blob, 0 no such file, -1 unreadable\n")
+  val () = $B.bput(b,"  const backupPath = n => '")
+  val () = $B.bput(b, backup_directory())
+  val () = $B.bput(b,"' + n.replace(/[\\/\\\\]/g, '_');\n")
+  val () = $B.bput(b,"  function batsJsBackupFileAvailable() { return ")
+  val () = put_plugin_call(b, PluginFilesystem())
+  val () = $B.bput(b," ? 1 : 0; }\n")
+  val () = $B.bput(b,"  function batsJsBackupFileWrite(np, nl, bp, bl, id) {\n")
+  val () = $B.bput(b,"    const fs = ")
+  val () = put_plugin_call(b, PluginFilesystem())
+  val () = $B.bput(b,";\n")
+  val () = $B.bput(b,"    if (!fs) return settle(id, 0);\n")
+  val () = $B.bput(b,"    const path = backupPath(readString(np, nl)), data = base64(readBytes(bp, bl));\n")
+  val () = $B.bput(b,"    settleBy(id, () => fs.writeFile({ path, data, directory: 'DATA', recursive: true }), () => 1, () => 0);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsBackupFileRead(np, nl, id) {\n")
+  val () = $B.bput(b,"    const fs = ")
+  val () = put_plugin_call(b, PluginFilesystem())
+  val () = $B.bput(b,";\n")
+  val () = $B.bput(b,"    if (!fs) return settle(id, -1);\n")
+  val () = $B.bput(b,"    const path = backupPath(readString(np, nl));\n")
+  val () = $B.bput(b,"    settleBy(id, () => fs.stat({ path, directory: 'DATA' }).then(() => fs.readFile({ path, directory: 'DATA' }).then(r => {\n")
+  val () = $B.bput(b,"      const s = atob(r.data), u = new Uint8Array(s.length);\n")
+  val () = $B.bput(b,"      for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);\n")
+  val () = $B.bput(b,"      return u.length ? pendBlob(u) : -1;\n")
+  val () = $B.bput(b,"    }), () => 0), v => v, () => -1);\n")
+  val () = $B.bput(b,"  }\n")
+in end
+
 fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3940] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
@@ -1931,8 +1995,8 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 1660 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1660] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 2100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2100] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -1948,6 +2012,13 @@ fn emit_js_imports_platform {n:nat | n + 1660 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_share_file_available: batsJsShareFileAvailable,\n")
   val () = $B.bput(b,"      bats_js_share_text: batsJsShareText,\n")
   val () = $B.bput(b,"      bats_js_share_file: batsJsShareFile,\n")
+  val () = $B.bput(b,"      bats_js_google_token_available: batsJsGoogleTokenAvailable,\n")
+  val () = $B.bput(b,"      bats_js_google_token: batsJsGoogleToken,\n")
+  val () = $B.bput(b,"      bats_js_google_account: batsJsGoogleAccount,\n")
+  val () = $B.bput(b,"      bats_js_google_sign_out: batsJsGoogleSignOut,\n")
+  val () = $B.bput(b,"      bats_js_backup_file_available: batsJsBackupFileAvailable,\n")
+  val () = $B.bput(b,"      bats_js_backup_file_write: batsJsBackupFileWrite,\n")
+  val () = $B.bput(b,"      bats_js_backup_file_read: batsJsBackupFileRead,\n")
   val () = $B.bput(b,"      bats_js_storage_available: batsJsStorageAvailable,\n")
   val () = $B.bput(b,"      bats_js_storage_ask: batsJsStorageAsk,\n")
   val () = $B.bput(b,"      bats_js_install_prompt_available: () => batsInstall.offer ? 1 : 0,\n")
@@ -2028,14 +2099,15 @@ fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 12540 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12540] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 16140 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16140] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
+  val () = emit_js_account(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 7610 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7610] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 8050 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8050] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2049,8 +2121,8 @@ fn _emit_first_half {n:nat | n + 30090 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 41910 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 41910] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 45950 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 45950] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
