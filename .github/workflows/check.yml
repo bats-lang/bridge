@@ -50,3 +50,17 @@ jobs:
         run: |
           export PATH=~/bats-bin:$PATH
           tests/static/run.sh ~/repository
+
+      - name: Install lld (wasm linker)
+        run: sudo apt-get install -y -q lld
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Dynamic tests
+        run: |
+          export PATH=~/bats-bin:$PATH
+          (cd tests/dynamic && npm install --no-audit --no-fund --no-package-lock)
+          tests/dynamic/run.sh ~/repository

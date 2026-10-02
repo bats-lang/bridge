@@ -72,8 +72,8 @@ fn emit_js_loadwasm_open {n:nat | n + 1250 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom {n:nat | n + 8970 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8970] $B.builder(m)): void = let
+fn emit_js_dom {n:nat | n + 9470 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9470] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM helpers ---\n")
   val () = $B.bput(b,"\n")
@@ -100,6 +100,18 @@ fn emit_js_dom {n:nat | n + 8970 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    return { s: _dec.decode(mem.slice(base + off + 2, base + off + 2 + len)), len: len };\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function getEl(id) { return document.getElementById(id); }\n")
+  (* An attribute that would run script is never set: an event handler
+     (on...), or a URL attribute whose value, with what the URL parser
+     drops (controls and spaces) removed, starts with javascript:. The
+     dom package's types already refuse both; this is defence in depth *)
+  val () = $B.bput(b,"  let attrRefusedLogged = false;\n")
+  val () = $B.bput(b,"  function attrRefused(name, value) {\n")
+  val () = $B.bput(b,"    const n = name.toLowerCase();\n")
+  val () = $B.bput(b,"    const refused = n.startsWith('on') || (/^(href|src|action|formaction|xlink:href)$/.test(n)\n")
+  val () = $B.bput(b,"      && value.replace(/[\\u0000-\\u0020]/g, '').toLowerCase().startsWith('javascript:'));\n")
+  val () = $B.bput(b,"    if (refused && !attrRefusedLogged) { attrRefusedLogged = true; console.error('bats: attribute refused: ' + name); }\n")
+  val () = $B.bput(b,"    return refused;\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsDomFlush(bufPtr, len) {\n")
   val () = $B.bput(b,"    const mem = new Uint8Array(instance.exports.memory.buffer);\n")
@@ -138,7 +150,7 @@ fn emit_js_dom {n:nat | n + 8970 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"          const valLen = mem[bufPtr + valOff] | (mem[bufPtr + valOff + 1] << 8);\n")
   val () = $B.bput(b,"          const value = _dec.decode(mem.slice(bufPtr + valOff + 2, bufPtr + valOff + 2 + valLen));\n")
   val () = $B.bput(b,"          const el = getEl(nid.s);\n")
-  val () = $B.bput(b,"          if (el) el.setAttribute(name, value);\n")
+  val () = $B.bput(b,"          if (el && !attrRefused(name, value)) el.setAttribute(name, value);\n")
   val () = $B.bput(b,"          pos = valOff + 2 + valLen;\n")
   val () = $B.bput(b,"          break;\n")
   val () = $B.bput(b,"        }\n")
@@ -1976,8 +1988,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 11990 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11990] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 12490 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12490] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_early(b)
   val () = emit_js_loadwasm_open(b)
@@ -2046,8 +2058,8 @@ fn _emit_9 {n:nat | n + 7330 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 29705 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29705] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 30205 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 30205] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
