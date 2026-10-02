@@ -2,3 +2,7 @@ build/
 docs/
 bats_modules/
 bats.lock
+dist/
+tests/dynamic/node_modules/
+tests/dynamic/node_modules
+tests/dynamic/package-lock.json
