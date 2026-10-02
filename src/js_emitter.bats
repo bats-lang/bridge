@@ -1092,15 +1092,13 @@ fn emit_js_notify {n:nat | n + 2110 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_xml {n:nat | n + 2790 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2790] $B.builder(m)): void = let
+fn emit_js_xml {n:nat | n + 2490 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2490] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  // --- HTML parsing ---\n")
-  val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  const FILTERED_TAGS = new Set([\n")
-  val () = $B.bput(b,"    'script', 'iframe', 'object', 'embed', 'form', 'input', 'link', 'meta'\n")
-  val () = $B.bput(b,"  ]);\n")
-  val () = $B.bput(b,"\n")
+  (* DOMParser and a raw serialisation of what it found, every element,
+     attribute and text, as the html package's SAX stream. What is kept
+     is the html package's (sanitize), not this atom's *)
+  val () = $B.bput(b,"  // --- HTML parsing: DOMParser, serialised raw ---\n")
   val () = $B.bput(b,"  function batsJsParseHtml(htmlPtr, htmlLen) {\n")
   val () = $B.bput(b,"    const html = readString(htmlPtr, htmlLen);\n")
   val () = $B.bput(b,"    let doc;\n")
@@ -1122,17 +1120,13 @@ fn emit_js_xml {n:nat | n + 2790 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"    function serializeNode(node) {\n")
   val () = $B.bput(b,"      if (node.nodeType === 1) {\n")
-  val () = $B.bput(b,"        const tag = node.tagName.toLowerCase();\n")
-  val () = $B.bput(b,"        if (FILTERED_TAGS.has(tag)) return;\n")
+  val () = $B.bput(b,"        const tag = node.localName;\n")
   val () = $B.bput(b,"        const tagBytes = new TextEncoder().encode(tag);\n")
   val () = $B.bput(b,"        if (tagBytes.length > 255) return;\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"        const attrs = [];\n")
   val () = $B.bput(b,"        for (let i = 0; i < node.attributes.length; i++) {\n")
   val () = $B.bput(b,"          const attr = node.attributes[i];\n")
-  val () = $B.bput(b,"          if (/^on/i.test(attr.name)) continue;\n")
-  val () = $B.bput(b,"          if (attr.name === 'style') continue;\n")
-  val () = $B.bput(b,"          if (!/^[a-zA-Z0-9-]+$/.test(attr.name)) continue;\n")
   val () = $B.bput(b,"          const nameBytes = new TextEncoder().encode(attr.name);\n")
   val () = $B.bput(b,"          const valBytes = new TextEncoder().encode(attr.value);\n")
   val () = $B.bput(b,"          if (nameBytes.length > 255 || valBytes.length > 65535) continue;\n")
@@ -1984,8 +1978,8 @@ fn _emit_6 {n:nat | n + 4510 <= $B.BUILDER_CAP}
   val () = emit_js_notify(b)
 in end
 
-fn _emit_7 {n:nat | n + 3830 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3830] $B.builder(m)): void = let
+fn _emit_7 {n:nat | n + 3530 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3530] $B.builder(m)): void = let
   val () = emit_js_xml(b)
   val () = emit_js_blob(b)
 in end
@@ -2023,8 +2017,8 @@ fn _emit_first_half {n:nat | n + 29990 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 41230 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 41230] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 40930 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 40930] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
