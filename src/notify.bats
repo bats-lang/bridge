@@ -1,9 +1,11 @@
 (* notify -- notifications and push subscriptions for bridge *)
 
 #include "share/atspre_staload.hats"
+staload "./decompress.bats"
 
 #use array as A
 #use promise as P
+#use result as R
 
 (* ============================================================
    Public API
@@ -23,16 +25,25 @@
   {lb:agz}{n:pos}
   (title: !$A.borrow(byte, lb, n), title_len: int n): void
 
-(* Subscribes to push: the promise resolves with a handle to the
-   subscription's JSON, to claim with blob_claim (decompress.bats), 0
-   when subscribing failed *)
+(* A push subscription. None and failed are told apart: NotSubscribed
+   is there being none (get_subscription only; subscribing never answers
+   it); SubscribeFailed is subscribing, or reading the subscription,
+   failing (no service worker, permission refused). Linear: Subscribed
+   holds the subscription's JSON as a blob JS keeps until it is freed;
+   one no consumer takes is freed by promise's dispose. *)
+#pub datavtype subscription =
+  | Subscribed of ([n:pos] dblob(n))
+  | NotSubscribed
+  | SubscribeFailed
+
+(* Subscribes to push with the server's VAPID key *)
 #pub fun notify_push_subscribe
   : {lb:agz}{n:pos}
-  (!$A.borrow(byte, lb, n), int n) -> $P.promise_pending(Int)
+  (!$A.borrow(byte, lb, n), int n) -> $P.promise(subscription, $P.Chained)
 
-(* The current push subscription, resolved as notify_push_subscribe's *)
+(* The current push subscription *)
 #pub fun notify_push_get_subscription
-  : () -> $P.promise_pending(Int)
+  : () -> $P.promise(subscription, $P.Chained)
 
 #pub fun on_permission_result
   (resolver_id: int, granted: Int): void = "ext#bats_on_permission_result"
@@ -85,19 +96,41 @@ implement notify_show{lb}{n}(title, title_len) =
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(title) end,
     title_len)
 
+(* JS's codes: a blob's handle (positive), 0 none, anything else (its
+   -1) failed. A handle JS did not hand out, or an empty blob, is a
+   failure too *)
+fn _subscription (code: Int): subscription =
+  if code = 0 then NotSubscribed()
+  else if code < 0 then SubscribeFailed()
+  else (case+ blob_claim(code) of
+    | ~$R.some(blob) =>
+      if blob_len(blob) > 0 then Subscribed(blob)
+      else let val () = blob_free(blob) in SubscribeFailed() end
+    | ~$R.none() => SubscribeFailed())
+
+(* A subscription nobody took: its blob is freed. Before its first use. *)
+implement $P.dispose<subscription>(found) =
+  case+ found of
+  | ~Subscribed(blob) => blob_free(blob)
+  | ~NotSubscribed() => ()
+  | ~SubscribeFailed() => ()
+
+fn _subscription_promise (p: $P.promise(Int, $P.Pending)): $P.promise(subscription, $P.Chained) =
+  $P.and_then<Int><subscription>(p, llam (code) => $P.ret<subscription>(_subscription(code)))
+
 implement notify_push_subscribe{lb}{n}(vapid, vapid_len) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_push_subscribe(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(vapid) end,
     vapid_len, id)
-in p end
+in _subscription_promise(p) end
 
 implement notify_push_get_subscription() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_push_get_subscription(id)
-in p end
+in _subscription_promise(p) end
 
 implement on_permission_result(resolver_id, granted) =
   $P.fire(resolver_id, granted)

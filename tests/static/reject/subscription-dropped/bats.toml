@@ -1,0 +1,9 @@
+[package]
+name = "subscription-dropped"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

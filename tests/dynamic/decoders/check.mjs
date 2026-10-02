@@ -52,9 +52,39 @@ win.HTMLElement.prototype.play = function () {
 };
 Object.defineProperty(win.HTMLElement.prototype, 'currentTime', { get() { return 0.25; }, set() {}, configurable: true });
 
-// the clipboard refuses "no"
+// the clipboard refuses "no"; it reads "hello", then "", then refuses
+const clipboardTexts = ['hello', ''];
 Object.defineProperty(win.navigator, 'clipboard', {
-  value: { writeText: text => (text === 'no' ? Promise.reject(new Error('no')) : Promise.resolve()) },
+  value: {
+    writeText: text => (text === 'no' ? Promise.reject(new Error('no')) : Promise.resolve()),
+    readText: () => (clipboardTexts.length ? Promise.resolve(clipboardTexts.shift()) : Promise.reject(new Error('refused'))),
+  },
+});
+
+// push: no subscription, then one, then failing
+const pushAnswers = [
+  () => Promise.resolve(null),
+  () => Promise.resolve({ toJSON: () => ({ endpoint: 'e' }) }),
+  () => Promise.reject(new Error('failed')),
+];
+const pushManager = { getSubscription: () => pushAnswers.shift()(), subscribe: () => pushAnswers.shift()() };
+Object.defineProperty(global, 'navigator', {
+  value: { serviceWorker: { ready: Promise.resolve({ pushManager }) } }, configurable: true,
+});
+
+// files: input "picker" holds "a.txt" (3 bytes) and "bad", which cannot
+// be read
+global.FileReader = class {
+  readAsArrayBuffer(f) {
+    setTimeout(() => {
+      if (f.name === 'bad') { this.onerror(); return; }
+      this.result = new Uint8Array([1, 2, 3]).buffer; this.onload();
+    });
+  }
+};
+Object.defineProperty(win.HTMLElement.prototype, 'files', {
+  get() { return this.id === 'picker' ? [{ name: 'a.txt' }, { name: 'bad' }] : undefined; },
+  configurable: true,
 });
 
 // notifications: granted, then dismissed, then denied
