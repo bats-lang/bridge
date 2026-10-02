@@ -1,0 +1,12 @@
+GET https://example.org/app/: answered
+GET https://example.org/app/?shared=1: answered
+GET https://example.org/app/app.wasm: answered
+GET https://example.org/app/icon-192.png: answered
+GET https://example.org/app/homepage/: left to the network
+GET https://example.org/app/homepage/privacy.html: left to the network
+GET https://example.org/app/docs/a/b.html: left to the network
+GET https://example.org/other.html: left to the network
+GET https://example.org/_capacitor_file_/a.epub: left to the network
+GET https://elsewhere.example/app/feed.xml: left to the network
+POST https://example.org/app/app.wasm: left to the network
+kept: /app/ /app/ /app/app.wasm /app/icon-192.png

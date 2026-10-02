@@ -154,9 +154,13 @@ end (* #target wasm *)
    wasm_name: string nw, root_id: string nr): void
 
 (* The service worker: the shell is cached when it is installed, and
-   every same-origin GET goes to the network first (so a new build is
-   used as soon as it is served), its response kept in the cache for
-   when there is no network. A file shared with the installed app (a
+   every same-origin GET of a file directly in its scope goes to the
+   network first (so a new build is used as soon as it is served), its
+   response kept in the cache for when there is no network. A GET of a
+   path in a subdirectory of the scope, or outside it, is not the app's
+   (pwa writes the app flat): the worker leaves it to the network and
+   keeps nothing of it, so pages published beside the app (a home page,
+   a privacy policy) are always the server's. A file shared with the installed app (a
    manifest's share_target: a multipart POST of the field file to
    share-target) is kept in the cache bats-shared and the app opened at
    ?shared=, where the bridge hands it to the app as an external file
@@ -265,9 +269,15 @@ implement produce_service_worker (b, wasm_name) = let
   val () = $B.bput(b, "self.addEventListener('fetch', e => {\n")
   val () = $B.bput(b, "  const r = e.request;\n")
   (* A file the host hands over (Capacitor's /_capacitor_file_ URLs) is
-     the host's to serve, and is not kept *)
+     the host's to serve, and is not kept. Nor is anything outside the
+     app: pwa writes the app flat, every file of it directly in the
+     scope, so a path in a subdirectory of the scope (pages published
+     beside the app, such as its home page) or outside it is another
+     site's, left to the network, neither answered nor kept *)
   val () = $B.bput(b, "  const u = new URL(r.url);\n")
   val () = $B.bput(b, "  if (r.method !== 'GET' || u.origin !== self.location.origin || u.pathname.startsWith('/_capacitor_')) return;\n")
+  val () = $B.bput(b, "  const base = new URL(self.registration.scope).pathname;\n")
+  val () = $B.bput(b, "  if (!u.pathname.startsWith(base) || u.pathname.slice(base.length).includes('/')) return;\n")
   val () = $B.bput(b, "  e.respondWith(fetch(r).then(res => {\n")
   val () = $B.bput(b, "    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }\n")
   val () = $B.bput(b, "    return res;\n")
