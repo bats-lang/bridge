@@ -1,0 +1,9 @@
+[package]
+name = "html-parse"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""
