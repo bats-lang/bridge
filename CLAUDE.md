@@ -28,3 +28,12 @@ that would move instead of moving it: move it in a pull request of its
 own. A pull request that needs newer packages runs `bats lock
 --repository <dir>` and commits `bats.lock` (and
 `.github/repository-version`) with the change.
+
+## Primitives only
+
+bridge's JS offers generic DOM and platform primitives only; what to do
+with them (which attributes, which roles, when) is the app's, in Bats.
+A DOM primitive is an operation of the stream `dom_flush` applies,
+addressed by element id like the others (CLONE_NODE copies an element
+and nothing more: what the copy keeps is set by the app's own
+operations on its id).

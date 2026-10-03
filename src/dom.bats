@@ -8,6 +8,17 @@
    Public API
    ============================================================ *)
 
+(* Applies a stream of DOM operations, each addressed by element id:
+   SET_TEXT (1), SET_ATTR (2), REMOVE_CHILDREN (3), CREATE_ELEMENT (4),
+   REMOVE_CHILD (5), APPEND_TEXT (6), REMOVE_ATTR (7), CLONE_NODE (8),
+   SET_SCROLL (9) and the canvas operations (64 to 84). CLONE_NODE ([8][id][source
+   id][parent id], each id a u16 length and its bytes) puts a deep copy
+   of element source at the end of element parent's children, the copy
+   taking the id; the elements inside the copy lose their ids, since an
+   id names one element. What else the copy keeps or loses is the app's
+   to say, with the other operations on its id. SET_SCROLL ([9][id][i32
+   left][i32 top], little endian) scrolls element id to left and top,
+   in order with the operations around it *)
 #pub fun dom_flush
   {l:agz}{n:nat}{m:nat | m <= n}
   (buf: !$A.arr(byte, l, n), len: int m): void
@@ -35,18 +46,6 @@
 (* Removes every mark of this kind *)
 #pub fun clear_marks (kind: int): void
 
-(* Shows a copy of element source in element holder, in place of
-   holder's children: what source shows now, scrolled as it is, which
-   does not change after (a snapshot that is still live DOM, such as
-   the page being turned away from, laid over the page). The copy has
-   no id, nor any inside it (source keeps them all, so an id still
-   names one element), no tabindex and no data-gesture-region; it is
-   inert and aria-hidden, so it can neither be focused nor read out *)
-#pub fun copy_node
-  {ls,lh:agz}{ns,nh:pos}
-  (source: !$A.borrow(byte, ls, ns), source_len: int ns,
-   holder: !$A.borrow(byte, lh, nh), holder_len: int nh): void
-
 (* Moves the keyboard focus to the element *)
 #pub fun focus_node
   {li:agz}{ni:pos}
@@ -65,7 +64,6 @@ extern void bats_js_click_node(void*, int);
 extern void bats_js_mark_range(int, void*, int, int, void*, int, int);
 extern void bats_js_clear_marks(int);
 extern void bats_js_focus_node(void*, int);
-extern void bats_js_copy_node(void*, int, void*, int);
 %}
 extern fun _bats_dom_flush
   (buf: ptr, len: int): void = "mac#bats_dom_flush"
@@ -81,8 +79,6 @@ extern fun _bats_js_clear_marks
   (kind: int): void = "mac#bats_js_clear_marks"
 extern fun _bats_js_focus_node
   (id: ptr, id_len: int): void = "mac#bats_js_focus_node"
-extern fun _bats_js_copy_node
-  (source: ptr, source_len: int, holder: ptr, holder_len: int): void = "mac#bats_js_copy_node"
 
 implement dom_flush{l}{n}{m}(buf, len) =
   _bats_dom_flush(
@@ -109,11 +105,6 @@ implement clear_marks(kind) = _bats_js_clear_marks(kind)
 
 implement focus_node{li}{ni}(node_id, id_len) =
   _bats_js_focus_node($UNSAFE.castvwtp1{ptr}(node_id), id_len)
-
-implement copy_node{ls,lh}{ns,nh}(source, source_len, holder, holder_len) =
-  _bats_js_copy_node(
-    $UNSAFE.castvwtp1{ptr}(source), source_len,
-    $UNSAFE.castvwtp1{ptr}(holder), holder_len)
 
 end (* $UNSAFE *)
 end (* #target wasm *)

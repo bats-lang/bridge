@@ -1,8 +1,9 @@
 // Runs dist/pwa/app.wasm through the bridge.js that pwa generated, in
 // jsdom, over a page with an element "page" (ids, a tabindex, a gesture
-// region and a link inside it, and scrolled) and an element "sheet"
-// holding something else. Prints the document's body after the app has
-// copied "page" into "sheet", and where the copy is scrolled.
+// region and a link inside it) and an element "sheet" holding something
+// else. Prints the document's body after the app has cloned "page" into
+// "sheet" twice (CLONE_NODE) and changed and scrolled the first clone,
+// where it is scrolled, and the ids in the document.
 import { JSDOM } from 'jsdom';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -25,14 +26,12 @@ for (const name of ['scrollLeft', 'scrollTop']) {
     configurable: true,
   });
 }
-document.getElementById('page').scrollLeft = 640;
-document.getElementById('page').scrollTop = 12;
 
 // bridge.js boots itself at its end; keep only loadWASM
 const src = readFileSync('dist/pwa/bridge.js', 'utf-8');
 const boot = src.lastIndexOf("\nconst root = document.getElementById('bats-root');");
 if (boot < 0) throw new Error('bridge.js: boot code not found');
-const tmp = join(tmpdir(), `bridge-copy-node-${process.pid}.mjs`);
+const tmp = join(tmpdir(), `bridge-clone-node-${process.pid}.mjs`);
 writeFileSync(tmp, src.slice(0, boot) + '\n');
 const { loadWASM } = await import(tmp);
 unlinkSync(tmp);
@@ -40,6 +39,6 @@ unlinkSync(tmp);
 const root = document.getElementById('bats-root');
 await loadWASM(readFileSync('dist/pwa/app.wasm'), root, {});
 console.log(root.innerHTML.replace(/></g, '>\n<'));
-const copy = document.getElementById('sheet').firstElementChild;
+const copy = document.getElementById('copy');
 console.log(`copy scrolled to ${copy.scrollLeft}, ${copy.scrollTop}`);
 console.log(`ids: ${[...document.querySelectorAll('[id]')].map((el) => el.id).join(' ')}`);

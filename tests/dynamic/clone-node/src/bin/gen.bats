@@ -7,7 +7,7 @@
    wasm binary app) *)
 implement main0 () = let
   val assets = $A.alloc<byte>(1)
-  val () = $P.create_pwa("Copy node", "dev.bats.copy-node",
+  val () = $P.create_pwa("Clone node", "dev.bats.clone-node",
     "dist/debug/app.wasm", "app.wasm", "dist/pwa",
     assets, 0, 1)
   val () = $A.free<byte>(assets)
