@@ -32,17 +32,24 @@
    given an id already in the document makes a second element with it,
    as CREATE_ELEMENT does.
 
-   The copy's ordinary tree keeps only what the stream itself could
-   make: HTML elements (CREATE_ELEMENT makes no SVG or MathML), none
-   that CREATE_ELEMENT refuses, none with an is attribute (a customized
-   built-in, which the stream never makes) or an open shadow root (one
-   the copy carries, a clonable one: cloneNode copies only those), and
-   no attribute that SET_ATTR refuses. An element left out goes with
-   everything inside it; when source is one, nothing is made. A closed
-   shadow root cannot be seen from the page, so it is outside this
-   check; the stream makes no shadow root (it never attaches one, and
-   template is refused). What else the copy keeps or loses is the app's
-   to say, with the other operations on its id.
+   The copy's ordinary tree is checked, element by element (on the
+   copy, not the source), against what the stream itself makes: HTML
+   elements only (CREATE_ELEMENT makes no SVG or MathML), none that
+   CREATE_ELEMENT refuses, no custom element, none carrying an open
+   shadow root, and no attribute that SET_ATTR refuses. A custom
+   element is one with an is attribute, or one whose constructor
+   customElements names (a customized built-in made by script carries
+   no is attribute); its constructor has already run, inside the
+   clone, when it is left out. A shadow root is in the copy only when
+   it was made clonable; a closed one cannot be seen, so it is outside
+   the check. An element left out goes with everything inside it; when
+   it is the copy itself, nothing is put in. The stream makes no
+   custom element and no shadow root (it never defines or attaches
+   one, and template is refused), so for a source the stream made the
+   check leaves everything; a source holding script-made custom
+   elements or closed shadow roots is outside this guarantee. What else
+   the copy keeps or loses is the app's to say, with the other
+   operations on its id.
 
    SET_SCROLL_LEFT and SET_SCROLL_TOP ([11 or 12][id][i32 value],
    little endian) set the element's scrollLeft or scrollTop: one write, at its
