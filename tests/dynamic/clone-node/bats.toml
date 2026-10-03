@@ -1,5 +1,5 @@
 [package]
-name = "copy-node"
+name = "clone-node"
 kind = "bin"
 
 [dependencies]
