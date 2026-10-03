@@ -1,0 +1,5 @@
+initTokenClient: client-id scope
+requestAccessToken 1
+initTokenClient: client-id scope
+requestAccessToken 2
+revoke: web-token-1
