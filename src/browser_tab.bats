@@ -9,11 +9,16 @@
    plugin: there the page leaves for the address itself (nav.bats'
    navigate_away).
 
-   There is no close: on Android a return at the app's own address
-   brings its activity (singleTask) forward, which finishes the tab and
-   the plugin's BrowserControllerActivity above it; Browser.close() after
-   that starts a new BrowserControllerActivity, which nothing finishes
-   (bats-lang/bridge#130). *)
+   There is no close (bats-lang/bridge#135): on Android a return at the
+   app's own address brings its activity (singleTask) forward, which
+   finishes the tab and the plugin's BrowserControllerActivity above it.
+   Once that activity is destroyed, its onDestroy clears the plugin's
+   instance, and Browser.close() does nothing. Between its finish and
+   its onDestroy, Browser.close() would start a new
+   BrowserControllerActivity, which either opens the tab again (the
+   plugin's listener from open() is still set) or stays, translucent,
+   over the app. So a close gives nothing on Android, and iOS is not a
+   platform pwa writes. *)
 
 #include "share/atspre_staload.hats"
 staload "./nav.bats"

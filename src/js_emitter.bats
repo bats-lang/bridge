@@ -502,7 +502,6 @@ fn emit_js_nav {n:nat | n + 1400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function batsJsNavigateAway(urlPtr, urlLen) {\n")
   val () = $B.bput(b,"    try {\n")
   val () = $B.bput(b,"      const url = readString(urlPtr, urlLen);\n")
-  val () = $B.bput(b,"      if (!/^https:\\/\\//.test(url)) return 0;\n")
   val () = $B.bput(b,"      root.ownerDocument.defaultView.location.assign(url);\n")
   val () = $B.bput(b,"      return 1;\n")
   val () = $B.bput(b,"    } catch(e) { return 0; }\n")

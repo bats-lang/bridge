@@ -1,29 +1,34 @@
 == both
 addListener: appUrlOpen
 open: https://example.com/sign-in
-hash: #tab+link
 open: https://example.com/opened
 open: https://example.com/not-opened
+open: https://example.com/rejected
+open: https://example.com/not-opened
+hash: #tab+link
 hash: #quire://oauth/started
 appUrlOpen: quire://oauth/dropbox?code=c&state=s
 hash: #quire://oauth/dropbox?code=c&state=s
 appUrlOpen: 
-hash: #quire://oauth/dropbox?code=c&state=s
 == browser
 open: https://example.com/sign-in
-hash: #tab
 open: https://example.com/opened
+open: https://example.com/not-opened
+open: https://example.com/rejected
 open: https://example.com/not-opened
 hash: #tab
 appUrlOpen: quire://oauth/dropbox?code=c&state=s
-hash: #tab
 appUrlOpen: 
-hash: #tab
 == app
 addListener: appUrlOpen
 hash: #link
+hash: #tab-not-opened
 hash: #quire://oauth/started
 appUrlOpen: quire://oauth/dropbox?code=c&state=s
 hash: #quire://oauth/dropbox?code=c&state=s
 appUrlOpen: 
-hash: #quire://oauth/dropbox?code=c&state=s
+== browser page
+hash: #none
+hash: #tab-not-opened
+appUrlOpen: quire://oauth/dropbox?code=c&state=s
+appUrlOpen: 

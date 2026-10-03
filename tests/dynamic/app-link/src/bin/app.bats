@@ -59,22 +59,33 @@ fn listen (): void =
       in hash_bytes(copy, n) end
     end)
 
+(* How a tab opened, put in the hash (where no Browser plugin prints it) *)
+fn told_hash (opened: $BT.tab_opened): void =
+  case+ opened of
+  | $BT.TabOpened() => hash_text("tab-opened")
+  | $BT.TabNotOpened() => hash_text("tab-not-opened")
+
 (* check.mjs plays the native app with its Browser plugin, its App
-   plugin, or both: each one's availability is said in the hash; with
-   Browser, a tab is opened, and one at an http address is refused
-   (before JS); with App, each address the app is opened at is put in
-   the hash *)
+   plugin, both, or neither (a browser): each one's availability is put
+   in the hash, and both atoms are used whatever it says. A tab is
+   opened, one at an http address is refused (before JS), and one that
+   Browser.open rejects is not opened; with no Browser, the tab not
+   opened is put in the hash. Each address the app is opened at is put
+   in the hash (with no App, none comes) *)
 implement main0 () = let
   val tab = $BT.browser_tab_available()
   val link = $AL.app_link_available()
   val () = (if tab then (if link then hash_text("tab+link") else hash_text("tab"))
     else (if link then hash_text("link") else hash_text("none")))
-  val () = (if link then listen() else ())
+  val () = listen()
 in
-  if ~tab then ()
+  if ~tab then
+    $P.finish<$BT.tab_opened>(open_text("https://example.com/sign-in"), llam(opened) => told_hash(opened))
   else let
     val first = $P.and_then<$BT.tab_opened><$BT.tab_opened>(open_text("https://example.com/sign-in"), llam(opened) => told(opened))
     val second = $P.and_then<$BT.tab_opened><$BT.tab_opened>(first, llam(_) => open_text("http://example.com/plain"))
     val third = $P.and_then<$BT.tab_opened><$BT.tab_opened>(second, llam(opened) => told(opened))
-  in $P.finish<$BT.tab_opened>(third, llam(_) => ()) end
+    val fourth = $P.and_then<$BT.tab_opened><$BT.tab_opened>(third, llam(_) => open_text("https://example.com/rejected"))
+    val fifth = $P.and_then<$BT.tab_opened><$BT.tab_opened>(fourth, llam(opened) => told(opened))
+  in $P.finish<$BT.tab_opened>(fifth, llam(_) => ()) end
 end
