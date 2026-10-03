@@ -4,7 +4,7 @@
 #use wasm.bats-packages.dev/bridge as B
 staload DM = "wasm.bats-packages.dev/bridge/src/dom.bats"
 
-#define CAP 128
+#define CAP 256
 
 (* s at off as the stream writes a name: its length (u16, little
    endian), then its bytes; the offset after it *)
@@ -32,15 +32,25 @@ fn put_i32 {l:agz}{o:nat | o + 4 <= CAP}{low,high:nat | low < 256; high < 256}
   val () = $A.set<byte>(buf, off + 3, $A.int2byte(0))
 in off + 4 end
 
-(* Through dom_flush: element "page" (check.mjs made it) cloned into
-   "sheet" as "copy", and again as "again"; then the copy's tabindex
-   removed, inert set and its scroll set (SET_SCROLL), as any
-   element's; and a clone of an element that is not there, which makes
-   nothing *)
+(* Through dom_flush, in one flush: element "page" (check.mjs made it,
+   with markup the stream would refuse) given a title, then cloned into
+   "sheet" as "copy" (with the title: in order), and again as "again";
+   then the copy's tabindex removed, inert set and its scroll set, one
+   axis per operation, as any element's; a scroll of an element that is
+   not there and a clone of one, which do nothing; and a clone given an
+   id already in the document ("old"), which makes a second element
+   with it *)
 implement main0 () = let
   val buf = $A.alloc<byte>(CAP)
+  (* SET_ATTR: [2][id][u8 name length][name][u16 value length][value] *)
+  val off = put_byte(buf, 0, 2)
+  val off = put_name(buf, off, "page")
+  val off = put_byte(buf, off, 5)
+  val () = $A.write_text(buf, off, $A.text_lit("title"), 5)
+  val off = off + 5
+  val off = put_name(buf, off, "now")
   (* CLONE_NODE: [8][new id][source id][parent id] *)
-  val off = put_byte(buf, 0, 8)
+  val off = put_byte(buf, off, 8)
   val off = put_name(buf, off, "copy")
   val off = put_name(buf, off, "page")
   val off = put_name(buf, off, "sheet")
@@ -54,7 +64,6 @@ implement main0 () = let
   val off = put_byte(buf, off, 8)
   val () = $A.write_text(buf, off, $A.text_lit("tabindex"), 8)
   val off = off + 8
-  (* SET_ATTR: [2][id][u8 name length][name][u16 value length][value] *)
   val off = put_byte(buf, off, 2)
   val off = put_name(buf, off, "copy")
   val off = put_byte(buf, off, 5)
@@ -63,15 +72,25 @@ implement main0 () = let
   (* an empty value *)
   val off = put_byte(buf, off, 0)
   val off = put_byte(buf, off, 0)
-  (* SET_SCROLL: [9][id][i32 left][i32 top] *)
+  (* SET_SCROLL_LEFT and SET_SCROLL_TOP: [9 or 10][id][i32]: 640, 12 *)
   val off = put_byte(buf, off, 9)
   val off = put_name(buf, off, "copy")
-  (* 640 and 12 *)
   val off = put_i32(buf, off, 128, 2)
+  val off = put_byte(buf, off, 10)
+  val off = put_name(buf, off, "copy")
   val off = put_i32(buf, off, 12, 0)
+  (* nothing there: nothing done *)
+  val off = put_byte(buf, off, 9)
+  val off = put_name(buf, off, "nowhere")
+  val off = put_i32(buf, off, 1, 0)
   val off = put_byte(buf, off, 8)
   val off = put_name(buf, off, "lost")
   val off = put_name(buf, off, "nowhere")
+  val off = put_name(buf, off, "sheet")
+  (* a second "old" *)
+  val off = put_byte(buf, off, 8)
+  val off = put_name(buf, off, "old")
+  val off = put_name(buf, off, "c2")
   val off = put_name(buf, off, "sheet")
   val () = $DM.dom_flush(buf, off)
 in $A.free<byte>(buf) end

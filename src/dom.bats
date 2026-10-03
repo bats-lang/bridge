@@ -8,17 +8,35 @@
    Public API
    ============================================================ *)
 
-(* Applies a stream of DOM operations, each addressed by element id:
-   SET_TEXT (1), SET_ATTR (2), REMOVE_CHILDREN (3), CREATE_ELEMENT (4),
-   REMOVE_CHILD (5), APPEND_TEXT (6), REMOVE_ATTR (7), CLONE_NODE (8),
-   SET_SCROLL (9) and the canvas operations (64 to 84). CLONE_NODE ([8][id][source
-   id][parent id], each id a u16 length and its bytes) puts a deep copy
-   of element source at the end of element parent's children, the copy
-   taking the id; the elements inside the copy lose their ids, since an
-   id names one element. What else the copy keeps or loses is the app's
-   to say, with the other operations on its id. SET_SCROLL ([9][id][i32
-   left][i32 top], little endian) scrolls element id to left and top,
-   in order with the operations around it *)
+(* Applies a stream of DOM operations, each addressed by element id,
+   in order: SET_TEXT (1), SET_ATTR (2), REMOVE_CHILDREN (3),
+   CREATE_ELEMENT (4), REMOVE_CHILD (5), APPEND_TEXT (6), REMOVE_ATTR
+   (7), CLONE_NODE (8), SET_SCROLL_LEFT (9), SET_SCROLL_TOP (10) and the
+   canvas operations (64 to 84). An id is a u16 length (little endian)
+   and its bytes.
+
+   CLONE_NODE ([8][id][source id][parent id]) puts a deep copy of
+   element source, as earlier operations of the flush left it, at the
+   end of element parent's children, the copy taking the id. The
+   elements inside the copy lose their ids, since an id names one
+   element; so what they need can come only from the copy itself (inert
+   on it covers them all) or from stylesheet rules keyed on it. An id
+   reference inside the copy (aria-*, href="#...", url(#...)) still
+   names the source's element. A copy given an id already in the
+   document makes a second element with it, as CREATE_ELEMENT does.
+   The copy keeps only what the stream itself could make: an element
+   or attribute that CREATE_ELEMENT or SET_ATTR would refuse is left
+   out (all of it, when source is one). What else the copy keeps or
+   loses is the app's to say, with the other operations on its id.
+
+   SET_SCROLL_LEFT and SET_SCROLL_TOP ([9 or 10][id][i32 value], little
+   endian) set the element's scrollLeft or scrollTop: one write, at its
+   place in the flush, so an element made earlier in the same flush can
+   be scrolled. The write lays the page out then, so it should come
+   after every operation that sizes the element (or its scroll range is
+   still the old one). The scroll imports (scroll.bats) write at once,
+   while a flush is still being written, so a scroll in a batch belongs
+   in the stream *)
 #pub fun dom_flush
   {l:agz}{n:nat}{m:nat | m <= n}
   (buf: !$A.arr(byte, l, n), len: int m): void
