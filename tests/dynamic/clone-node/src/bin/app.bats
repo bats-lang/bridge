@@ -22,10 +22,20 @@ fn put_byte {l:agz}{o:nat | o + 1 <= CAP}{v:nat | v < 256}
   val () = $A.set<byte>(buf, off, $A.int2byte(v))
 in off + 1 end
 
+(* v at off, little endian, for v < 65536; the offset after it *)
+fn put_i32 {l:agz}{o:nat | o + 4 <= CAP}{v:nat | v < 65536}
+  (buf: !$A.arr(byte, l, CAP), off: int o, v: int v): int(o + 4) = let
+  val () = $A.set<byte>(buf, off, $A.int2byte(v % 256))
+  val () = $A.set<byte>(buf, off + 1, $A.int2byte(v / 256))
+  val () = $A.set<byte>(buf, off + 2, $A.int2byte(0))
+  val () = $A.set<byte>(buf, off + 3, $A.int2byte(0))
+in off + 4 end
+
 (* Through dom_flush: element "page" (check.mjs made it) cloned into
    "sheet" as "copy", and again as "again"; then the copy's tabindex
-   removed and inert set, as any element's; and a clone of an element
-   that is not there, which makes nothing *)
+   removed, inert set and its scroll set (SET_SCROLL), as any
+   element's; and a clone of an element that is not there, which makes
+   nothing *)
 implement main0 () = let
   val buf = $A.alloc<byte>(CAP)
   (* CLONE_NODE: [8][new id][source id][parent id] *)
@@ -52,6 +62,11 @@ implement main0 () = let
   (* an empty value *)
   val off = put_byte(buf, off, 0)
   val off = put_byte(buf, off, 0)
+  (* SET_SCROLL: [9][id][i32 left][i32 top] *)
+  val off = put_byte(buf, off, 9)
+  val off = put_name(buf, off, "copy")
+  val off = put_i32(buf, off, 640)
+  val off = put_i32(buf, off, 12)
   val off = put_byte(buf, off, 8)
   val off = put_name(buf, off, "lost")
   val off = put_name(buf, off, "nowhere")

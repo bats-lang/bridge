@@ -10,13 +10,15 @@
 
 (* Applies a stream of DOM operations, each addressed by element id:
    SET_TEXT (1), SET_ATTR (2), REMOVE_CHILDREN (3), CREATE_ELEMENT (4),
-   REMOVE_CHILD (5), APPEND_TEXT (6), REMOVE_ATTR (7), CLONE_NODE (8)
-   and the canvas operations (64 to 84). CLONE_NODE ([8][id][source
+   REMOVE_CHILD (5), APPEND_TEXT (6), REMOVE_ATTR (7), CLONE_NODE (8),
+   SET_SCROLL (9) and the canvas operations (64 to 84). CLONE_NODE ([8][id][source
    id][parent id], each id a u16 length and its bytes) puts a deep copy
    of element source at the end of element parent's children, the copy
    taking the id; the elements inside the copy lose their ids, since an
    id names one element. What else the copy keeps or loses is the app's
-   to say, with the other operations on its id *)
+   to say, with the other operations on its id. SET_SCROLL ([9][id][i32
+   left][i32 top], little endian) scrolls element id to left and top,
+   in order with the operations around it *)
 #pub fun dom_flush
   {l:agz}{n:nat}{m:nat | m <= n}
   (buf: !$A.arr(byte, l, n), len: int m): void

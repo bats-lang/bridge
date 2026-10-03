@@ -2,8 +2,8 @@
 // jsdom, over a page with an element "page" (ids, a tabindex, a gesture
 // region and a link inside it) and an element "sheet" holding something
 // else. Prints the document's body after the app has cloned "page" into
-// "sheet" twice (CLONE_NODE) and changed the first clone, and the ids
-// in the document.
+// "sheet" twice (CLONE_NODE) and changed and scrolled the first clone,
+// where it is scrolled, and the ids in the document.
 import { JSDOM } from 'jsdom';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -18,6 +18,14 @@ const dom = new JSDOM(
   { url: 'http://localhost', pretendToBeVisual: true });
 global.document = dom.window.document;
 global.window = dom.window;
+// jsdom lays nothing out, so a scroll is only what was set
+for (const name of ['scrollLeft', 'scrollTop']) {
+  Object.defineProperty(dom.window.HTMLElement.prototype, name, {
+    get() { return this['_' + name] || 0; },
+    set(v) { this['_' + name] = v; },
+    configurable: true,
+  });
+}
 
 // bridge.js boots itself at its end; keep only loadWASM
 const src = readFileSync('dist/pwa/bridge.js', 'utf-8');
@@ -31,4 +39,6 @@ unlinkSync(tmp);
 const root = document.getElementById('bats-root');
 await loadWASM(readFileSync('dist/pwa/app.wasm'), root, {});
 console.log(root.innerHTML.replace(/></g, '>\n<'));
+const copy = document.getElementById('copy');
+console.log(`copy scrolled to ${copy.scrollLeft}, ${copy.scrollTop}`);
 console.log(`ids: ${[...document.querySelectorAll('[id]')].map((el) => el.id).join(' ')}`);
