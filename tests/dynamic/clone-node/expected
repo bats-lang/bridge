@@ -7,7 +7,14 @@ bats: element refused: SCRIPT
 <span onclick="go()">On</span>
 <a href="javascript:go()">Run</a>
 <script>go()</script>
+<svg>
+<set attributeName="href" to="javascript:go()">
+</set>
+</svg>
 </div>
+<form id="form">
+<input id="field">
+</form>
 <div id="sheet">
 <span id="old">old</span>
 <div id="copy" class="caf" data-gesture-region="1" role="document" title="now" inert="">
@@ -27,4 +34,4 @@ bats: element refused: SCRIPT
 <p id="old">Two</p>
 </div>
 copy scrolled to 640, 12
-ids: bats-root page c0 c1 c2 sheet old copy again old
+ids: bats-root page c0 c1 c2 form field sheet old copy again old
