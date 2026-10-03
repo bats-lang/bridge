@@ -2,7 +2,7 @@
 
 <!-- What changes, and the issue or spec it answers. -->
 
-Kind: <!-- one of: bug fix / new capability / process, documentation or CI -->
+Kind: <!-- one of: bug fix / new capability / process, documentation or CI. The review confirms it from the diff. -->
 
 ## Bug fix
 
@@ -10,17 +10,18 @@ Kind: <!-- one of: bug fix / new capability / process, documentation or CI -->
 
 - The spec it deviates from (the atom's or opcode's documentation, or the platform API it wraps), and how:
 - Why this is the minimal fix:
+- That it adds or widens no atom or opcode, and puts no policy in bridge:
 
 ## New capability (an atom or an opcode)
 
 <!-- Delete this section unless Kind is "new capability". Answer each with evidence: code, measurements, the platform API's documentation. -->
 
 1. Is there no way to do this with what exists, at reasonable performance?
-2. Is this the minimal wrapper? Does it map 1:1 to the platform API? If not, why can it not be broken into smaller atoms?
+2. Is this the minimal wrapper? Does it map 1:1 to the platform API? Why can it not be broken into smaller atoms? (Always answer; in detail when it is not 1:1.)
 3. Does it write to the DOM? If so, is it an opcode of the diff stream (a separate call is an extra JS crossing outside the batch's order)?
 4. The plausible alternatives, and why each would not work:
 5. Where the app's policy (which attributes, roles, defaults, when) lives: it must be in the app's Bats, not in bridge's JS (bats-lang/pwa#49).
 
 ## Review
 
-No merge before an adversarial review: a comment by someone other than the author, first line `## Adversarial review`, with a line `Verdict: approved` or `Verdict: changes needed` and a line `Reviewed: <full head SHA>` (CLAUDE.md, "Adversarial review before merge"). The `adversarial-review` status follows the newest one, and is success only for an approval that names the current head: a push after approval needs a new review.
+No merge before an adversarial review (CLAUDE.md, "Adversarial review before merge"): a new comment by someone other than the author, whose first line is `## Adversarial review`, with exactly one line `Verdict: approved` or `Verdict: changes needed` and exactly one line `Reviewed: <full head SHA>`, outside code blocks. The newest such comment alone sets the `adversarial-review` status: success only for an unedited approval that names the current head, so a push after approval needs a new review.
