@@ -75,8 +75,8 @@ fn emit_js_loadwasm_open {n:nat | n + 1240 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom {n:nat | n + 10800 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10800] $B.builder(m)): void = let
+fn emit_js_dom {n:nat | n + 11000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11000] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM helpers ---\n")
   val () = $B.bput(b,"\n")
@@ -186,14 +186,17 @@ fn emit_js_dom {n:nat | n + 10800 <= $B.BUILDER_CAP}
      child, the copy taking the op's id; the elements inside it lose
      theirs, since an id names one element. The copy is held to what
      the stream itself makes (the source may be markup the stream never
-     made): an element tagRefused refuses is left out (the whole copy,
-     for the source itself), and so is an attribute attrRefused
-     refuses *)
-  val () = $B.bput(b,"        case 8:{const sr=readStr(mem,bufPtr,dataStart);const d2=dataStart+2+sr.len;const pr=readStr(mem,bufPtr,d2);const s=getEl(sr.s),p=getEl(pr.s);if(s&&p&&!tagRefused(s.tagName)){const c=s.cloneNode(true);for(const e of [c,...c.querySelectorAll('*')]){if(e!==c){if(tagRefused(e.tagName)){e.remove();continue;}e.removeAttribute('id');}for(const a of [...e.attributes])if(attrRefused(a.name,a.value))e.removeAttribute(a.name);}c.id=nid.s;p.appendChild(c);}pos=d2+2+pr.len;break;} // CLONE_NODE\n")
-  (* SET_SCROLL_LEFT and SET_SCROLL_TOP: one property write each, in
-     order with the other operations *)
-  val () = $B.bput(b,"        case 9:{const e=getEl(nid.s);if(e)e.scrollLeft=readI32(mem,bufPtr+dataStart);pos=dataStart+4;break;} // SET_SCROLL_LEFT\n")
-  val () = $B.bput(b,"        case 10:{const e=getEl(nid.s);if(e)e.scrollTop=readI32(mem,bufPtr+dataStart);pos=dataStart+4;break;} // SET_SCROLL_TOP\n")
+     made): HTML elements only (createElement makes no other), none
+     that tagRefused refuses, and no attribute that attrRefused
+     refuses. An element left out goes with what it holds; when it is
+     the source, nothing is made *)
+  val () = $B.bput(b,"        case 8:{const sr=readStr(mem,bufPtr,dataStart);const d2=dataStart+2+sr.len;const pr=readStr(mem,bufPtr,d2);const s=getEl(sr.s),p=getEl(pr.s);const out=(e)=>e.namespaceURI!=='http://www.w3.org/1999/xhtml'||tagRefused(e.tagName);if(s&&p&&!out(s)){const c=s.cloneNode(true);for(const e of [c,...c.querySelectorAll('*')]){if(e!==c){if(out(e)){e.remove();continue;}e.removeAttribute('id');}for(const a of [...e.attributes])if(attrRefused(a.name,a.value))e.removeAttribute(a.name);}c.id=nid.s;p.appendChild(c);}pos=d2+2+pr.len;break;} // CLONE_NODE\n")
+  (* SET_SCROLL_LEFT (11) and SET_SCROLL_TOP (12): one property write
+     each, in order with the other operations. 9 was a two-axis scroll
+     in 2026.10.3.72358 and is retired, as is 10, so a stream in that
+     shape stops at an unknown operation instead of being misread *)
+  val () = $B.bput(b,"        case 11:{const e=getEl(nid.s);if(e)e.scrollLeft=readI32(mem,bufPtr+dataStart);pos=dataStart+4;break;} // SET_SCROLL_LEFT\n")
+  val () = $B.bput(b,"        case 12:{const e=getEl(nid.s);if(e)e.scrollTop=readI32(mem,bufPtr+dataStart);pos=dataStart+4;break;} // SET_SCROLL_TOP\n")
   (* Canvas opcodes 64-84 — all use dataStart for params, nid.s for element *)
   val () = $B.bput(b,"        case 64: { // CANVAS_FILL_RECT\n")
   val () = $B.bput(b,"          const x=readI32(mem,bufPtr+dataStart),y=readI32(mem,bufPtr+dataStart+4),w=readI32(mem,bufPtr+dataStart+8),h=readI32(mem,bufPtr+dataStart+12);\n")
@@ -2162,8 +2165,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 13840 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 13840] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 14040 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 14040] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_early(b)
   val () = emit_js_loadwasm_open(b)
@@ -2234,8 +2237,8 @@ fn _emit_9 {n:nat | n + 8410 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 31470 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 31470] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 31670 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 31670] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)

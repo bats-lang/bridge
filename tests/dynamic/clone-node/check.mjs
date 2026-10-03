@@ -1,8 +1,8 @@
 // Runs dist/pwa/app.wasm through the bridge.js that pwa generated, in
 // jsdom, over a page with an element "page" (ids, a tabindex, a gesture
 // region and a link inside it, and markup the stream would refuse: an
-// event handler, a javascript: URL and a script) and an element "sheet"
-// holding something else. Prints the document's body after the app has cloned "page" into
+// event handler, a javascript: URL, a script and SVG), a form, and an
+// element "sheet" holding something else. Prints the document's body after the app has cloned "page" into
 // "sheet" twice (CLONE_NODE) and changed and scrolled the first clone,
 // where it is scrolled, and the ids in the document.
 import { JSDOM } from 'jsdom';
@@ -14,7 +14,9 @@ const dom = new JSDOM(
   '<!DOCTYPE html><html><body><div id="bats-root">' +
   '<div id="page" class="caf" tabindex="0" data-gesture-region="1" role="document">' +
   '<p id="c0">One <a id="c1" href="#x" tabindex="0">link</a></p><p id="c2">Two</p>' +
-  '<span onclick="go()">On</span><a href="javascript:go()">Run</a><script>go()</script></div>' +
+  '<span onclick="go()">On</span><a href="javascript:go()">Run</a><script>go()</script>' +
+  '<svg><set attributeName="href" to="javascript:go()"></set></svg></div>' +
+  '<form id="form"><input id="field"></form>' +
   '<div id="sheet"><span id="old">old</span></div>' +
   '</div></body></html>',
   { url: 'http://localhost', pretendToBeVisual: true });

@@ -11,26 +11,34 @@
 (* Applies a stream of DOM operations, each addressed by element id,
    in order: SET_TEXT (1), SET_ATTR (2), REMOVE_CHILDREN (3),
    CREATE_ELEMENT (4), REMOVE_CHILD (5), APPEND_TEXT (6), REMOVE_ATTR
-   (7), CLONE_NODE (8), SET_SCROLL_LEFT (9), SET_SCROLL_TOP (10) and the
-   canvas operations (64 to 84). An id is a u16 length (little endian)
-   and its bytes.
+   (7), CLONE_NODE (8), SET_SCROLL_LEFT (11), SET_SCROLL_TOP (12) and
+   the canvas operations (64 to 84). An id is a u16 length (little
+   endian) and its bytes. 9 and 10 are not used: 9 was a scroll of both
+   axes in 2026.10.3.72358, so a stream written for that shape stops
+   at an unknown operation rather than being misread.
 
    CLONE_NODE ([8][id][source id][parent id]) puts a deep copy of
    element source, as earlier operations of the flush left it, at the
    end of element parent's children, the copy taking the id. The
    elements inside the copy lose their ids, since an id names one
-   element; so what they need can come only from the copy itself (inert
-   on it covers them all) or from stylesheet rules keyed on it. An id
+   element; so what they need can come only from the copy itself or
+   from stylesheet rules keyed on it. Inert on the copy takes its whole
+   subtree out of focus, clicks and the accessibility tree, but it does
+   not stop a medium with autoplay from loading and playing, nor a CSS
+   animation: a source that may hold them needs the app to remove them
+   from the copy (or the source to have none). An id
    reference inside the copy (aria-*, href="#...", url(#...)) still
    names the source's element. A copy given an id already in the
    document makes a second element with it, as CREATE_ELEMENT does.
-   The copy keeps only what the stream itself could make: an element
-   or attribute that CREATE_ELEMENT or SET_ATTR would refuse is left
-   out (all of it, when source is one). What else the copy keeps or
+   The copy keeps only what the stream itself could make: HTML elements
+   (CREATE_ELEMENT makes no SVG or MathML), none that CREATE_ELEMENT
+   refuses, and no attribute that SET_ATTR refuses. An element left out
+   goes with everything inside it; when source is one, nothing is
+   made. What else the copy keeps or
    loses is the app's to say, with the other operations on its id.
 
-   SET_SCROLL_LEFT and SET_SCROLL_TOP ([9 or 10][id][i32 value], little
-   endian) set the element's scrollLeft or scrollTop: one write, at its
+   SET_SCROLL_LEFT and SET_SCROLL_TOP ([11 or 12][id][i32 value],
+   little endian) set the element's scrollLeft or scrollTop: one write, at its
    place in the flush, so an element made earlier in the same flush can
    be scrolled. The write lays the page out then, so it should come
    after every operation that sizes the element (or its scroll range is

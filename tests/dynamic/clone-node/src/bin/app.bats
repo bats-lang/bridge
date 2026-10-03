@@ -36,8 +36,9 @@ in off + 4 end
    with markup the stream would refuse) given a title, then cloned into
    "sheet" as "copy" (with the title: in order), and again as "again";
    then the copy's tabindex removed, inert set and its scroll set, one
-   axis per operation, as any element's; a scroll of an element that is
-   not there and a clone of one, which do nothing; and a clone given an
+   axis per operation, as any element's; scrolls of an element that is
+   not there and a clone of one, and a clone of a form (an element the
+   stream would refuse), which do nothing; and a clone given an
    id already in the document ("old"), which makes a second element
    with it *)
 implement main0 () = let
@@ -72,17 +73,25 @@ implement main0 () = let
   (* an empty value *)
   val off = put_byte(buf, off, 0)
   val off = put_byte(buf, off, 0)
-  (* SET_SCROLL_LEFT and SET_SCROLL_TOP: [9 or 10][id][i32]: 640, 12 *)
-  val off = put_byte(buf, off, 9)
+  (* SET_SCROLL_LEFT and SET_SCROLL_TOP: [11 or 12][id][i32]: 640, 12 *)
+  val off = put_byte(buf, off, 11)
   val off = put_name(buf, off, "copy")
   val off = put_i32(buf, off, 128, 2)
-  val off = put_byte(buf, off, 10)
+  val off = put_byte(buf, off, 12)
   val off = put_name(buf, off, "copy")
   val off = put_i32(buf, off, 12, 0)
   (* nothing there: nothing done *)
-  val off = put_byte(buf, off, 9)
+  val off = put_byte(buf, off, 11)
   val off = put_name(buf, off, "nowhere")
   val off = put_i32(buf, off, 1, 0)
+  val off = put_byte(buf, off, 12)
+  val off = put_name(buf, off, "nowhere")
+  val off = put_i32(buf, off, 1, 0)
+  (* a source the stream would refuse (a form): nothing made *)
+  val off = put_byte(buf, off, 8)
+  val off = put_name(buf, off, "refused")
+  val off = put_name(buf, off, "form")
+  val off = put_name(buf, off, "sheet")
   val off = put_byte(buf, off, 8)
   val off = put_name(buf, off, "lost")
   val off = put_name(buf, off, "nowhere")
