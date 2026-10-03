@@ -35,6 +35,14 @@ staload "./decompress.bats"
 
 #pub fun reload(): void
 
+(* Leaves the page for the https address url[0, url_len) (a sign-in
+   page, say an OAuth authorization, which comes back to the page's own
+   address): whether it is left. An address that is not https:// is
+   refused here, and nothing is done *)
+#pub fun navigate_away
+  {lb:agz}{n:nat}
+  (url: !$A.borrow(byte, lb, n), url_len: int n): bool
+
 #pub fun on_popstate
   (url: Int): void = "ext#bats_on_popstate"
 
@@ -67,6 +75,7 @@ extern void bats_js_set_url_hash(void*, int);
 extern void bats_js_replace_state(void*, int);
 extern void bats_js_push_state(void*, int);
 extern void bats_js_reload(void);
+extern int bats_js_navigate_away(void*, int);
 %}
 extern fun _bats_js_get_url
   (out: ptr, max_len: int): [v:int] int v = "mac#bats_js_get_url"
@@ -80,7 +89,18 @@ extern fun _bats_js_push_state
   (url: ptr, url_len: int): void = "mac#bats_js_push_state"
 extern fun _bats_js_reload
   (): void = "mac#bats_js_reload"
+extern fun _bats_js_navigate_away
+  (url: ptr, url_len: int): int = "mac#bats_js_navigate_away"
 end
+
+(* Whether url[0, url_len) starts with https:// *)
+fn _https {lb:agz}{n:nat} (url: !$A.borrow(byte, lb, n), url_len: int n): bool = let
+  fun starts {i:nat | i <= 8} .<8 - i>. (url: !$A.borrow(byte, lb, n), i: int i): bool =
+    if i >= 8 then true
+    else if i >= url_len then false
+    else if byte2int0($A.read<byte>(url, i)) <> char2int0(string_get_at("https://", i)) then false
+    else starts(url, i + 1)
+in starts(url, 0) end
 
 (* A length JS wrote, bounded here once: JS writes at most max_len
    bytes, and 0 when it cannot read the URL *)
@@ -113,6 +133,10 @@ implement push_state{lb}{n}(url, url_len) =
     url_len)
 
 implement reload() = _bats_js_reload()
+
+implement navigate_away{lb}{n}(url, url_len) =
+  if ~_https(url, url_len) then false
+  else _bats_js_navigate_away($UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end, url_len) > 0
 
 implement set_popstate_callback(cb) = let
   val cbp = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(cb) end

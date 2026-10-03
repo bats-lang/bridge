@@ -459,8 +459,8 @@ fn emit_js_window {n:nat | n + 1300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_nav {n:nat | n + 1020 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1020] $B.builder(m)): void = let
+fn emit_js_nav {n:nat | n + 1400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1400] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Navigation ---\n")
   val () = $B.bput(b,"\n")
@@ -490,6 +490,15 @@ fn emit_js_nav {n:nat | n + 1020 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const win = root.ownerDocument.defaultView;\n")
   val () = $B.bput(b,"      win.history.replaceState(null, '', readString(urlPtr, urlLen));\n")
   val () = $B.bput(b,"    } catch(e) {}\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsNavigateAway(urlPtr, urlLen) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const url = readString(urlPtr, urlLen);\n")
+  val () = $B.bput(b,"      if (!/^https:\\/\\//.test(url)) return 0;\n")
+  val () = $B.bput(b,"      root.ownerDocument.defaultView.location.assign(url);\n")
+  val () = $B.bput(b,"      return 1;\n")
+  val () = $B.bput(b,"    } catch(e) { return 0; }\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsPushState(urlPtr, urlLen) {\n")
@@ -1480,8 +1489,8 @@ fn emit_js_extra {n:nat | n + 4640 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 5360 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5360] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5420 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5420] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1513,6 +1522,7 @@ fn emit_js_imports {n:nat | n + 5360 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_get_url_hash: batsJsGetUrlHash,\n")
   val () = $B.bput(b,"      bats_js_set_url_hash: batsJsSetUrlHash,\n")
   val () = $B.bput(b,"      bats_js_replace_state: batsJsReplaceState,\n")
+  val () = $B.bput(b,"      bats_js_navigate_away: batsJsNavigateAway,\n")
   val () = $B.bput(b,"      bats_js_push_state: batsJsPushState,\n")
   val () = $B.bput(b,"      // DOM read\n")
   val () = $B.bput(b,"      bats_js_measure_node: batsJsMeasureNode,\n")
@@ -2118,8 +2128,8 @@ fn _emit_2 {n:nat | n + 4850 <= $B.BUILDER_CAP}
   val () = emit_js_window(b)
 in end
 
-fn _emit_3 {n:nat | n + 5760 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5760] $B.builder(m)): void = let
+fn _emit_3 {n:nat | n + 6140 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6140] $B.builder(m)): void = let
   val () = emit_js_nav(b)
   val () = emit_js_dom_read(b)
 in end
@@ -2167,23 +2177,23 @@ fn _emit_11 {n:nat | n + 18540 <= $B.BUILDER_CAP}
   val () = emit_js_account(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 8150 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8150] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 8210 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8210] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 30090 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 30090] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 30470 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 30470] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 49250 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 49250] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 49310 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 49310] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
