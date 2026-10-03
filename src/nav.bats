@@ -43,6 +43,13 @@ staload "./decompress.bats"
   {lb:agz}{n:nat}
   (url: !$A.borrow(byte, lb, n), url_len: int n): bool
 
+(* Whether url[0, url_len) is an https address (starts with https://):
+   the one check of the atoms that hand an address off the page
+   (navigate_away, browser_tab.bats' browser_tab_open) *)
+#pub fun is_https
+  {lb:agz}{n:nat}
+  (url: !$A.borrow(byte, lb, n), url_len: int n): bool
+
 #pub fun on_popstate
   (url: Int): void = "ext#bats_on_popstate"
 
@@ -93,8 +100,7 @@ extern fun _bats_js_navigate_away
   (url: ptr, url_len: int): int = "mac#bats_js_navigate_away"
 end
 
-(* Whether url[0, url_len) starts with https:// *)
-fn _https {lb:agz}{n:nat} (url: !$A.borrow(byte, lb, n), url_len: int n): bool = let
+implement is_https{lb}{n}(url, url_len) = let
   fun starts {i:nat | i <= 8} .<8 - i>. (url: !$A.borrow(byte, lb, n), i: int i): bool =
     if i >= 8 then true
     else if i >= url_len then false
@@ -135,7 +141,7 @@ implement push_state{lb}{n}(url, url_len) =
 implement reload() = _bats_js_reload()
 
 implement navigate_away{lb}{n}(url, url_len) =
-  if ~_https(url, url_len) then false
+  if ~is_https(url, url_len) then false
   else _bats_js_navigate_away($UNSAFE begin $UNSAFE.castvwtp1{ptr}(url) end, url_len) > 0
 
 implement set_popstate_callback(cb) = let
