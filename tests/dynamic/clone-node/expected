@@ -1,11 +1,11 @@
-bats: attribute refused: onclick
+bats: attribute refused: onmouseover
 bats: element refused: SCRIPT
 stopped: Unknown bats DOM op: 9 at offset 0
 <div id="page" class="caf" tabindex="0" data-gesture-region="1" role="document" title="now">
 <p id="c0">One <a id="c1" href="#x" tabindex="0">link</a>
 </p>
 <p id="c2">Two</p>
-<span onclick="go()">On</span>
+<span onclick="go()" onmouseover="go()">On</span>
 <a href="javascript:go()">Run</a>
 <script>go()</script>
 <svg>
@@ -14,6 +14,8 @@ stopped: Unknown bats DOM op: 9 at offset 0
 </svg>
 <p is="x-para">Built in</p>
 <div id="host" class="shadowed">Host</div>
+<div class="own-shadow">Own</div>
+<q is="x-quote">Quoted</q>
 </div>
 <form id="form">
 <input id="field">
@@ -30,6 +32,7 @@ stopped: Unknown bats DOM op: 9 at offset 0
 <p>Two</p>
 <span>On</span>
 <a>Run</a>
+<div class="own-shadow">Own</div>
 </div>
 <div id="again" class="caf" tabindex="0" data-gesture-region="1" role="document" title="now">
 <p>One <a href="#x" tabindex="0">link</a>
@@ -37,6 +40,7 @@ stopped: Unknown bats DOM op: 9 at offset 0
 <p>Two</p>
 <span>On</span>
 <a>Run</a>
+<div class="own-shadow">Own</div>
 </div>
 <p id="old">Two</p>
 </div>
