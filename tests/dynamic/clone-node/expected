@@ -1,20 +1,30 @@
-<div id="page" class="caf" tabindex="0" data-gesture-region="1" role="document">
+bats: attribute refused: onclick
+bats: element refused: SCRIPT
+<div id="page" class="caf" tabindex="0" data-gesture-region="1" role="document" title="now">
 <p id="c0">One <a id="c1" href="#x" tabindex="0">link</a>
 </p>
 <p id="c2">Two</p>
+<span onclick="go()">On</span>
+<a href="javascript:go()">Run</a>
+<script>go()</script>
 </div>
 <div id="sheet">
 <span id="old">old</span>
-<div id="copy" class="caf" data-gesture-region="1" role="document" inert="">
+<div id="copy" class="caf" data-gesture-region="1" role="document" title="now" inert="">
 <p>One <a href="#x" tabindex="0">link</a>
 </p>
 <p>Two</p>
+<span>On</span>
+<a>Run</a>
 </div>
-<div id="again" class="caf" tabindex="0" data-gesture-region="1" role="document">
+<div id="again" class="caf" tabindex="0" data-gesture-region="1" role="document" title="now">
 <p>One <a href="#x" tabindex="0">link</a>
 </p>
 <p>Two</p>
+<span>On</span>
+<a>Run</a>
 </div>
+<p id="old">Two</p>
 </div>
 copy scrolled to 640, 12
-ids: bats-root page c0 c1 c2 sheet old copy again
+ids: bats-root page c0 c1 c2 sheet old copy again old
