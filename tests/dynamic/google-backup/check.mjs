@@ -32,7 +32,15 @@ globalThis.Capacitor = {
     },
     Filesystem: {
       writeFile: o => { console.log(`write ${o.directory} ${o.path}: ${text(o.data)}`); files.set(o.path, o.data); return Promise.resolve({ uri: 'file:///' + o.path }); },
-      stat: o => files.has(o.path) ? Promise.resolve({ type: 'file' }) : Promise.reject(new Error('File does not exist')),
+      // a call for a file not there rejects (and is logged by the app):
+      // the atom must not make one
+      stat: o => { console.log(`stat ${o.path}`); return Promise.reject(new Error('File does not exist')); },
+      readdir: o => {
+        const prefix = o.path ? o.path + '/' : '';
+        const names = [...new Set([...files.keys()].filter(k => k.startsWith(prefix)).map(k => k.slice(prefix.length).split('/')[0]))];
+        if (o.path && !names.length) return Promise.reject(new Error('Folder does not exist'));
+        return Promise.resolve({ files: names.map(name => ({ name, type: 'file' })) });
+      },
       readFile: o => { console.log(`read ${o.directory} ${o.path}`); return Promise.resolve({ data: files.get(o.path) }); },
     },
   },
