@@ -192,7 +192,7 @@ fn emit_js_dom {n:nat | n + 11100 <= $B.BUILDER_CAP}
      attrRefused refuses. An element left out goes with what it holds;
      when it is the source, nothing is made. A closed shadow root cannot
      be seen, so it is outside the check *)
-  val () = $B.bput(b,"        case 8:{const sr=readStr(mem,bufPtr,dataStart);const d2=dataStart+2+sr.len;const pr=readStr(mem,bufPtr,d2);const s=getEl(sr.s),p=getEl(pr.s);const out=(e)=>e.namespaceURI!=='http://www.w3.org/1999/xhtml'||tagRefused(e.tagName)||e.hasAttribute('is')||!!e.shadowRoot;if(s&&p&&!out(s)){const c=s.cloneNode(true);for(const e of [c,...c.querySelectorAll('*')]){if(e!==c){if(out(e)){e.remove();continue;}e.removeAttribute('id');}for(const a of [...e.attributes])if(attrRefused(a.name,a.value))e.removeAttribute(a.name);}c.id=nid.s;p.appendChild(c);}pos=d2+2+pr.len;break;} // CLONE_NODE\n")
+  val () = $B.bput(b,"        case 8:{const sr=readStr(mem,bufPtr,dataStart);const d2=dataStart+2+sr.len;const pr=readStr(mem,bufPtr,d2);const s=getEl(sr.s),p=getEl(pr.s);const out=(e)=>e.namespaceURI!=='http://www.w3.org/1999/xhtml'||tagRefused(e.tagName)||e.hasAttribute('is')||!!e.shadowRoot;if(s&&p&&!out(s)){const c=s.cloneNode(true);for(const e of [c,...c.querySelectorAll('*')]){if(e!==c){if(out(e)){e.remove();continue;}e.removeAttribute('id');}for(let i=e.attributes.length-1;i>=0;i--){const a=e.attributes[i];if(attrRefused(a.name,a.value))e.removeAttribute(a.name);}}c.id=nid.s;p.appendChild(c);}pos=d2+2+pr.len;break;} // CLONE_NODE\n")
   (* SET_SCROLL_LEFT (11) and SET_SCROLL_TOP (12): one property write
      each, in order with the other operations. 9 was a two-axis scroll
      in 2026.10.3.72358 and is retired, as is 10, so a stream in that
