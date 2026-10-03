@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 81920 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 81920] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 83968 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 83968] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -1303,8 +1303,8 @@ fn emit_js_audio {n:nat | n + 1140 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_scroll {n:nat | n + 710 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 710] $B.builder(m)): void = let
+fn emit_js_scroll {n:nat | n + 1500 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1500] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Scroll ---\n")
   val () = $B.bput(b,"\n")
@@ -1330,6 +1330,25 @@ fn emit_js_scroll {n:nat | n + 710 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const id = readIdFromPtr(idPtr, idLen);\n")
   val () = $B.bput(b,"    const el = getEl(id);\n")
   val () = $B.bput(b,"    if (el) el.scrollLeft = value;\n")
+  val () = $B.bput(b,"  }\n")
+  (* dom.bats's copy_node: a snapshot of source in holder, with no id,
+     tabindex or gesture region of its own, inert and aria-hidden *)
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  function batsJsCopyNode(sourcePtr, sourceLen, holderPtr, holderLen) {\n")
+  val () = $B.bput(b,"    const source = getEl(readIdFromPtr(sourcePtr, sourceLen));\n")
+  val () = $B.bput(b,"    const holder = getEl(readIdFromPtr(holderPtr, holderLen));\n")
+  val () = $B.bput(b,"    if (!source || !holder) return;\n")
+  val () = $B.bput(b,"    const copy = source.cloneNode(true);\n")
+  val () = $B.bput(b,"    for (const el of [copy, ...copy.querySelectorAll('[id],[tabindex],[data-gesture-region]')]) {\n")
+  val () = $B.bput(b,"      el.removeAttribute('id');\n")
+  val () = $B.bput(b,"      el.removeAttribute('tabindex');\n")
+  val () = $B.bput(b,"      el.removeAttribute('data-gesture-region');\n")
+  val () = $B.bput(b,"    }\n")
+  val () = $B.bput(b,"    copy.setAttribute('aria-hidden', 'true');\n")
+  val () = $B.bput(b,"    copy.setAttribute('inert', '');\n")
+  val () = $B.bput(b,"    holder.replaceChildren(copy);\n")
+  val () = $B.bput(b,"    copy.scrollLeft = source.scrollLeft;\n")
+  val () = $B.bput(b,"    copy.scrollTop = source.scrollTop;\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -1489,8 +1508,8 @@ fn emit_js_extra {n:nat | n + 4640 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 5420 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5420] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5470 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5470] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1570,6 +1589,7 @@ fn emit_js_imports {n:nat | n + 5420 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_clear_marks: batsJsClearMarks,\n")
   val () = $B.bput(b,"      bats_js_element_at_point: batsJsElementAtPoint,\n")
   val () = $B.bput(b,"      bats_js_focus_node: batsJsFocusNode,\n")
+  val () = $B.bput(b,"      bats_js_copy_node: batsJsCopyNode,\n")
   val () = $B.bput(b,"      bats_js_file_claim: batsJsFileClaim,\n")
   val () = $B.bput(b,"      bats_js_file_read: batsJsFileRead,\n")
   val () = $B.bput(b,"      bats_js_file_close: batsJsFileClose,\n")
@@ -2195,8 +2215,8 @@ fn _emit_7 {n:nat | n + 3530 <= $B.BUILDER_CAP}
   val () = emit_js_blob(b)
 in end
 
-fn _emit_8 {n:nat | n + 3300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3300] $B.builder(m)): void = let
+fn _emit_8 {n:nat | n + 4090 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4090] $B.builder(m)): void = let
   val () = emit_js_media(b)
   val () = emit_js_audio(b)
   val () = emit_js_scroll(b)
@@ -2215,8 +2235,8 @@ fn _emit_11 {n:nat | n + 20040 <= $B.BUILDER_CAP}
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 8410 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8410] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 8460 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8460] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2230,8 +2250,8 @@ fn _emit_first_half {n:nat | n + 30470 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 51010 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 51010] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 51850 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 51850] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

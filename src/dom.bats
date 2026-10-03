@@ -35,6 +35,18 @@
 (* Removes every mark of this kind *)
 #pub fun clear_marks (kind: int): void
 
+(* Shows a copy of element source in element holder, in place of
+   holder's children: what source shows now, scrolled as it is, which
+   does not change after (a snapshot that is still live DOM, such as
+   the page being turned away from, laid over the page). The copy has
+   no id, nor any inside it (source keeps them all, so an id still
+   names one element), no tabindex and no data-gesture-region; it is
+   inert and aria-hidden, so it can neither be focused nor read out *)
+#pub fun copy_node
+  {ls,lh:agz}{ns,nh:pos}
+  (source: !$A.borrow(byte, ls, ns), source_len: int ns,
+   holder: !$A.borrow(byte, lh, nh), holder_len: int nh): void
+
 (* Moves the keyboard focus to the element *)
 #pub fun focus_node
   {li:agz}{ni:pos}
@@ -53,6 +65,7 @@ extern void bats_js_click_node(void*, int);
 extern void bats_js_mark_range(int, void*, int, int, void*, int, int);
 extern void bats_js_clear_marks(int);
 extern void bats_js_focus_node(void*, int);
+extern void bats_js_copy_node(void*, int, void*, int);
 %}
 extern fun _bats_dom_flush
   (buf: ptr, len: int): void = "mac#bats_dom_flush"
@@ -68,6 +81,8 @@ extern fun _bats_js_clear_marks
   (kind: int): void = "mac#bats_js_clear_marks"
 extern fun _bats_js_focus_node
   (id: ptr, id_len: int): void = "mac#bats_js_focus_node"
+extern fun _bats_js_copy_node
+  (source: ptr, source_len: int, holder: ptr, holder_len: int): void = "mac#bats_js_copy_node"
 
 implement dom_flush{l}{n}{m}(buf, len) =
   _bats_dom_flush(
@@ -94,6 +109,11 @@ implement clear_marks(kind) = _bats_js_clear_marks(kind)
 
 implement focus_node{li}{ni}(node_id, id_len) =
   _bats_js_focus_node($UNSAFE.castvwtp1{ptr}(node_id), id_len)
+
+implement copy_node{ls,lh}{ns,nh}(source, source_len, holder, holder_len) =
+  _bats_js_copy_node(
+    $UNSAFE.castvwtp1{ptr}(source), source_len,
+    $UNSAFE.castvwtp1{ptr}(holder), holder_len)
 
 end (* $UNSAFE *)
 end (* #target wasm *)
