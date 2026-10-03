@@ -33,8 +33,14 @@
   | PluginFilesystem
   (* A Google access token for the account on the device *)
   | PluginGoogleSignIn
+  (* An address opened in the system browser's tab over the app (a
+     Custom Tab on Android), as an OAuth sign-in is (app_link.bats) *)
+  | PluginBrowser
+  (* The addresses the app is opened at, its own scheme's: an OAuth
+     sign-in coming back (app_link.bats) *)
+  | PluginApp
 
-#pub stadef PLUGIN_COUNT = 6
+#pub stadef PLUGIN_COUNT = 8
 
 (* The i-th plugin of the table, for walking it *)
 #pub fn plugin_at {i:nat | i < PLUGIN_COUNT} (i: int i): plugin
@@ -54,7 +60,9 @@ implement plugin_at (i) =
   else if i = 2 then PluginScreenBrightness
   else if i = 3 then PluginShare
   else if i = 4 then PluginFilesystem
-  else PluginGoogleSignIn
+  else if i = 5 then PluginGoogleSignIn
+  else if i = 6 then PluginBrowser
+  else PluginApp
 
 implement plugin_name (p) =
   case+ p of
@@ -64,6 +72,8 @@ implement plugin_name (p) =
   | PluginShare() => "Share"
   | PluginFilesystem() => "Filesystem"
   | PluginGoogleSignIn() => "GoogleSignIn"
+  | PluginBrowser() => "Browser"
+  | PluginApp() => "App"
 
 implement plugin_package (p) =
   case+ p of
@@ -73,6 +83,8 @@ implement plugin_package (p) =
   | PluginShare() => "@capacitor/share"
   | PluginFilesystem() => "@capacitor/filesystem"
   | PluginGoogleSignIn() => "@capawesome/capacitor-google-sign-in"
+  | PluginBrowser() => "@capacitor/browser"
+  | PluginApp() => "@capacitor/app"
 
 implement plugin_version (p) =
   case+ p of
@@ -82,10 +94,12 @@ implement plugin_version (p) =
   | PluginShare() => "^8.0.3"
   | PluginFilesystem() => "^8.1.3"
   | PluginGoogleSignIn() => "^0.1.4"
+  | PluginBrowser() => "^8.0.5"
+  | PluginApp() => "^8.1.2"
 
 (* The Kotlin standard library the app needs: the newest any plugin's
    Android code is compiled with (Filesystem 8.1.3's, 2.2.20; the others
-   are Java). An older one the app forces makes a plugin's code fail as
+   are Java, Browser's and App's too). An older one the app forces makes a plugin's code fail as
    it runs, missing a class of the newer library (SpillingKt, quire#223).
    A plugin added or updated here that is compiled with a newer Kotlin
    moves it *)
@@ -127,7 +141,7 @@ in $B.bput(b, "\"") end
 fun put_dependencies_from {i:nat | i <= PLUGIN_COUNT}{n:nat | n + 80 * (PLUGIN_COUNT - i) <= $B.BUILDER_CAP} .<PLUGIN_COUNT - i>.
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 80 * (PLUGIN_COUNT - i)] $B.builder(m),
    i: int i, indent: [s:nat | s <= 8] string s, sep: bool): void =
-  if i >= 6 then ()
+  if i >= 8 then ()
   else let
     val () = put_dependency(b, plugin_at(i), indent, sep)
   in put_dependencies_from(b, i + 1, indent, true) end
@@ -135,8 +149,8 @@ fun put_dependencies_from {i:nat | i <= PLUGIN_COUNT}{n:nat | n + 80 * (PLUGIN_C
 (* Each plugin's package as a package.json dependency, "<package>":
    "<version>", each line after indent and all but the last ending in a
    comma; no newline after the last *)
-#pub fn put_plugin_dependencies {n:nat | n + 480 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 480] $B.builder(m),
+#pub fn put_plugin_dependencies {n:nat | n + 640 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 640] $B.builder(m),
    indent: [s:nat | s <= 8] string s): void
 
 implement put_plugin_dependencies (b, indent) =

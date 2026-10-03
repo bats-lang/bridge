@@ -175,8 +175,8 @@ end (* #target wasm *)
    package.json dependency line after indent, all but the last ending in
    a comma: what the native app installs, so it has every plugin an atom
    may call *)
-#pub fun produce_plugin_dependencies {n:nat | n + 480 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 480] $B.builder(m),
+#pub fun produce_plugin_dependencies {n:nat | n + 640 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 640] $B.builder(m),
    indent: [s:nat | s <= 8] string s): void
 
 implement produce_plugin_dependencies (b, indent) = put_plugin_dependencies(b, indent)

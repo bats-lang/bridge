@@ -1987,6 +1987,39 @@ fn emit_js_account {n:nat | n + 6000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
+fn emit_js_app_link {n:nat | n + 1500 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1500] $B.builder(m)): void = let
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // The app's links: an https address opened in the system browser's tab\n")
+  val () = $B.bput(b,"  // over the app (Browser), and each address the app is opened at (App's\n")
+  val () = $B.bput(b,"  // appUrlOpen), passed to listener l as its UTF-8 bytes\n")
+  val () = $B.bput(b,"  let linkListener = -1, linkHeard = false;\n")
+  val () = $B.bput(b,"  function batsJsBrowserTabAvailable() { return ")
+  val () = put_plugin_call(b, PluginBrowser())
+  val () = $B.bput(b," && ")
+  val () = put_plugin_call(b, PluginApp())
+  val () = $B.bput(b," ? 1 : 0; }\n")
+  val () = $B.bput(b,"  function batsJsBrowserTabOpen(up, ul, id) {\n")
+  val () = $B.bput(b,"    const t = ")
+  val () = put_plugin_call(b, PluginBrowser())
+  val () = $B.bput(b,", url = readString(up, ul);\n")
+  val () = $B.bput(b,"    if (!t || !/^https:\\/\\//.test(url)) return settle(id, 0);\n")
+  val () = $B.bput(b,"    settleBy(id, () => t.open({ url }), () => 1, () => 0);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsBrowserTabClose() { const t = ")
+  val () = put_plugin_call(b, PluginBrowser())
+  val () = $B.bput(b,"; if (t) quiet(t.close()); }\n")
+  val () = $B.bput(b,"  function batsJsListenAppLink(l) {\n")
+  val () = $B.bput(b,"    const a = ")
+  val () = put_plugin_call(b, PluginApp())
+  val () = $B.bput(b,";\n")
+  val () = $B.bput(b,"    linkListener = l;\n")
+  val () = $B.bput(b,"    if (!a || linkHeard) return;\n")
+  val () = $B.bput(b,"    linkHeard = true;\n")
+  val () = $B.bput(b,"    quiet(a.addListener('appUrlOpen', e => { if (e && e.url) fireBytes(linkListener, utf8.encode(String(e.url))); }));\n")
+  val () = $B.bput(b,"  }\n")
+in end
+
 fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3940] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
@@ -2066,8 +2099,8 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 2100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2100] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 2300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2300] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -2090,6 +2123,10 @@ fn emit_js_imports_platform {n:nat | n + 2100 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_backup_file_available: batsJsBackupFileAvailable,\n")
   val () = $B.bput(b,"      bats_js_backup_file_write: batsJsBackupFileWrite,\n")
   val () = $B.bput(b,"      bats_js_backup_file_read: batsJsBackupFileRead,\n")
+  val () = $B.bput(b,"      bats_js_browser_tab_available: batsJsBrowserTabAvailable,\n")
+  val () = $B.bput(b,"      bats_js_browser_tab_open: batsJsBrowserTabOpen,\n")
+  val () = $B.bput(b,"      bats_js_browser_tab_close: batsJsBrowserTabClose,\n")
+  val () = $B.bput(b,"      bats_js_listen_app_link: batsJsListenAppLink,\n")
   val () = $B.bput(b,"      bats_js_storage_available: batsJsStorageAvailable,\n")
   val () = $B.bput(b,"      bats_js_storage_ask: batsJsStorageAsk,\n")
   val () = $B.bput(b,"      bats_js_install_prompt_available: () => batsInstall.offer ? 1 : 0,\n")
@@ -2170,15 +2207,16 @@ fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 18540 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18540] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 20040 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 20040] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
+  val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 8210 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8210] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 8410 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8410] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2192,8 +2230,8 @@ fn _emit_first_half {n:nat | n + 30470 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 49310 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 49310] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 51010 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 51010] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

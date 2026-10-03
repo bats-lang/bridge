@@ -1,0 +1,10 @@
+[package]
+name = "app-link"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""
