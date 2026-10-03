@@ -17,15 +17,20 @@ const dom = new JSDOM(
   '<p id="c0">One <a id="c1" href="#x" tabindex="0">link</a></p><p id="c2">Two</p>' +
   '<span onclick="go()">On</span><a href="javascript:go()">Run</a><script>go()</script>' +
   '<svg><set attributeName="href" to="javascript:go()"></set></svg>' +
-  '<p is="x-para">Built in</p><div id="host">Host</div></div>' +
+  '<p is="x-para">Built in</p><div id="host" class="shadowed">Host</div></div>' +
   '<form id="form"><input id="field"></form><svg id="drawing"><rect></rect></svg>' +
   '<div id="sheet"><span id="old">old</span></div>' +
   '</div></body></html>',
   { url: 'http://localhost', pretendToBeVisual: true });
 global.document = dom.window.document;
 global.window = dom.window;
-// an open shadow root, which the stream cannot make
-document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML = '<b>Inside</b>';
+// A shadow root, which the stream cannot make: jsdom neither clones one
+// (clonable) nor lets one be set, so a host whose copy would carry an
+// open one is stood in for by a shadowRoot getter on its class
+Object.defineProperty(dom.window.HTMLElement.prototype, 'shadowRoot', {
+  get() { return this.classList.contains('shadowed') ? {} : null; },
+  configurable: true,
+});
 // jsdom lays nothing out, so a scroll is only what was set
 for (const name of ['scrollLeft', 'scrollTop']) {
   Object.defineProperty(dom.window.HTMLElement.prototype, name, {

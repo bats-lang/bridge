@@ -35,7 +35,8 @@
    The copy's ordinary tree keeps only what the stream itself could
    make: HTML elements (CREATE_ELEMENT makes no SVG or MathML), none
    that CREATE_ELEMENT refuses, none with an is attribute (a customized
-   built-in, which the stream never makes) or an open shadow root, and
+   built-in, which the stream never makes) or an open shadow root (one
+   the copy carries, a clonable one: cloneNode copies only those), and
    no attribute that SET_ATTR refuses. An element left out goes with
    everything inside it; when source is one, nothing is made. A closed
    shadow root cannot be seen from the page, so it is outside this

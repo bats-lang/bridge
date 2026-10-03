@@ -188,7 +188,8 @@ fn emit_js_dom {n:nat | n + 11100 <= $B.BUILDER_CAP}
      held to what the stream itself makes (the source may be markup the
      stream never made): HTML elements only (createElement makes no
      other), none that tagRefused refuses, none with an is attribute (a
-     customized built-in) or an open shadow root, and no attribute that
+     customized built-in) or an open shadow root (a clonable one, which
+     cloneNode copies), and no attribute that
      attrRefused refuses. An element left out goes with what it holds;
      when it is the source, nothing is made. A closed shadow root cannot
      be seen, so it is outside the check *)
