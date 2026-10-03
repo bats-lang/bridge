@@ -34,7 +34,7 @@
   (* A Google access token for the account on the device *)
   | PluginGoogleSignIn
   (* An address opened in the system browser's tab over the app (a
-     Custom Tab on Android), as an OAuth sign-in is (app_link.bats) *)
+     Custom Tab on Android), as an OAuth sign-in is (browser_tab.bats) *)
   | PluginBrowser
   (* The addresses the app is opened at, its own scheme's: an OAuth
      sign-in coming back (app_link.bats) *)
