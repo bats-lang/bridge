@@ -1,11 +1,15 @@
-(* google_account -- an access token for the Google account on the device
+(* google_account -- an access token for the reader's Google account
 
-   App (Capacitor) only: the GoogleSignIn plugin (plugins.bats,
+   App (Capacitor): the GoogleSignIn plugin (plugins.bats,
    @capawesome/capacitor-google-sign-in), which signs in with the
    account already on the device (Android's Credential Manager, one tap,
    no browser) and authorizes the scope asked for (AuthorizationClient),
-   showing a consent sheet the first time and nothing after. A browser
-   has no such account: google_token_available is false there. *)
+   showing a consent sheet the first time. Browser: Google Identity
+   Services' token model (its script loaded from accounts.google.com
+   when google_token_available is first asked, so a click's request
+   opens Google's window at once): a token for about an hour, with no
+   refresh token, as a page with no server gets; the account's address
+   is not given. Signing out in a browser revokes the token given. *)
 
 #include "share/atspre_staload.hats"
 staload "./decompress.bats"
@@ -34,7 +38,7 @@ staload "./decompress.bats"
      (its package and signing key), Play services are missing or out of
      date, or it failed otherwise *)
   | GoogleRefused
-  (* No GoogleSignIn plugin here: not the app *)
+  (* No way to ask here: an app without the plugin *)
   | GoogleUnavailable
 
 (* How signing out ended *)
@@ -42,7 +46,8 @@ staload "./decompress.bats"
   | GoogleSignedOut
   | GoogleSignOutFailed
 
-(* Whether a token can be asked for here: the app, with its plugin *)
+(* Whether a token can be asked for here: the app with its plugin, or a
+   browser (its sign-in script is then loaded, for the click that asks) *)
 #pub fun google_token_available(): bool
 
 (* An access token for scope[0, scope_len) (one OAuth scope, as

@@ -1853,23 +1853,56 @@ fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_account {n:nat | n + 4000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4000] $B.builder(m)): void = let
+fn emit_js_account {n:nat | n + 6000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6000] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  // A Google access token for the account on the device: the app's\n")
-  val () = $B.bput(b,"  // GoogleSignIn. -1 no account, -2 canceled, -3 refused, -4 no plugin;\n")
-  val () = $B.bput(b,"  // the account's address kept by request, for bats_js_google_account\n")
+  val () = $B.bput(b,"  // A Google access token: in the app, for the account on the device\n")
+  val () = $B.bput(b,"  // (GoogleSignIn); in a browser, through Google's own sign-in page (its\n")
+  val () = $B.bput(b,"  // Identity Services' token model, loaded when the token is first\n")
+  val () = $B.bput(b,"  // looked for, so a click's request opens its window at once).\n")
+  val () = $B.bput(b,"  // -1 no account, -2 canceled, -3 refused, -4 not here; the account's\n")
+  val () = $B.bput(b,"  // address kept by request, for bats_js_google_account\n")
   val () = $B.bput(b,"  const googleAccounts = new Map();\n")
-  val () = $B.bput(b,"  function batsJsGoogleTokenAvailable() { return ")
+  val () = $B.bput(b,"  let googleScript = null, googleToken = '';\n")
+  val () = $B.bput(b,"  const googleWeb = () => !capNative() && !!view.document;\n")
+  val () = $B.bput(b,"  function googleLoad() {\n")
+  val () = $B.bput(b,"    const loaded = () => view.google && view.google.accounts && view.google.accounts.oauth2;\n")
+  val () = $B.bput(b,"    if (!googleScript) googleScript = new Promise((ok, no) => {\n")
+  val () = $B.bput(b,"      if (loaded()) return ok();\n")
+  val () = $B.bput(b,"      const s = view.document.createElement('script');\n")
+  val () = $B.bput(b,"      s.src = 'https://accounts.google.com/gsi/client';\n")
+  val () = $B.bput(b,"      s.async = true;\n")
+  val () = $B.bput(b,"      s.onload = () => loaded() ? ok() : no(new Error('Google sign-in did not load'));\n")
+  val () = $B.bput(b,"      s.onerror = () => { googleScript = null; no(new Error('Google sign-in did not load')); };\n")
+  val () = $B.bput(b,"      view.document.head.appendChild(s);\n")
+  val () = $B.bput(b,"    });\n")
+  val () = $B.bput(b,"    return googleScript;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsGoogleTokenAvailable() {\n    if (")
   val () = put_plugin_call(b, PluginGoogleSignIn())
-  val () = $B.bput(b," ? 1 : 0; }\n")
+  val () = $B.bput(b,") return 1;\n")
+  val () = $B.bput(b,"    if (!googleWeb()) return 0;\n")
+  val () = $B.bput(b,"    googleLoad().catch(() => {});\n")
+  val () = $B.bput(b,"    return 1;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function googleWebToken(clientId, scope) {\n")
+  val () = $B.bput(b,"    return googleLoad().then(() => new Promise((ok, no) => {\n")
+  val () = $B.bput(b,"      const client = view.google.accounts.oauth2.initTokenClient({\n")
+  val () = $B.bput(b,"        client_id: clientId, scope,\n")
+  val () = $B.bput(b,"        callback: r => r && r.access_token ? ok(r) : no({ code: r && r.error === 'access_denied' ? 'SIGN_IN_CANCELED' : 'REFUSED' }),\n")
+  val () = $B.bput(b,"        error_callback: e => no({ code: e && e.type === 'popup_closed' ? 'SIGN_IN_CANCELED' : 'REFUSED' }),\n")
+  val () = $B.bput(b,"      });\n")
+  val () = $B.bput(b,"      client.requestAccessToken({ prompt: '' });\n")
+  val () = $B.bput(b,"    })).then(r => { googleToken = r.access_token; return { accessToken: r.access_token }; });\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsGoogleToken(cp, cl, sp, sl, id) {\n")
   val () = $B.bput(b,"    const g = ")
   val () = put_plugin_call(b, PluginGoogleSignIn())
   val () = $B.bput(b,";\n")
-  val () = $B.bput(b,"    if (!g) return settle(id, -4);\n")
+  val () = $B.bput(b,"    if (!g && !googleWeb()) return settle(id, -4);\n")
   val () = $B.bput(b,"    const clientId = readString(cp, cl), scope = readString(sp, sl);\n")
-  val () = $B.bput(b,"    settleBy(id, () => g.initialize({ clientId, scopes: [scope] }).then(() => g.signIn()), r => {\n")
+  val () = $B.bput(b,"    const ask = g ? () => g.initialize({ clientId, scopes: [scope] }).then(() => g.signIn()) : () => googleWebToken(clientId, scope);\n")
+  val () = $B.bput(b,"    settleBy(id, ask, r => {\n")
   val () = $B.bput(b,"      const t = r && r.accessToken;\n")
   val () = $B.bput(b,"      if (!t) return -3;\n")
   val () = $B.bput(b,"      if (r.email) googleAccounts.set(id, pendBlob(utf8.encode(r.email)));\n")
@@ -1881,8 +1914,13 @@ fn emit_js_account {n:nat | n + 4000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const g = ")
   val () = put_plugin_call(b, PluginGoogleSignIn())
   val () = $B.bput(b,";\n")
-  val () = $B.bput(b,"    if (!g) return settle(id, 1);\n")
-  val () = $B.bput(b,"    settleBy(id, () => g.signOut(), () => 0, () => 1);\n")
+  val () = $B.bput(b,"    if (g) return settleBy(id, () => g.signOut(), () => 0, () => 1);\n")
+  val () = $B.bput(b,"    if (!googleWeb()) return settle(id, 1);\n")
+  val () = $B.bput(b,"    // the token given is revoked, so the next sign-in asks again\n")
+  val () = $B.bput(b,"    const t = googleToken;\n")
+  val () = $B.bput(b,"    googleToken = '';\n")
+  val () = $B.bput(b,"    if (!t) return settle(id, 0);\n")
+  val () = $B.bput(b,"    settleBy(id, () => googleLoad().then(() => new Promise(ok => view.google.accounts.oauth2.revoke(t, ok))), () => 0, () => 1);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Files the system backs up: the app's Filesystem, in a directory of\n")
@@ -2104,8 +2142,8 @@ fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 16540 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16540] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 18540 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 18540] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2126,8 +2164,8 @@ fn _emit_first_half {n:nat | n + 30090 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 46350 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46350] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 48350 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 48350] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
