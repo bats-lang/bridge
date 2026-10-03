@@ -1216,8 +1216,8 @@ fn emit_js_blob {n:nat | n + 1040 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_media {n:nat | n + 650 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 650] $B.builder(m)): void = let
+fn emit_js_media {n:nat | n + 1450 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1450] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Media queries ---\n")
   val () = $B.bput(b,"\n")
@@ -1238,6 +1238,22 @@ fn emit_js_media {n:nat | n + 650 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        instance.exports.bats_on_media_change(listenerId, e.matches ? 1 : 0);\n")
   val () = $B.bput(b,"      });\n")
   val () = $B.bput(b,"    } catch(e) {}\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // The page's fonts: each loadingdone fires the one listener, with no\n")
+  val () = $B.bput(b,"  // payload (bridge reads document.fonts.status as the event comes)\n")
+  val () = $B.bput(b,"  let fontsListener = -1;\n")
+  val () = $B.bput(b,"  function batsJsFontsLoading() {\n")
+  val () = $B.bput(b,"    const fonts = root.ownerDocument.fonts;\n")
+  val () = $B.bput(b,"    return fonts && fonts.status === 'loading' ? 1 : 0;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsListenFonts(listenerId) {\n")
+  val () = $B.bput(b,"    const fonts = root.ownerDocument.fonts;\n")
+  val () = $B.bput(b,"    if (!fonts || !fonts.addEventListener) return;\n")
+  val () = $B.bput(b,"    if (fontsListener < 0) fonts.addEventListener('loadingdone', () => {\n")
+  val () = $B.bput(b,"      if (fontsListener >= 0) instance.exports.bats_on_event(fontsListener, 0);\n")
+  val () = $B.bput(b,"    });\n")
+  val () = $B.bput(b,"    fontsListener = listenerId;\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -1464,8 +1480,8 @@ fn emit_js_extra {n:nat | n + 4640 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 5260 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5260] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5360 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5360] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1570,6 +1586,8 @@ fn emit_js_imports {n:nat | n + 5260 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      // Media queries\n")
   val () = $B.bput(b,"      bats_js_match_media: batsJsMatchMedia,\n")
   val () = $B.bput(b,"      bats_js_listen_media: batsJsListenMedia,\n")
+  val () = $B.bput(b,"      bats_js_fonts_loading: batsJsFontsLoading,\n")
+  val () = $B.bput(b,"      bats_js_listen_fonts: batsJsListenFonts,\n")
   val () = $B.bput(b,"      // Audio\n")
   val () = $B.bput(b,"      bats_js_audio_play: batsJsAudioPlay,\n")
   val () = $B.bput(b,"      bats_js_audio_pause: batsJsAudioPause,\n")
@@ -2130,8 +2148,8 @@ fn _emit_7 {n:nat | n + 3530 <= $B.BUILDER_CAP}
   val () = emit_js_blob(b)
 in end
 
-fn _emit_8 {n:nat | n + 2500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2500] $B.builder(m)): void = let
+fn _emit_8 {n:nat | n + 3300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3300] $B.builder(m)): void = let
   val () = emit_js_media(b)
   val () = emit_js_audio(b)
   val () = emit_js_scroll(b)
@@ -2149,8 +2167,8 @@ fn _emit_11 {n:nat | n + 18540 <= $B.BUILDER_CAP}
   val () = emit_js_account(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 8050 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8050] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 8150 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8150] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2164,8 +2182,8 @@ fn _emit_first_half {n:nat | n + 30090 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 48350 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 48350] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 49250 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 49250] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
