@@ -1853,8 +1853,8 @@ fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_account {n:nat | n + 3600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3600] $B.builder(m)): void = let
+fn emit_js_account {n:nat | n + 4000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4000] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // A Google access token for the account on the device: the app's\n")
   val () = $B.bput(b,"  // GoogleSignIn. -1 no account, -2 canceled, -3 refused, -4 no plugin;\n")
@@ -1907,12 +1907,17 @@ fn emit_js_account {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = put_plugin_call(b, PluginFilesystem())
   val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    if (!fs) return settle(id, -1);\n")
-  val () = $B.bput(b,"    const path = backupPath(readString(np, nl));\n")
-  val () = $B.bput(b,"    settleBy(id, () => fs.stat({ path, directory: 'DATA' }).then(() => fs.readFile({ path, directory: 'DATA' }).then(r => {\n")
-  val () = $B.bput(b,"      const s = atob(r.data), u = new Uint8Array(s.length);\n")
-  val () = $B.bput(b,"      for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);\n")
-  val () = $B.bput(b,"      return u.length ? pendBlob(u) : -1;\n")
-  val () = $B.bput(b,"    }), () => 0), v => v, () => -1);\n")
+  val () = $B.bput(b,"    const path = backupPath(readString(np, nl)), dir = backupPath('').slice(0, -1);\n")
+  val () = $B.bput(b,"    // whether it is there, from the directories' listings: a call for a\n")
+  val () = $B.bput(b,"    // file not there rejects, which the app's console logs as an error\n")
+  val () = $B.bput(b,"    const has = (p, entry) => fs.readdir({ path: p, directory: 'DATA' })\n")
+  val () = $B.bput(b,"      .then(r => (r && r.files || []).some(f => (f && typeof f === 'object' ? f.name : f) === entry));\n")
+  val () = $B.bput(b,"    settleBy(id, () => has('', dir).then(d => d && has(dir, path.slice(dir.length + 1))).then(there => !there ? 0 :\n")
+  val () = $B.bput(b,"      fs.readFile({ path, directory: 'DATA' }).then(r => {\n")
+  val () = $B.bput(b,"        const s = atob(r.data), u = new Uint8Array(s.length);\n")
+  val () = $B.bput(b,"        for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);\n")
+  val () = $B.bput(b,"        return u.length ? pendBlob(u) : -1;\n")
+  val () = $B.bput(b,"      })), v => v, () => -1);\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -2099,8 +2104,8 @@ fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 16140 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16140] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 16540 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16540] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2121,8 +2126,8 @@ fn _emit_first_half {n:nat | n + 30090 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 45950 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 45950] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 46350 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46350] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
