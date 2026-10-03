@@ -1,8 +1,9 @@
 // Runs dist/pwa/app.wasm through the bridge.js that pwa generated, in
 // jsdom, over a page with an element "page" (ids, a tabindex, a gesture
 // region and a link inside it, and markup the stream would refuse: an
-// event handler, a javascript: URL, a script and SVG), a form, and an
-// element "sheet" holding something else. Prints the document's body after the app has cloned "page" into
+// event handler, a javascript: URL, a script, SVG, a customized built-in
+// and an open shadow root), a form, an svg, and an element "sheet"
+// holding something else. Prints the document's body after the app has cloned "page" into
 // "sheet" twice (CLONE_NODE) and changed and scrolled the first clone,
 // where it is scrolled, and the ids in the document.
 import { JSDOM } from 'jsdom';
@@ -15,13 +16,16 @@ const dom = new JSDOM(
   '<div id="page" class="caf" tabindex="0" data-gesture-region="1" role="document">' +
   '<p id="c0">One <a id="c1" href="#x" tabindex="0">link</a></p><p id="c2">Two</p>' +
   '<span onclick="go()">On</span><a href="javascript:go()">Run</a><script>go()</script>' +
-  '<svg><set attributeName="href" to="javascript:go()"></set></svg></div>' +
-  '<form id="form"><input id="field"></form>' +
+  '<svg><set attributeName="href" to="javascript:go()"></set></svg>' +
+  '<p is="x-para">Built in</p><div id="host">Host</div></div>' +
+  '<form id="form"><input id="field"></form><svg id="drawing"><rect></rect></svg>' +
   '<div id="sheet"><span id="old">old</span></div>' +
   '</div></body></html>',
   { url: 'http://localhost', pretendToBeVisual: true });
 global.document = dom.window.document;
 global.window = dom.window;
+// an open shadow root, which the stream cannot make
+document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML = '<b>Inside</b>';
 // jsdom lays nothing out, so a scroll is only what was set
 for (const name of ['scrollLeft', 'scrollTop']) {
   Object.defineProperty(dom.window.HTMLElement.prototype, name, {
@@ -41,7 +45,11 @@ const { loadWASM } = await import(tmp);
 unlinkSync(tmp);
 
 const root = document.getElementById('bats-root');
-await loadWASM(readFileSync('dist/pwa/app.wasm'), root, {});
+try {
+  await loadWASM(readFileSync('dist/pwa/app.wasm'), root, {});
+} catch (error) {
+  console.log(`stopped: ${error.message}`);
+}
 console.log(root.innerHTML.replace(/></g, '>\n<'));
 const copy = document.getElementById('copy');
 console.log(`copy scrolled to ${copy.scrollLeft}, ${copy.scrollTop}`);

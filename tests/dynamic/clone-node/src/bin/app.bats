@@ -38,9 +38,11 @@ in off + 4 end
    then the copy's tabindex removed, inert set and its scroll set, one
    axis per operation, as any element's; scrolls of an element that is
    not there and a clone of one, and a clone of a form (an element the
-   stream would refuse), which do nothing; and a clone given an
+   stream would refuse) and of an svg, which do nothing; and a clone
+   given an
    id already in the document ("old"), which makes a second element
-   with it *)
+   with it. Then, in a flush of its own, the retired op 9, which stops
+   the flush *)
 implement main0 () = let
   val buf = $A.alloc<byte>(CAP)
   (* SET_ATTR: [2][id][u8 name length][name][u16 value length][value] *)
@@ -101,5 +103,17 @@ implement main0 () = let
   val off = put_name(buf, off, "old")
   val off = put_name(buf, off, "c2")
   val off = put_name(buf, off, "sheet")
+  (* a source outside HTML's namespace (an svg): nothing made *)
+  val off = put_byte(buf, off, 8)
+  val off = put_name(buf, off, "foreign")
+  val off = put_name(buf, off, "drawing")
+  val off = put_name(buf, off, "sheet")
+  val () = $DM.dom_flush(buf, off)
+  (* 9, retired: a stream in its old shape stops (check.mjs prints the
+     error) *)
+  val off = put_byte(buf, 0, 9)
+  val off = put_name(buf, off, "copy")
+  val off = put_i32(buf, off, 1, 0)
+  val off = put_i32(buf, off, 2, 0)
   val () = $DM.dom_flush(buf, off)
 in $A.free<byte>(buf) end

@@ -24,18 +24,24 @@
    element; so what they need can come only from the copy itself or
    from stylesheet rules keyed on it. Inert on the copy takes its whole
    subtree out of focus, clicks and the accessibility tree, but it does
-   not stop a medium with autoplay from loading and playing, nor a CSS
-   animation: a source that may hold them needs the app to remove them
-   from the copy (or the source to have none). An id
-   reference inside the copy (aria-*, href="#...", url(#...)) still
-   names the source's element. A copy given an id already in the
-   document makes a second element with it, as CREATE_ELEMENT does.
-   The copy keeps only what the stream itself could make: HTML elements
-   (CREATE_ELEMENT makes no SVG or MathML), none that CREATE_ELEMENT
-   refuses, and no attribute that SET_ATTR refuses. An element left out
-   goes with everything inside it; when source is one, nothing is
-   made. What else the copy keeps or
-   loses is the app's to say, with the other operations on its id.
+   not stop what moves by itself: a medium with autoplay (it loads and
+   plays), a marquee, an animated image, a CSS animation. A source that
+   may hold them needs the app to remove them from the copy (or the
+   source to have none). An id reference inside the copy (aria-*,
+   href="#...", url(#...)) still names the source's element. A copy
+   given an id already in the document makes a second element with it,
+   as CREATE_ELEMENT does.
+
+   The copy's ordinary tree keeps only what the stream itself could
+   make: HTML elements (CREATE_ELEMENT makes no SVG or MathML), none
+   that CREATE_ELEMENT refuses, none with an is attribute (a customized
+   built-in, which the stream never makes) or an open shadow root, and
+   no attribute that SET_ATTR refuses. An element left out goes with
+   everything inside it; when source is one, nothing is made. A closed
+   shadow root cannot be seen from the page, so it is outside this
+   check; the stream makes no shadow root (it never attaches one, and
+   template is refused). What else the copy keeps or loses is the app's
+   to say, with the other operations on its id.
 
    SET_SCROLL_LEFT and SET_SCROLL_TOP ([11 or 12][id][i32 value],
    little endian) set the element's scrollLeft or scrollTop: one write, at its
