@@ -8,17 +8,57 @@
    Public API
    ============================================================ *)
 
-(* Applies a stream of DOM operations, each addressed by element id:
-   SET_TEXT (1), SET_ATTR (2), REMOVE_CHILDREN (3), CREATE_ELEMENT (4),
-   REMOVE_CHILD (5), APPEND_TEXT (6), REMOVE_ATTR (7), CLONE_NODE (8),
-   SET_SCROLL (9) and the canvas operations (64 to 84). CLONE_NODE ([8][id][source
-   id][parent id], each id a u16 length and its bytes) puts a deep copy
-   of element source at the end of element parent's children, the copy
-   taking the id; the elements inside the copy lose their ids, since an
-   id names one element. What else the copy keeps or loses is the app's
-   to say, with the other operations on its id. SET_SCROLL ([9][id][i32
-   left][i32 top], little endian) scrolls element id to left and top,
-   in order with the operations around it *)
+(* Applies a stream of DOM operations, each addressed by element id,
+   in order: SET_TEXT (1), SET_ATTR (2), REMOVE_CHILDREN (3),
+   CREATE_ELEMENT (4), REMOVE_CHILD (5), APPEND_TEXT (6), REMOVE_ATTR
+   (7), CLONE_NODE (8), SET_SCROLL_LEFT (11), SET_SCROLL_TOP (12) and
+   the canvas operations (64 to 84). An id is a u16 length (little
+   endian) and its bytes. 9 and 10 are not used: 9 was a scroll of both
+   axes in 2026.10.3.72358, so a stream written for that shape stops
+   at an unknown operation rather than being misread.
+
+   CLONE_NODE ([8][id][source id][parent id]) puts a deep copy of
+   element source, as earlier operations of the flush left it, at the
+   end of element parent's children, the copy taking the id. The
+   elements inside the copy lose their ids, since an id names one
+   element; so what they need can come only from the copy itself or
+   from stylesheet rules keyed on it. Inert on the copy takes its whole
+   subtree out of focus, clicks and the accessibility tree, but it does
+   not stop what moves by itself: a medium with autoplay (it loads and
+   plays), a marquee, an animated image, a CSS animation. A source that
+   may hold them needs the app to remove them from the copy (or the
+   source to have none). An id reference inside the copy (aria-*,
+   href="#...", url(#...)) still names the source's element. A copy
+   given an id already in the document makes a second element with it,
+   as CREATE_ELEMENT does.
+
+   The copy's ordinary tree is checked, element by element (on the
+   copy, not the source), against what the stream itself makes: HTML
+   elements only (CREATE_ELEMENT makes no SVG or MathML), none that
+   CREATE_ELEMENT refuses, no custom element, none carrying an open
+   shadow root, and no attribute that SET_ATTR refuses. A custom
+   element is one with an is attribute, or one whose constructor
+   customElements names (a customized built-in made by script carries
+   no is attribute); its constructor has already run, inside the
+   clone, when it is left out. A shadow root is in the copy only when
+   it was made clonable; a closed one cannot be seen, so it is outside
+   the check. An element left out goes with everything inside it; when
+   it is the copy itself, nothing is put in. The stream makes no
+   custom element and no shadow root (it never defines or attaches
+   one, and template is refused), so for a source the stream made the
+   check leaves everything; a source holding script-made custom
+   elements or closed shadow roots is outside this guarantee. What else
+   the copy keeps or loses is the app's to say, with the other
+   operations on its id.
+
+   SET_SCROLL_LEFT and SET_SCROLL_TOP ([11 or 12][id][i32 value],
+   little endian) set the element's scrollLeft or scrollTop: one write, at its
+   place in the flush, so an element made earlier in the same flush can
+   be scrolled. The write lays the page out then, so it should come
+   after every operation that sizes the element (or its scroll range is
+   still the old one). The scroll imports (scroll.bats) write at once,
+   while a flush is still being written, so a scroll in a batch belongs
+   in the stream *)
 #pub fun dom_flush
   {l:agz}{n:nat}{m:nat | m <= n}
   (buf: !$A.arr(byte, l, n), len: int m): void
