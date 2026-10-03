@@ -1,0 +1,20 @@
+<div id="page" class="caf" tabindex="0" data-gesture-region="1" role="document">
+<p id="c0">One <a id="c1" href="#x" tabindex="0">link</a>
+</p>
+<p id="c2">Two</p>
+</div>
+<div id="sheet">
+<span id="old">old</span>
+<div id="copy" class="caf" data-gesture-region="1" role="document" inert="">
+<p>One <a href="#x" tabindex="0">link</a>
+</p>
+<p>Two</p>
+</div>
+<div id="again" class="caf" tabindex="0" data-gesture-region="1" role="document">
+<p>One <a href="#x" tabindex="0">link</a>
+</p>
+<p>Two</p>
+</div>
+</div>
+copy scrolled to 640, 12
+ids: bats-root page c0 c1 c2 sheet old copy again
