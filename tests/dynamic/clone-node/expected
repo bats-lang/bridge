@@ -1,5 +1,6 @@
 bats: attribute refused: onclick
 bats: element refused: SCRIPT
+stopped: Unknown bats DOM op: 9 at offset 0
 <div id="page" class="caf" tabindex="0" data-gesture-region="1" role="document" title="now">
 <p id="c0">One <a id="c1" href="#x" tabindex="0">link</a>
 </p>
@@ -11,10 +12,16 @@ bats: element refused: SCRIPT
 <set attributeName="href" to="javascript:go()">
 </set>
 </svg>
+<p is="x-para">Built in</p>
+<div id="host" class="shadowed">Host</div>
 </div>
 <form id="form">
 <input id="field">
 </form>
+<svg id="drawing">
+<rect>
+</rect>
+</svg>
 <div id="sheet">
 <span id="old">old</span>
 <div id="copy" class="caf" data-gesture-region="1" role="document" title="now" inert="">
@@ -34,4 +41,4 @@ bats: element refused: SCRIPT
 <p id="old">Two</p>
 </div>
 copy scrolled to 640, 12
-ids: bats-root page c0 c1 c2 form field sheet old copy again old
+ids: bats-root page c0 c1 c2 host form field drawing sheet old copy again old
