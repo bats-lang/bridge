@@ -148,11 +148,11 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge {n:nat | n + 81920 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 81920] $B.builder(m)): void
+#pub fun produce_bridge {n:nat | n + 83968 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 83968] $B.builder(m)): void
 
-#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 83920 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 83920] $B.builder(m),
+#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 85968 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 85968] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
 (* The service worker: the shell is cached when it is installed, and
@@ -175,8 +175,8 @@ end (* #target wasm *)
    package.json dependency line after indent, all but the last ending in
    a comma: what the native app installs, so it has every plugin an atom
    may call *)
-#pub fun produce_plugin_dependencies {n:nat | n + 480 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 480] $B.builder(m),
+#pub fun produce_plugin_dependencies {n:nat | n + 640 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 640] $B.builder(m),
    indent: [s:nat | s <= 8] string s): void
 
 implement produce_plugin_dependencies (b, indent) = put_plugin_dependencies(b, indent)

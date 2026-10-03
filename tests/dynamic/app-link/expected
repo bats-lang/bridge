@@ -1,0 +1,12 @@
+addListener: appUrlOpen
+open: https://example.com/sign-in
+open: https://example.com/opened
+open: https://example.com/not-opened
+close
+open: https://example.com/started
+appUrlOpen: quire://oauth/dropbox?code=c&state=s
+close
+appUrlOpen: 
+appUrlOpen: https://example.com/back?code=1
+close
+open: https://example.com/back?code=1
