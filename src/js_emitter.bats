@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 83968 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 83968] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 85268 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 85268] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -1668,8 +1668,8 @@ in end
    native app's entry points (batsNative), and the files the system opens
    the app with or shares with it, handed over as external files: the
    browser's APIs, or the Capacitor app's plugins *)
-fn emit_js_early {n:nat | n + 1350 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1350] $B.builder(m)): void = let
+fn emit_js_early {n:nat | n + 1850 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1850] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"// An offer to install the app can come before the app is loaded: it is\n")
   val () = $B.bput(b,"// kept from the start (the browser's own banner is held back), for\n")
@@ -1684,7 +1684,9 @@ fn emit_js_early {n:nat | n + 1350 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"// view can fetch (an external file; kept until the app asks for it);\n")
   val () = $B.bput(b,"// key(name) sends the page the keydown a browser would send (a volume\n")
   val () = $B.bput(b,"// key: AudioVolumeUp, AudioVolumeDown), true when the page took it\n")
-  val () = $B.bput(b,"// (preventDefault)\n")
+  val () = $B.bput(b,"// (preventDefault); systemBars(status, navigation) tells the page whether\n")
+  val () = $B.bput(b,"// each system bar is shown (Android's WindowInsets.isVisible of each, at\n")
+  val () = $B.bput(b,"// each insets dispatch), the latest kept for listen_system_bars\n")
   val () = $B.bput(b,"globalThis.batsNative = {\n")
   val () = $B.bput(b,"  deliverFile(url, name) {\n")
   val () = $B.bput(b,"    const d = { url: String(url), name: String(name || '') };\n")
@@ -1696,11 +1698,16 @@ fn emit_js_early {n:nat | n + 1350 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const t = document.activeElement || document.body;\n")
   val () = $B.bput(b,"    return !!t && !t.dispatchEvent(new KeyboardEvent('keydown', { key: String(name), bubbles: true, cancelable: true }));\n")
   val () = $B.bput(b,"  },\n")
+  val () = $B.bput(b,"  systemBars(status, navigation) {\n")
+  val () = $B.bput(b,"    globalThis.batsSystemBars = (status === true ? 1 : 0) | (navigation === true ? 2 : 0);\n")
+  val () = $B.bput(b,"    if (globalThis.batsSystemBarsChanged) globalThis.batsSystemBarsChanged();\n")
+  val () = $B.bput(b,"    return true;\n")
+  val () = $B.bput(b,"  },\n")
   val () = $B.bput(b,"};\n")
 in end
 
-fn emit_js_screen {n:nat | n + 4400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
+fn emit_js_screen {n:nat | n + 5000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5000] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Platform: the browser's APIs, or the app's (Capacitor) plugins ---\n")
   val () = $B.bput(b,"  function capNative() {\n")
@@ -1747,6 +1754,13 @@ fn emit_js_screen {n:nat | n + 4400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  // No payload: bridge reads the state as the event comes\n")
   val () = $B.bput(b,"  function fsFire() { if (fsListener >= 0) instance.exports.bats_on_event(fsListener, 0); }\n")
   val () = $B.bput(b,"  document.addEventListener('fullscreenchange', fsFire);\n")
+  val () = $B.bput(b,"  // The system bars as the app's native side reports them (batsNative.\n")
+  val () = $B.bput(b,"  // systemBars): bit 1 the status bar shown, bit 2 the navigation bar;\n")
+  val () = $B.bput(b,"  // -1 before any report. No payload: bridge reads it as the event comes\n")
+  val () = $B.bput(b,"  let barsListener = -1;\n")
+  val () = $B.bput(b,"  function batsJsSystemBars() { return typeof globalThis.batsSystemBars === 'number' ? globalThis.batsSystemBars : -1; }\n")
+  val () = $B.bput(b,"  function barsFire() { if (barsListener >= 0 && batsJsSystemBars() >= 0) instance.exports.bats_on_event(barsListener, 0); }\n")
+  val () = $B.bput(b,"  globalThis.batsSystemBarsChanged = barsFire;\n")
   val () = $B.bput(b,"  function batsJsFullscreenSet(on) {\n")
   val () = $B.bput(b,"    const s = ")
   val () = put_plugin_call(b, PluginSystemBars())
@@ -2116,13 +2130,15 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 2300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2300] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 2500 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2500] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_set: batsJsFullscreenSet,\n")
   val () = $B.bput(b,"      bats_js_listen_fullscreen: l => { fsListener = l; },\n")
+  val () = $B.bput(b,"      bats_js_system_bars: batsJsSystemBars,\n")
+  val () = $B.bput(b,"      bats_js_listen_system_bars: l => { barsListener = l; Promise.resolve().then(barsFire); },\n")
   val () = $B.bput(b,"      bats_js_orientation_available: batsJsOrientationAvailable,\n")
   val () = $B.bput(b,"      bats_js_orientation_lock: batsJsOrientationLock,\n")
   val () = $B.bput(b,"      bats_js_orientation_unlock: batsJsOrientationUnlock,\n")
@@ -2167,8 +2183,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 14340 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 14340] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 14840 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 14840] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_early(b)
   val () = emit_js_loadwasm_open(b)
@@ -2224,31 +2240,31 @@ fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 20040 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 20040] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 20640 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 20640] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 8410 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8410] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 8610 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8610] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 31970 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 31970] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 32470 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 32470] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 51010 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 51010] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 51810 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 51810] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

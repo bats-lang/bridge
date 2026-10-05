@@ -1,0 +1,8 @@
+[package]
+name = "bars-reported"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""

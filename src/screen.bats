@@ -68,6 +68,29 @@ staload "./event.bats"
   (listener_id: listener_id,
    callback: (fullscreen_change) -<lincloptr1> void): void
 
+(* The app's system bars, as its native side reports them: which of the
+   status bar and the navigation bar are shown (Android's
+   WindowInsets.isVisible(statusBars()), isVisible(navigationBars())) *)
+#pub datatype system_bars =
+  | BarsShown           (* both *)
+  | StatusBarShown      (* the status bar alone *)
+  | NavigationBarShown  (* the navigation bar alone *)
+  | BarsHidden          (* neither *)
+
+(* Whether the system bars are reported here: once the app's native side
+   has reported them (batsNative.systemBars); never in a browser *)
+#pub fun system_bars_available(): bool
+
+(* A listener for the system bars, passed each report of them by the
+   app's native side (batsNative.systemBars, at each of Android's window
+   insets dispatches, read as the event comes): whatever changed them,
+   fullscreen_enter and fullscreen_exit, or the system (a swipe from the
+   screen's edge brings hidden bars back). The latest report made before
+   the listener is passed to it as it is set. None in a browser. *)
+#pub fun listen_system_bars
+  (listener_id: listener_id,
+   callback: (system_bars) -<lincloptr1> void): void
+
 (* Whether the rotation can be locked here and now. Browser:
    screen.orientation.lock, where a browser allows it (the app installed,
    or in full screen). App: the ScreenOrientation plugin. *)
@@ -105,6 +128,8 @@ extern int bats_js_fullscreen_available(void);
 extern int bats_js_fullscreen_active(void);
 extern void bats_js_fullscreen_set(int);
 extern void bats_js_listen_fullscreen(int);
+extern int bats_js_system_bars(void);
+extern void bats_js_listen_system_bars(int);
 extern int bats_js_orientation_available(void);
 extern void bats_js_orientation_lock(int);
 extern void bats_js_orientation_unlock(void);
@@ -120,6 +145,10 @@ extern fun _bats_js_fullscreen_set
   (on: int): void = "mac#bats_js_fullscreen_set"
 extern fun _bats_js_listen_fullscreen
   (listener_id: int): void = "mac#bats_js_listen_fullscreen"
+extern fun _bats_js_system_bars
+  (): int = "mac#bats_js_system_bars"
+extern fun _bats_js_listen_system_bars
+  (listener_id: int): void = "mac#bats_js_listen_system_bars"
 extern fun _bats_js_orientation_available
   (): int = "mac#bats_js_orientation_available"
 extern fun _bats_js_orientation_lock
@@ -157,6 +186,34 @@ implement listen_fullscreen(listener_id, callback) = let
   val () = $UNSAFE begin
     $extfcall(void, "bats_listener_set_decoded", listener_id, decoder, inner) end
 in _bats_js_listen_fullscreen(listener_id) end
+
+implement system_bars_available() = _bats_js_system_bars() >= 0
+
+(* JS's report, decoded here, once: bit 1 the status bar shown, bit 2
+   the navigation bar *)
+fn _system_bars (code: int): system_bars =
+  if code = 3 then BarsShown()
+  else if code = 1 then StatusBarShown()
+  else if code = 2 then NavigationBarShown()
+  else BarsHidden()
+
+(* As listen_fullscreen: no payload, the report read as the event comes
+   (JS fires only once there is one) *)
+implement listen_system_bars(listener_id, callback) = let
+  val inner = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(callback) end
+  val decode = llam (payload: event_payload): int =<lincloptr1> let
+    val code = _bats_js_system_bars()
+  in
+    if code < 0 then 0
+    else let
+      val call = $UNSAFE begin $UNSAFE.cast{(system_bars) -<cloref1> void}(inner) end
+      val () = call(_system_bars(code))
+    in 0 end
+  end
+  val decoder = $UNSAFE begin $UNSAFE.castvwtp0{ptr}(decode) end
+  val () = $UNSAFE begin
+    $extfcall(void, "bats_listener_set_decoded", listener_id, decoder, inner) end
+in _bats_js_listen_system_bars(listener_id) end
 
 implement orientation_available() = _bats_js_orientation_available() > 0
 
