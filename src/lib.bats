@@ -148,11 +148,11 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge {n:nat | n + 85268 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 85268] $B.builder(m)): void
+#pub fun produce_bridge {n:nat | n + 89168 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 89168] $B.builder(m)): void
 
-#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 87268 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 87268] $B.builder(m),
+#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 91168 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 91168] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
 (* The service worker: the shell is cached when it is installed, and
@@ -177,7 +177,7 @@ end (* #target wasm *)
    may call *)
 #pub fun produce_plugin_dependencies {n:nat | n + 640 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 640] $B.builder(m),
-   indent: [s:nat | s <= 8] string s): void
+   indent: [s:nat | s <= 4] string s): void
 
 implement produce_plugin_dependencies (b, indent) = put_plugin_dependencies(b, indent)
 
