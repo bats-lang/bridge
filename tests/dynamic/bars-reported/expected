@@ -1,0 +1,14 @@
+== app
+systemBars(true, true): true
+hash: #available
+hash: #both-shown
+systemBars(false, false): true
+hash: #both-hidden
+systemBars(true, false): true
+hash: #status-bar-shown
+systemBars(false, true): true
+hash: #navigation-bar-shown
+systemBars(true, true): true
+hash: #both-shown
+== browser
+hash: #unavailable
