@@ -40,8 +40,6 @@
   (* Files in the app's own directories: a file shared is written to its
      cache first (share.bats) *)
   | PluginFilesystem(0)
-  (* A Google access token for the account on the device *)
-  | PluginGoogleSignIn(0)
   (* An address opened in the system browser's tab over the app (a
      Custom Tab on Android), as an OAuth sign-in is (browser_tab.bats) *)
   | PluginBrowser(0)
@@ -53,13 +51,13 @@
      bats-lang/capacitor-plugins' google-authorize *)
   | PluginGoogleAuthorize(1)
 
-#pub stadef PLUGIN_COUNT = 9
+#pub stadef PLUGIN_COUNT = 8
 
 (* Whether the table's i-th plugin comes from a git repository (1) or
    not (0), and how many of the table's plugins from the i-th on do:
    plugin_at's index, kept with the table *)
-#pub stadef GIT_AT(i:int) = ifint(i == 8, 1, 0)
-#pub stadef GIT_FROM(i:int) = ifint(i <= 8, 1, 0)
+#pub stadef GIT_AT(i:int) = ifint(i == 7, 1, 0)
+#pub stadef GIT_FROM(i:int) = ifint(i <= 7, 1, 0)
 
 (* The i-th plugin of the table, for walking it *)
 #pub fn plugin_at {i:nat | i < PLUGIN_COUNT} (i: int i): plugin(GIT_AT(i))
@@ -82,7 +80,6 @@ implement plugin_origin (p) =
   | PluginScreenBrightness() => Package()
   | PluginShare() => Package()
   | PluginFilesystem() => Package()
-  | PluginGoogleSignIn() => Package()
   | PluginBrowser() => Package()
   | PluginApp() => Package()
   | PluginGoogleAuthorize() => Package()
@@ -115,9 +112,8 @@ implement plugin_at (i) =
   else if i = 2 then PluginScreenBrightness
   else if i = 3 then PluginShare
   else if i = 4 then PluginFilesystem
-  else if i = 5 then PluginGoogleSignIn
-  else if i = 6 then PluginBrowser
-  else if i = 7 then PluginApp
+  else if i = 5 then PluginBrowser
+  else if i = 6 then PluginApp
   else PluginGoogleAuthorize
 
 implement plugin_name (p) =
@@ -127,7 +123,6 @@ implement plugin_name (p) =
   | PluginScreenBrightness() => "ScreenBrightness"
   | PluginShare() => "Share"
   | PluginFilesystem() => "Filesystem"
-  | PluginGoogleSignIn() => "GoogleSignIn"
   | PluginBrowser() => "Browser"
   | PluginApp() => "App"
   | PluginGoogleAuthorize() => "GoogleAuthorize"
@@ -139,7 +134,6 @@ implement plugin_package (p) =
   | PluginScreenBrightness() => "@capacitor-community/screen-brightness"
   | PluginShare() => "@capacitor/share"
   | PluginFilesystem() => "@capacitor/filesystem"
-  | PluginGoogleSignIn() => "@capawesome/capacitor-google-sign-in"
   | PluginBrowser() => "@capacitor/browser"
   | PluginApp() => "@capacitor/app"
   | PluginGoogleAuthorize() => "@bats-lang/capacitor-google-authorize"
@@ -151,7 +145,6 @@ implement plugin_source (p) =
   | PluginScreenBrightness() => Registry("^8.0.0")
   | PluginShare() => Registry("^8.0.3")
   | PluginFilesystem() => Registry("^8.1.3")
-  | PluginGoogleSignIn() => Registry("^0.1.4")
   | PluginBrowser() => Registry("^8.0.5")
   | PluginApp() => Registry("^8.1.2")
   (* capacitor-plugins' main after its #3 *)
@@ -226,7 +219,7 @@ stadef LINES_FROM(i:int) = LINE_MOST * (PLUGIN_COUNT - i) + GIT_LONGER * GIT_FRO
 fun put_dependencies_from {i:nat | i <= PLUGIN_COUNT}{n:nat | n + LINES_FROM(i) <= $B.BUILDER_CAP} .<PLUGIN_COUNT - i>.
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + LINES_FROM(i)] $B.builder(m),
    i: int i, indent: [s:nat | s <= 4] string s, sep: bool): void =
-  if i >= 9 then ()
+  if i >= 8 then ()
   else let
     val p = plugin_at(i)
   in

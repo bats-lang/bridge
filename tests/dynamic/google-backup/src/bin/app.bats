@@ -97,27 +97,16 @@ fn found_written {n:pos | n < 256} (name: string n, found: $BF.backup_found): $P
   | ~$BF.BackupNone() => write_text(name, "none")
   | ~$BF.BackupUnreadable() => write_text(name, "unreadable")
 
-(* check.mjs plays the app's GoogleSignIn and Filesystem: a token is
-   asked for and written as a backed-up file, read back and written
-   again, a file never written is read, a second token is refused (no
-   account), and the account is signed out *)
+(* check.mjs plays the app's Filesystem, and Capawesome's GoogleSignIn,
+   which nothing may call now: in the app no token is offered, and one
+   asked for is unavailable (written as the backed-up file token), which
+   is read back and written again; a file never written is read; and
+   signing out asks no plugin *)
 implement main0 () =
-  if ~$GA.google_token_available() then $P.finish<$BF.backup_written>(write_text("token", "unavailable"), llam(_) => ())
-  else if ~$BF.backup_file_available() then ()
+  if ~$BF.backup_file_available() then ()
   else let
-    val @(client_frozen, client) = $A.freeze<byte>(bytes("client-id"))
-    val @(scope_frozen, scope) = $A.freeze<byte>(bytes("scope"))
-    val asked = $GA.google_token_get(client, 9, scope, 5)
-    val () = $A.drop<byte>(scope_frozen, scope)
-    val () = $A.free<byte>($A.thaw<byte>(scope_frozen))
-    val () = $A.drop<byte>(client_frozen, client)
-    val () = $A.free<byte>($A.thaw<byte>(client_frozen))
-    val written = $P.and_then<$GA.google_token><$BF.backup_written>(asked, llam(answer) => token_written(answer))
-    val again = $P.and_then<$BF.backup_written><$BF.backup_found>(written, llam(_) => read("token"))
-    val copied = $P.and_then<$BF.backup_found><$BF.backup_written>(again, llam(found) => found_written("again", found))
-    val missing = $P.and_then<$BF.backup_written><$BF.backup_found>(copied, llam(_) => read("missing"))
-    val noted = $P.and_then<$BF.backup_found><$BF.backup_written>(missing, llam(found) => found_written("missing", found))
-    val second = $P.and_then<$BF.backup_written><$GA.google_token>(noted, llam(_) => let
+    val offered = (if $GA.google_token_available() then write_text("available", "yes") else write_text("available", "no")): $P.promise($BF.backup_written, $P.Chained)
+    val asked = $P.and_then<$BF.backup_written><$GA.google_token>(offered, llam(_) => let
       val @(client_frozen, client) = $A.freeze<byte>(bytes("client-id"))
       val @(scope_frozen, scope) = $A.freeze<byte>(bytes("scope"))
       val asked = $GA.google_token_get(client, 9, scope, 5)
@@ -126,6 +115,10 @@ implement main0 () =
       val () = $A.drop<byte>(client_frozen, client)
       val () = $A.free<byte>($A.thaw<byte>(client_frozen))
     in asked end)
-    val refused = $P.and_then<$GA.google_token><$BF.backup_written>(second, llam(answer) => token_written(answer))
-    val out = $P.and_then<$BF.backup_written><$GA.google_signed_out>(refused, llam(_) => $GA.google_sign_out())
+    val written = $P.and_then<$GA.google_token><$BF.backup_written>(asked, llam(answer) => token_written(answer))
+    val again = $P.and_then<$BF.backup_written><$BF.backup_found>(written, llam(_) => read("token"))
+    val copied = $P.and_then<$BF.backup_found><$BF.backup_written>(again, llam(found) => found_written("again", found))
+    val missing = $P.and_then<$BF.backup_written><$BF.backup_found>(copied, llam(_) => read("missing"))
+    val noted = $P.and_then<$BF.backup_found><$BF.backup_written>(missing, llam(found) => found_written("missing", found))
+    val out = $P.and_then<$BF.backup_written><$GA.google_signed_out>(noted, llam(_) => $GA.google_sign_out())
   in $P.finish<$GA.google_signed_out>(out, llam(_) => ()) end

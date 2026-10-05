@@ -1,7 +1,7 @@
 // Runs dist/pwa/app.wasm through the bridge.js that pwa generated, in
-// jsdom, playing the native app: Capacitor with its GoogleSignIn (the
-// first sign-in gives a token and an address, the second finds no
-// account) and Filesystem (files kept in a map). Prints each call.
+// jsdom, playing the native app: Capacitor with Capawesome's GoogleSignIn,
+// which bridge no longer calls (each call is printed, and none may be),
+// and Filesystem (files kept in a map). Prints each call.
 import { JSDOM } from 'jsdom';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -15,20 +15,14 @@ global.document = win.document;
 global.window = win;
 
 const files = new Map();
-let signIns = 0;
 const text = b64 => Buffer.from(b64, 'base64').toString('utf-8');
 globalThis.Capacitor = {
   isNativePlatform: () => true,
   Plugins: {
     GoogleSignIn: {
-      initialize: o => { console.log(`initialize: ${o.clientId} [${o.scopes.join(', ')}]`); return Promise.resolve(); },
-      signIn: () => {
-        signIns += 1;
-        console.log(`signIn ${signIns}`);
-        if (signIns === 1) return Promise.resolve({ accessToken: 'token-123', email: 'reader@example.com' });
-        return Promise.reject(Object.assign(new Error('none'), { code: 'NO_CREDENTIAL_AVAILABLE' }));
-      },
-      signOut: () => { console.log('signOut'); return Promise.resolve(); },
+      initialize: () => { console.log('GoogleSignIn.initialize'); return Promise.resolve(); },
+      signIn: () => { console.log('GoogleSignIn.signIn'); return Promise.resolve({ accessToken: 'token-123', email: 'reader@example.com' }); },
+      signOut: () => { console.log('GoogleSignIn.signOut'); return Promise.resolve(); },
     },
     Filesystem: {
       writeFile: o => { console.log(`write ${o.directory} ${o.path}: ${text(o.data)}`); files.set(o.path, o.data); return Promise.resolve({ uri: 'file:///' + o.path }); },

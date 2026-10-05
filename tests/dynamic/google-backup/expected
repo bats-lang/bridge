@@ -1,11 +1,5 @@
-initialize: client-id [scope]
-signIn 1
-write DATA backup/account: reader@example.com
-write DATA backup/token: token-123
+write DATA backup/available: no
+write DATA backup/token: unavailable
 read DATA backup/token
-write DATA backup/again: token-123
+write DATA backup/again: unavailable
 write DATA backup/missing: none
-initialize: client-id [scope]
-signIn 2
-write DATA backup/token: no account
-signOut

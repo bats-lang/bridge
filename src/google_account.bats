@@ -1,15 +1,18 @@
-(* google_account -- an access token for the reader's Google account
+(* google_account -- an access token for the reader's Google account, in
+   a browser
 
-   App (Capacitor): the GoogleSignIn plugin (plugins.bats,
-   @capawesome/capacitor-google-sign-in), which signs in with the
-   account already on the device (Android's Credential Manager, one tap,
-   no browser) and authorizes the scope asked for (AuthorizationClient),
-   showing a consent sheet the first time. Browser: Google Identity
-   Services' token model (its script loaded from accounts.google.com
-   when google_token_available is first asked, so a click's request
-   opens Google's window at once): a token for about an hour, with no
-   refresh token, as a page with no server gets; the account's address
-   is not given. Signing out in a browser revokes the token given. *)
+   Google Identity Services' token model (its script loaded from
+   accounts.google.com when google_token_available is first asked, so a
+   click's request opens Google's window at once): a token for about an
+   hour, with no refresh token, as a page with no server gets; the
+   account's address is not given. Signing out revokes the token given.
+
+   The app has none of this: google_authorize.bats is its way (Play
+   services' AuthorizationClient, with no sign-in). Capawesome's Google
+   Sign-In, which this module used in the app, showed Credential
+   Manager's sheet before each authorization and is gone from the
+   plugin table (bats-lang/quire#321); in the app, google_token_available
+   is false and google_token_get answers GoogleUnavailable. *)
 
 #include "share/atspre_staload.hats"
 staload "./decompress.bats"
@@ -30,15 +33,17 @@ staload "./decompress.bats"
 #pub datavtype google_token =
   (* The access token, and the account's address *)
   | GoogleToken of ([n:pos] dblob(n), $R.option([k:pos] dblob(k)))
-  (* No Google account on the device *)
+  (* No Google account on the device: given by no platform since the
+     app's plugin went (Google Identity Services lets the reader add
+     one in its window); kept so that an app's match of it still
+     stands *)
   | GoogleNoAccount
   (* The person said no *)
   | GoogleCanceled
-  (* Google refused: the app's OAuth clients are not registered for it
-     (its package and signing key), Play services are missing or out of
-     date, or it failed otherwise *)
+  (* Google refused: the page's origin is not registered with the OAuth
+     client, or it failed otherwise *)
   | GoogleRefused
-  (* No way to ask here: an app without the plugin *)
+  (* No way to ask here: the app, or a page with no document *)
   | GoogleUnavailable
 
 (* How signing out ended *)
@@ -46,24 +51,21 @@ staload "./decompress.bats"
   | GoogleSignedOut
   | GoogleSignOutFailed
 
-(* Whether a token can be asked for here: the app with its plugin, or a
-   browser (its sign-in script is then loaded, for the click that asks) *)
+(* Whether a token can be asked for here: a browser (its sign-in script
+   is then loaded, for the click that asks); never in the app *)
 #pub fun google_token_available(): bool
 
 (* An access token for scope[0, scope_len) (one OAuth scope, as
-   https://www.googleapis.com/auth/drive.appdata), for the account on
-   the device, through the web client client_id[0, client_len) (the
-   plugin takes the web client's ID on Android too; the Android client,
-   registered with the app's package and signing key, must exist).
-   Asked again when a token expires, it answers without a sheet. *)
+   https://www.googleapis.com/auth/drive.appdata), for the account the
+   reader chooses in Google's window, through the web client
+   client_id[0, client_len) *)
 #pub fun google_token_get
   {lc:agz}{nc:pos}{ls:agz}{ns:pos}
   (client_id: !$A.borrow(byte, lc, nc), client_len: int nc,
    scope: !$A.borrow(byte, ls, ns), scope_len: int ns)
   : $P.promise(google_token, $P.Chained)
 
-(* Signs the account out of the app, so the next token is asked for
-   anew *)
+(* Revokes the token given, so the next token is asked for anew *)
 #pub fun google_sign_out(): $P.promise(google_signed_out, $P.Chained)
 
 (* ============================================================
@@ -105,7 +107,7 @@ fn _nonempty (code: int): $R.option([n:pos] dblob(n)) =
     | ~$R.none() => $R.none())
 
 (* JS's codes: the token's blob (positive), -1 no account, -2 canceled,
-   -4 no plugin, anything else refused. The account's address is the
+   -4 not here, anything else refused. The account's address is the
    blob JS kept for this request (bats_js_google_account), taken once *)
 fn _google_token (resolver_id: int, code: Int): google_token = let
   val account = _nonempty(_bats_js_google_account(resolver_id))
