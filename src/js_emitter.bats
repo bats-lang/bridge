@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 85268 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 85268] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 89168 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 89168] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2019,6 +2019,74 @@ fn emit_js_account {n:nat | n + 6000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
+fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3600] $B.builder(m)): void = let
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // Google authorization with no sign-in, in the app (GoogleAuthorize,\n")
+  val () = $B.bput(b,"  // bats-lang/capacitor-plugins' google-authorize). Scopes cross separated\n")
+  val () = $B.bput(b,"  // by spaces (RFC 6749 3.3). An answer: the token's blob (positive), 0\n")
+  val () = $B.bput(b,"  // not authorized, -1 canceled, -2 failed; a clear or a revoke: 0 done,\n")
+  val () = $B.bput(b,"  // -2 failed. The granted scopes (part 0), the account (1) and the\n")
+  val () = $B.bput(b,"  // platform's code (2) are kept by request for bats_js_google_authorize_part.\n")
+  val () = $B.bput(b,"  // No plugin is Capacitor's own code for a platform without the method\n")
+  val () = $B.bput(b,"  const googleParts = new Map();\n")
+  val () = $B.bput(b,"  const googleScopeList = (p, l) => readString(p, l).split(' ').filter(s => s);\n")
+  val () = $B.bput(b,"  const googleText = s => typeof s === 'string' && s ? pendBlob(utf8.encode(s)) : 0;\n")
+  val () = $B.bput(b,"  function googleKeep(id, scopes, account, code) {\n")
+  val () = $B.bput(b,"    googleParts.set(id, [googleText(scopes), googleText(account), googleText(code)]);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function googleFailed(id, e) {\n")
+  val () = $B.bput(b,"    googleKeep(id, '', '', e && e.code);\n")
+  val () = $B.bput(b,"    return -2;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsGoogleAuthorizeAvailable() { return ")
+  val () = put_plugin_call(b, PluginGoogleAuthorize())
+  val () = $B.bput(b," ? 1 : 0; }\n")
+  val () = $B.bput(b,"  function batsJsGoogleAuthorize(sp, sl, mayAsk, id) {\n")
+  val () = $B.bput(b,"    const g = ")
+  val () = put_plugin_call(b, PluginGoogleAuthorize())
+  val () = $B.bput(b,";\n")
+  val () = $B.bput(b,"    if (!g) return settle(id, googleFailed(id, { code: 'UNIMPLEMENTED' }));\n")
+  val () = $B.bput(b,"    const scopes = googleScopeList(sp, sl);\n")
+  val () = $B.bput(b,"    settleBy(id, () => mayAsk ? g.authorizeScopes({ scopes }) : g.authorizationForScopes({ scopes }), r => {\n")
+  val () = $B.bput(b,"      const a = r && r.authorization;\n")
+  val () = $B.bput(b,"      if (a === null && !mayAsk) { googleKeep(id); return 0; }\n")
+  val () = $B.bput(b,"      if (!a || typeof a.accessToken !== 'string' || !a.accessToken) return googleFailed(id, null);\n")
+  val () = $B.bput(b,"      const granted = Array.isArray(a.grantedScopes) && a.grantedScopes.every(s => typeof s === 'string' && s && !/\\s/.test(s));\n")
+  val () = $B.bput(b,"      if (!granted) return googleFailed(id, null);\n")
+  val () = $B.bput(b,"      googleKeep(id, a.grantedScopes.join(' '), a.account);\n")
+  val () = $B.bput(b,"      return pendBlob(utf8.encode(a.accessToken));\n")
+  val () = $B.bput(b,"    }, e => {\n")
+  val () = $B.bput(b,"      if (mayAsk && e && e.code === 'CANCELED') { googleKeep(id); return -1; }\n")
+  val () = $B.bput(b,"      return googleFailed(id, e);\n")
+  val () = $B.bput(b,"    });\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsGoogleAuthorizePart(id, part) {\n")
+  val () = $B.bput(b,"    const parts = googleParts.get(id);\n")
+  val () = $B.bput(b,"    if (!parts) return 0;\n")
+  val () = $B.bput(b,"    const h = parts[part] || 0;\n")
+  val () = $B.bput(b,"    parts[part] = 0;\n")
+  val () = $B.bput(b,"    if (!parts.some(x => x)) googleParts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsGoogleClearToken(tp, tl, id) {\n")
+  val () = $B.bput(b,"    const g = ")
+  val () = put_plugin_call(b, PluginGoogleAuthorize())
+  val () = $B.bput(b,";\n")
+  val () = $B.bput(b,"    if (!g) return settle(id, googleFailed(id, { code: 'UNIMPLEMENTED' }));\n")
+  val () = $B.bput(b,"    const accessToken = readString(tp, tl);\n")
+  val () = $B.bput(b,"    settleBy(id, () => g.clearAuthorizationToken({ accessToken }), () => { googleKeep(id); return 0; }, e => googleFailed(id, e));\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsGoogleRevokeAccess(ap, al, sp, sl, id) {\n")
+  val () = $B.bput(b,"    const g = ")
+  val () = put_plugin_call(b, PluginGoogleAuthorize())
+  val () = $B.bput(b,";\n")
+  val () = $B.bput(b,"    if (!g) return settle(id, googleFailed(id, { code: 'UNIMPLEMENTED' }));\n")
+  val () = $B.bput(b,"    const account = readString(ap, al), scopes = googleScopeList(sp, sl);\n")
+  val () = $B.bput(b,"    settleBy(id, () => g.revokeAccess({ account, scopes }), () => { googleKeep(id); return 0; }, e => googleFailed(id, e));\n")
+  val () = $B.bput(b,"  }\n")
+in end
+
 fn emit_js_app_link {n:nat | n + 1500 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1500] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
@@ -2130,8 +2198,8 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 2500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2500] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 2800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2800] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -2153,6 +2221,11 @@ fn emit_js_imports_platform {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_google_token: batsJsGoogleToken,\n")
   val () = $B.bput(b,"      bats_js_google_account: batsJsGoogleAccount,\n")
   val () = $B.bput(b,"      bats_js_google_sign_out: batsJsGoogleSignOut,\n")
+  val () = $B.bput(b,"      bats_js_google_authorize_available: batsJsGoogleAuthorizeAvailable,\n")
+  val () = $B.bput(b,"      bats_js_google_authorize: batsJsGoogleAuthorize,\n")
+  val () = $B.bput(b,"      bats_js_google_authorize_part: batsJsGoogleAuthorizePart,\n")
+  val () = $B.bput(b,"      bats_js_google_clear_token: batsJsGoogleClearToken,\n")
+  val () = $B.bput(b,"      bats_js_google_revoke_access: batsJsGoogleRevokeAccess,\n")
   val () = $B.bput(b,"      bats_js_backup_file_available: batsJsBackupFileAvailable,\n")
   val () = $B.bput(b,"      bats_js_backup_file_write: batsJsBackupFileWrite,\n")
   val () = $B.bput(b,"      bats_js_backup_file_read: batsJsBackupFileRead,\n")
@@ -2240,16 +2313,17 @@ fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 20640 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 20640] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 24240 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 24240] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
+  val () = emit_js_google_authorize(b)
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 8610 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8610] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 8910 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8910] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2263,8 +2337,8 @@ fn _emit_first_half {n:nat | n + 32470 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 51810 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 51810] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 55710 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 55710] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

@@ -1,0 +1,57 @@
+== app
+authorizationForScopes: {"scopes":["scope-a","scope-b"]}
+clearAuthorizationToken: {"accessToken":"token-1"}
+revokeAccess: {"account":"reader@example.com","scopes":["scope-a","scope-b"]}
+authorizationForScopes: {"scopes":["scope-a"]}
+authorizationForScopes: {"scopes":["scope-a"]}
+authorizationForScopes: {"scopes":["scope-a"]}
+authorizeScopes: {"scopes":["scope-a","scope-c"]}
+clearAuthorizationToken: {"accessToken":"token-2"}
+authorizeScopes: {"scopes":["scope-a"]}
+authorizeScopes: {"scopes":["scope-a"]}
+authorizeScopes: {"scopes":["scope-a"]}
+clearAuthorizationToken: {"accessToken":"refused-token"}
+hash: #available
+hash: #authorization for scopes
+hash: #authorized
+hash: #changed
+hash: #revoke
+hash: #changed
+hash: #authorization for scopes
+hash: #not authorized
+hash: #authorization for scopes
+hash: #NETWORK_ERROR
+hash: #authorization for scopes
+hash: #no code
+hash: #authorize scopes
+hash: #authorized
+hash: #no account
+hash: #changed
+hash: #authorize scopes
+hash: #canceled
+hash: #authorize scopes
+hash: #CONSENT_SHOWING
+hash: #authorize scopes
+hash: #no code
+hash: #clear
+hash: #INTERNAL_ERROR
+== browser page
+hash: #unavailable
+hash: #authorization for scopes
+hash: #UNIMPLEMENTED
+hash: #authorization for scopes
+hash: #UNIMPLEMENTED
+hash: #authorization for scopes
+hash: #UNIMPLEMENTED
+hash: #authorization for scopes
+hash: #UNIMPLEMENTED
+hash: #authorize scopes
+hash: #UNIMPLEMENTED
+hash: #authorize scopes
+hash: #UNIMPLEMENTED
+hash: #authorize scopes
+hash: #UNIMPLEMENTED
+hash: #authorize scopes
+hash: #UNIMPLEMENTED
+hash: #clear
+hash: #UNIMPLEMENTED
