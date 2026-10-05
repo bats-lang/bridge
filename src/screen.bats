@@ -39,17 +39,20 @@ staload "./event.bats"
   | FollowSystem
 
 (* Whether full screen can be had here. Browser: the Fullscreen API
-   (document.fullscreenEnabled). App (Capacitor): the StatusBar plugin,
-   which hides the status bar. *)
+   (document.fullscreenEnabled). App (Capacitor): Capacitor's SystemBars,
+   which hides the system bars. *)
 #pub fun fullscreen_available(): bool
 
 (* Goes into full screen. Browser: the document element's
    requestFullscreen, which needs the user's activation (call it from a
-   click's listener). App: the bars hidden. Nothing when it is not
+   click's listener). App: the system bars, the status bar and the
+   navigation bar, hidden (SystemBars.hide with no bar named: Android's
+   WindowInsetsCompat.Type.systemBars()). Nothing when it is not
    available. *)
 #pub fun fullscreen_enter(): void
 
-(* Leaves full screen (the bars shown again in the app) *)
+(* Leaves full screen (the system bars shown again in the app,
+   SystemBars.show with no bar named) *)
 #pub fun fullscreen_exit(): void
 
 (* Whether the page is in full screen now (browser: document's

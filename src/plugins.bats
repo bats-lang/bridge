@@ -4,7 +4,8 @@
    Capacitor.Plugins[name], each behind its *_available check. This is
    the one table of those plugins: what the atoms call them (the name the
    JS reaches them by) and what the app installs for them (the npm
-   package and its version range). The JS gets a plugin's name only
+   package and its version range), or that Capacitor's Android runtime
+   has it itself (plugin_origin), so the app installs nothing for it. The JS gets a plugin's name only
    from here (put_plugin_call), so an atom cannot use a plugin the table
    does not have; pwa's Android generator writes the app's package.json
    from it (put_plugin_dependencies), so the app has every plugin an atom
@@ -20,8 +21,10 @@
    ============================================================ *)
 
 #pub datatype plugin =
-  (* The status bar hidden for full screen (screen.bats) *)
-  | PluginStatusBar
+  (* The system bars, the status bar and the navigation bar, hidden
+     together for full screen (screen.bats): Capacitor's own, in
+     @capacitor/android since 8 *)
+  | PluginSystemBars
   (* The rotation locked (screen.bats) *)
   | PluginScreenOrientation
   (* The screen's brightness (screen.bats) *)
@@ -48,14 +51,34 @@
 (* The name the JS reaches it by, Capacitor.Plugins[name] *)
 #pub fn plugin_name (p: plugin): [s:pos | s <= 24] string s
 
-(* The npm package the app installs for it *)
+(* Where the app gets a plugin: Capacitor's Android runtime has it
+   (CapacitorCore: the app's package.json names @capacitor/android
+   anyway, so the plugin is not a dependency of its own), or its own npm
+   package (Package) *)
+#pub datatype plugin_origin = CapacitorCore | Package
+
+#pub fn plugin_origin (p: plugin): plugin_origin
+
+implement plugin_origin (p) =
+  case+ p of
+  | PluginSystemBars() => CapacitorCore()
+  | PluginScreenOrientation() => Package()
+  | PluginScreenBrightness() => Package()
+  | PluginShare() => Package()
+  | PluginFilesystem() => Package()
+  | PluginGoogleSignIn() => Package()
+  | PluginBrowser() => Package()
+  | PluginApp() => Package()
+
+(* The npm package the app installs for it (Capacitor's runtime, for a
+   CapacitorCore plugin) *)
 #pub fn plugin_package (p: plugin): [s:pos | s <= 48] string s
 
 (* The package's version range *)
 #pub fn plugin_version (p: plugin): [s:pos | s <= 16] string s
 
 implement plugin_at (i) =
-  if i = 0 then PluginStatusBar
+  if i = 0 then PluginSystemBars
   else if i = 1 then PluginScreenOrientation
   else if i = 2 then PluginScreenBrightness
   else if i = 3 then PluginShare
@@ -66,7 +89,7 @@ implement plugin_at (i) =
 
 implement plugin_name (p) =
   case+ p of
-  | PluginStatusBar() => "StatusBar"
+  | PluginSystemBars() => "SystemBars"
   | PluginScreenOrientation() => "ScreenOrientation"
   | PluginScreenBrightness() => "ScreenBrightness"
   | PluginShare() => "Share"
@@ -77,7 +100,7 @@ implement plugin_name (p) =
 
 implement plugin_package (p) =
   case+ p of
-  | PluginStatusBar() => "@capacitor/status-bar"
+  | PluginSystemBars() => "@capacitor/android"
   | PluginScreenOrientation() => "@capacitor/screen-orientation"
   | PluginScreenBrightness() => "@capacitor-community/screen-brightness"
   | PluginShare() => "@capacitor/share"
@@ -88,7 +111,7 @@ implement plugin_package (p) =
 
 implement plugin_version (p) =
   case+ p of
-  | PluginStatusBar() => "^8.0.4"
+  | PluginSystemBars() => "^8.1.0"
   | PluginScreenOrientation() => "^8.0.2"
   | PluginScreenBrightness() => "^8.0.0"
   | PluginShare() => "^8.0.3"
@@ -143,10 +166,17 @@ fun put_dependencies_from {i:nat | i <= PLUGIN_COUNT}{n:nat | n + 80 * (PLUGIN_C
    i: int i, indent: [s:nat | s <= 8] string s, sep: bool): void =
   if i >= 8 then ()
   else let
-    val () = put_dependency(b, plugin_at(i), indent, sep)
-  in put_dependencies_from(b, i + 1, indent, true) end
+    val p = plugin_at(i)
+  in
+    case+ plugin_origin(p) of
+    | CapacitorCore() => put_dependencies_from(b, i + 1, indent, sep)
+    | Package() => let
+        val () = put_dependency(b, p, indent, sep)
+      in put_dependencies_from(b, i + 1, indent, true) end
+  end
 
-(* Each plugin's package as a package.json dependency, "<package>":
+(* Each plugin's package as a package.json dependency (a CapacitorCore
+   plugin has none of its own), "<package>":
    "<version>", each line after indent and all but the last ending in a
    comma; no newline after the last *)
 #pub fn put_plugin_dependencies {n:nat | n + 640 <= $B.BUILDER_CAP}
