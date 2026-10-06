@@ -2031,8 +2031,9 @@ in end
    blank, that is not a scope-token; an access token or an account that
    starts with a byte order mark, is not well-formed Unicode, is over
    4096 bytes or holds no visible ASCII character), and a rejection
-   that is not an object whose code and message are each text or
-   absent (no value, null, a string included), fail with no code and
+   that is not an object whose code and message are each well-formed
+   text (no lone surrogate) or absent (no value, null, a string
+   included), fail with no code and
    say which they were, each condition in a message of its own; an empty code or message is kept as none.
    googleBlank is blank as the plugin's Java has it (String.isBlank:
    Character.isWhitespace's characters only). No plugin is Capacitor's
@@ -2047,7 +2048,7 @@ fn emit_js_google_authorize {n:nat | n + 4400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function googleKeep(id, scopes, account, code, message) {\n")
   val () = $B.bput(b,"    googleParts.set(id, [googleText(scopes), googleText(account), googleText(code), googleText(message)]);\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  const googleTextOrNone = x => x == null || typeof x == 'string';\n")
+  val () = $B.bput(b,"  const googleTextOrNone = x => x == null || typeof x == 'string' && !/\\p{Cs}/u.test(x);\n")
   val () = $B.bput(b,"  function googleFailed(id, e) {\n")
   val () = $B.bput(b,"    if (!(e && typeof e == 'object' && googleTextOrNone(e.code) && googleTextOrNone(e.message)))\n")
   val () = $B.bput(b,"      e = { message: 'The rejection is not an error whose code and message are text' };\n")

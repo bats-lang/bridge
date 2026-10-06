@@ -241,12 +241,12 @@ fn scope_case {l:agz}{at:nat | at < 17}{n:pos | n < 256} (out: !$A.arr(byte, l, 
 
 (* Only a scope-token is a scope: no whitespace of any kind, no other
    control character, no quote or backslash, nothing non-ASCII. One
-   hash, twelve letters alone, a y or n for each of: a space, a tab, a
+   hash, seventeen letters alone, a y or n for each of: a space, a tab, a
    line feed, a carriage return, a form feed, a vertical tab, an
    ideographic space, a quote, a backslash, a control character that is
    not whitespace (0x01), DEL (0x7F) (each n); then each end of NQCHAR's
    ranges, 0x21, 0x23, 0x5B, 0x5D and 0x7E, and drive.appdata's scope
-   (each y): seventeen letters *)
+   (each y) *)
 fn split_scope (): void = let
   val out = $A.alloc<byte>(17)
   val () = scope_case(out, 0, "scope-a scope-b")
@@ -269,7 +269,7 @@ fn split_scope (): void = let
 in hash_bytes(out, 17) end
 
 (* Whether bytes are a google_text: y or n at out[at] *)
-fn text_case {l:agz}{at:nat | at < 18}{n:pos | n < 256} (out: !$A.arr(byte, l, 18), at: int at, text: string n): void =
+fn text_case {l:agz}{at:nat | at < 31}{n:pos | n < 256} (out: !$A.arr(byte, l, 31), at: int at, text: string n): void =
   case+ text_of(bytes(text), g1u2i(string1_length(text))) of
   | ~$R.some(made) => let
       val () = $GZ.google_text_free(made)
@@ -277,7 +277,7 @@ fn text_case {l:agz}{at:nat | at < 18}{n:pos | n < 256} (out: !$A.arr(byte, l, 1
   | ~$R.none() => $A.set<byte>(out, at, int2byte0(110))
 
 (* Only well-formed UTF-8 with no leading byte order mark, holding a
-   visible ASCII character, is a google_text. One hash, eighteen
+   visible ASCII character, is a google_text. One hash, thirty-one
    letters alone, a y or n for each of: an a then a lone continuation
    byte (0x80), the overlong forms C0 AF, E0 9F BF and F0 8F BF BF, a
    surrogate (ED A0 80), a code point over U+10FFFF (F4 90 80 80), F5,
@@ -285,9 +285,14 @@ fn text_case {l:agz}{at:nat | at < 18}{n:pos | n < 256} (out: !$A.arr(byte, l, 1
    two bytes (C3 A9), three (E4 B8 AD), four (F0 9F 98 80) and the
    last code point (F4 8F BF BF), an exclamation mark (0x21) alone and
    a tilde (0x7E) alone (each y); DEL (0x7F) alone, a space alone, a
-   byte order mark then abc, and a, 0xFF, b (each n) *)
+   byte order mark then abc, and a, 0xFF, b (each n); an a then C3 cut
+   short, C3 then A, E4 B8 then A, F0 9F 98 cut short, F0 9F then A
+   and 80, F0 9F 98 then A, and C1 BF (each n); an a then the lowest of
+   each form, C2 80, E0 A0 80 and F0 90 80 80, and the highest below
+   the surrogates, ED 9F BF; EF BB 80 (U+FEC0) then a; and an a then a
+   byte order mark, which does not lead (each y) *)
 fn text_row (): void = let
-  val out = $A.alloc<byte>(18)
+  val out = $A.alloc<byte>(31)
   val () = text_case(out, 0, "a\200")
   val () = text_case(out, 1, "a\300\257")
   val () = text_case(out, 2, "a\340\237\277")
@@ -306,7 +311,20 @@ fn text_row (): void = let
   val () = text_case(out, 15, " ")
   val () = text_case(out, 16, "\357\273\277abc")
   val () = text_case(out, 17, "a\377b")
-in hash_bytes(out, 18) end
+  val () = text_case(out, 18, "a\303")
+  val () = text_case(out, 19, "a\303A")
+  val () = text_case(out, 20, "a\344\270A")
+  val () = text_case(out, 21, "a\360\237\230")
+  val () = text_case(out, 22, "a\360\237A\200")
+  val () = text_case(out, 23, "a\360\237\230A")
+  val () = text_case(out, 24, "a\301\277")
+  val () = text_case(out, 25, "a\302\200")
+  val () = text_case(out, 26, "a\340\240\200")
+  val () = text_case(out, 27, "a\360\220\200\200")
+  val () = text_case(out, 28, "a\355\237\277")
+  val () = text_case(out, 29, "\357\273\200a")
+  val () = text_case(out, 30, "a\357\273\277")
+in hash_bytes(out, 31) end
 
 (* A step's end, read: nothing to do with it but let it go *)
 fn ended (change: $GZ.google_authorization_change): void =
@@ -378,8 +396,9 @@ implement main0 () = let
      Unicode);
      then a status with an empty message (no message kept); then a
      rejection with no value, a string, an error whose code is a number,
-     one whose message is a number, and null, each said to be no error
-     whose code and message are text (D), and an error with no code and
+     one whose message is a number, null, and one whose message holds a
+     lone surrogate, each said to be no error whose code and message
+     are text (D), and an error with no code and
      no message (none and none); then an authorization that is not an
      object (D), a token and an account starting with a byte order mark
      (G), a token of exactly 4096 bytes (taken and cleared), one of 4097
@@ -387,9 +406,9 @@ implement main0 () = let
      (taken, the token cleared and its grant revoked), one of 4097 bytes
      (G), an account holding a letter outside ASCII (taken and revoked
      as it came), and a scope holding each end of NQCHAR's ranges
-     (taken): 41 asks *)
+     (taken): 42 asks *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
-    val () = ended(change) in found_times(41) end)
+    val () = ended(change) in found_times(42) end)
   (* granted with no account, asked with a consent screen allowed *)
   val s8 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7d, llam(change) => let
     val () = ended(change) in asked() end)

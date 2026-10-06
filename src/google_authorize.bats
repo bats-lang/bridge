@@ -123,8 +123,9 @@ staload "./decompress.bats"
      non-empty list, or one that is not a string, is empty or is blank;
      an account missing from the answer, not a string, empty or blank;
      a rejection that is not an object whose code and message are each
-     text or absent: one with no value, null, a string, an error whose
-     code or message is a number); or a grant the plugin passes on that bridge does
+     well-formed text or absent: one with no value, null, a string, an
+     error whose code or message is a number or holds a lone
+     surrogate); or a grant the plugin passes on that bridge does
      not take: a granted scope, not blank, that is not RFC 6749's
      scope-token (bats-lang/capacitor-plugins#9), or an access token or
      an account that starts with a byte order mark (U+FEFF, which JS's
@@ -155,9 +156,9 @@ staload "./decompress.bats"
      plugin's INVALID_OPTIONS, which google_text's and google_scopes'
      types keep a call from earning; CONSENT_SHOWING, which neither call
      documents; and, JS saying what it was, a rejection that is not an
-     object whose code and message are each text or absent (one with
-     no value, null, a string, an error whose code or message is a
-     number) *)
+     object whose code and message are each well-formed text or absent
+     (one with no value, null, a string, an error whose code or message
+     is a number or holds a lone surrogate) *)
   | ChangeUnexpected of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* Whether the app has the plugin: false in a browser *)
