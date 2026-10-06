@@ -108,22 +108,34 @@ staload "./decompress.bats"
      holding no visible ASCII character) *)
   | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
-(* How clearing a token or revoking a grant ended, each as
-   google_authorization's *)
+(* How clearing a token or revoking a grant ended *)
 #pub datavtype google_authorization_change =
+  (* Cleared, or taken back *)
   | Changed
+  (* Play services refused, with its status (any CommonStatusCodes
+     names, CANCELED among them: neither call shows anything for the
+     reader to cancel) and its message, when it gave one *)
   | ChangeRefused of (google_status, $R.option([m:pos] dblob(m)))
+  (* No plugin: a browser, or an app without it (UNIMPLEMENTED) *)
   | ChangeUnavailable
+  (* An answer this module does not recognise, with the code (none when
+     there was none) and the message as they came, and only these: the
+     plugin's UNEXPECTED; a rejection with no code, or a code neither
+     Play services nor the plugin names (SUCCESS among them); the
+     plugin's INVALID_OPTIONS, which google_text's and google_scopes'
+     types keep a call from earning; CONSENT_SHOWING, which neither call
+     documents *)
   | ChangeUnexpected of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* Whether the app has the plugin: false in a browser *)
 #pub fun google_authorize_available(): bool
 
 (* An OAuth scope: its text proven not empty by its type and checked to
-   hold no whitespace (the scopes of a call cross as one text, separated
-   by spaces: RFC 6749, 3.3), once, by google_scope_of, the only way to
-   make one, so no call asks for an empty or blank scope, or splits one
-   in two (quire#334). The set of scopes is open: one Google does not
+   be RFC 6749's scope-token (NQCHAR bytes only: no whitespace, no quote
+   or backslash, nothing non-ASCII; the scopes of a call cross as one
+   text, separated by spaces, RFC 6749 3.3), once, by google_scope_of,
+   the only way to make one, so no call asks for an empty or blank
+   scope, or splits one in two (quire#334). The set of scopes is open: one Google does not
    recognise is Google's to refuse *)
 #pub abstype google_scope = ptr
 
