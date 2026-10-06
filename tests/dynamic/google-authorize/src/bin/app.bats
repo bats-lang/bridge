@@ -402,8 +402,9 @@ implement main0 () = let
      cancel: a refusal *)
   val s7b = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7, llam(change) => let
     val () = ended(change) in found() end)
-  (* the 14 statuses CommonStatusCodes names but NETWORK_ERROR and
-     CANCELED (asked above), INTERNAL_ERROR (driven through a clear) and
+  (* the 14 statuses a refusal can carry (CommonStatusCodes' names but
+     SUCCESS and SUCCESS_CACHE), but NETWORK_ERROR and CANCELED (asked
+     above), INTERNAL_ERROR (driven through a clear) and
      DEVELOPER_ERROR (through authorizeScopes), then SUCCESS, which is no
      refusal: 15 asks *)
   val s7c = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7b, llam(change) => let

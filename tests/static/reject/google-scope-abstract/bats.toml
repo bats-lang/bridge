@@ -1,0 +1,9 @@
+[package]
+name = "google-scope-abstract"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"promise" = ""
+"wasm.bats-packages.dev/bridge" = ""

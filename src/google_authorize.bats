@@ -29,12 +29,13 @@
    or a CANCELED status Play services gives before any consent screen,
    which the plugin cannot tell apart: bats-lang/capacitor-plugins#8;
    its message is kept; CANCELED from any other call is a refusal), and
-   anything this module does
-   not recognise (the plugin's UNEXPECTED, a code it does not document,
-   an answer missing what it must hold, a grant the types here cannot
-   carry) AuthorizeUnexpected or
-   ChangeUnexpected, with the code and the message as they came, never
-   folded into a known outcome.
+   anything this module does not recognise AuthorizeUnexpected or
+   ChangeUnexpected, never folded into a known outcome: the plugin's
+   UNEXPECTED, a code it does not document and a rejection with no code
+   with the code and the message as they came; an answer missing what
+   it must hold, a grant the types here cannot carry and a rejection
+   that is not an object whose code and message are text with no code
+   and a message JS gives saying which it was.
 
    Scopes cross as OAuth writes a list of them, separated by spaces
    (RFC 6749, 3.3; a scope has no space in it): those asked for, and
@@ -379,8 +380,7 @@ fn _named {k:pos} (code: !dblob(k), status: google_status): bool = let
   val n = g1u2i(string1_length(name))
 in if blob_len(code) <> n then false else _same(code, name, n, 0) end
 
-(* The status code names: the first of status and those after it (fuel
-   of them at most), or none *)
+(* The status code names: status and at most fuel after it, or none *)
 fun _status_from {k:pos}{fuel:nat} .<fuel>.
   (code: !dblob(k), status: google_status, fuel: int fuel): $R.option(google_status) =
   if _named(code, status) then $R.some(status)

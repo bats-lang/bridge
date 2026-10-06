@@ -2032,8 +2032,8 @@ in end
    starts with a byte order mark, is not well-formed Unicode, is over
    4096 bytes or holds no visible ASCII character), and a rejection
    that is not an object whose code and message are each well-formed
-   text (no lone surrogate) or absent (no value, null, a string
-   included), fail with no code and
+   text (no lone surrogate) or absent (null or missing): a rejection
+   with no value, null or a string is one, fail with no code and
    say which they were, each condition in a message of its own; an empty code or message is kept as none.
    googleBlank is blank as the plugin's Java has it (String.isBlank:
    Character.isWhitespace's characters only). No plugin is Capacitor's

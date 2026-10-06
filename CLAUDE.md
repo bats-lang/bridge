@@ -53,11 +53,15 @@ useful.)
   plugin (`AuthorizeUnavailable`). One outcome is never folded into
   another.
 * Anything the atom does not recognise is an explicit `...Unexpected`
-  constructor, never a known one: a plugin's `UNEXPECTED` or a code
-  nothing documents carries the code and the message as they came (or
-  none); an answer missing what it must hold, a grant the atom's types
-  cannot carry, or a rejection that is no error with a text code and
-  message carries no code and a message of the atom's own saying which
+  constructor, never a known one. A plugin's `UNEXPECTED`,
+  `INVALID_OPTIONS`, a code that names no outcome the call documents
+  (`SUCCESS`, `SUCCESS_CACHE`, `CONSENT_SHOWING` outside
+  `authorizeScopes`), a code nothing documents, and a rejection with no
+  code carry the code and the message as they came, each none when
+  null, missing or empty. An answer missing what it must hold, a grant
+  the atom's types cannot carry, or a rejection that is not an object
+  whose code and message are each well-formed text or absent (null or
+  missing) carries no code and a message of the atom's own saying which
   condition it was.
 * What a call cannot take is unrepresentable in the atom's type, not
   refused at run time: google_authorize's scopes are a `google_scopes(k)`
@@ -68,8 +72,14 @@ useful.)
   plugin's own check of its options (`INVALID_OPTIONS`) then cannot be
   reached from Bats. A token or an account is a `google_text`, made only
   by `google_text_of` from 1 to 4096 bytes of well-formed UTF-8, with no
-  leading byte order mark, holding a visible ASCII character. Static reject fixtures hold it
-  (`tests/static/reject/google-scope-bytes`, `google-scope-empty`, `google-scopes-empty`, `google-token-bytes`).
+  leading byte order mark, holding a visible ASCII character. Static
+  reject fixtures hold each bound and the abstraction
+  (`tests/static/reject/`): `google-scope-empty` (a scope of no bytes),
+  `google-scope-long` (one of 256), `google-scopes-empty` (no scope),
+  `google-scopes-nine` (nine), `google-scope-abstract` (a string as a
+  scope), `google-scope-bytes` (a caller's bytes as scopes),
+  `google-token-bytes` (a caller's bytes as a token) and
+  `google-text-long` (a text of 4097 bytes).
 * The atom's dynamic test drives every constructor, `...Unexpected`
   included, through a stand-in for the platform. The app matches every
   answer with `case+` and handles each constructor visibly (quire's
