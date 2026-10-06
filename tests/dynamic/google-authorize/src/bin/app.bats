@@ -269,7 +269,7 @@ fn split_scope (): void = let
 in hash_bytes(out, 17) end
 
 (* Whether bytes are a google_text: y or n at out[at] *)
-fn text_case {l:agz}{at:nat | at < 44}{n:pos | n < 256} (out: !$A.arr(byte, l, 44), at: int at, text: string n): void =
+fn text_case {l:agz}{at:nat | at < 47}{n:pos | n < 256} (out: !$A.arr(byte, l, 47), at: int at, text: string n): void =
   case+ text_of(bytes(text), g1u2i(string1_length(text))) of
   | ~$R.some(made) => let
       val () = $GZ.google_text_free(made)
@@ -277,7 +277,7 @@ fn text_case {l:agz}{at:nat | at < 44}{n:pos | n < 256} (out: !$A.arr(byte, l, 4
   | ~$R.none() => $A.set<byte>(out, at, int2byte0(110))
 
 (* Only well-formed UTF-8 with no leading byte order mark, holding a
-   visible ASCII character, is a google_text. One hash, forty-four
+   visible ASCII character, is a google_text. One hash, forty-seven
    letters alone, a y or n for each of: an a then a lone continuation
    byte (0x80), the overlong forms C0 AF, E0 9F BF and F0 8F BF BF, a
    surrogate (ED A0 80), a code point over U+10FFFF (F4 90 80 80), F5
@@ -294,11 +294,16 @@ fn text_case {l:agz}{at:nat | at < 44}{n:pos | n < 256} (out: !$A.arr(byte, l, 4
    then a continuation above BF in each place, C3 C0, E4 C0 80, E4 B8
    C0, F0 9F C0 80, F0 9F 98 C0 and F1 C0 80 80, and then a second
    byte below 80 after E4, F1 and F4, E4 7F 80, F1 7F 80 80 and F4 7F
-   80 80 (each n); an a then F1 80 80 80, DF BF, and DEL (each y).
-   Each bound and check of _visible, _utf8 and _byte_order_mark, moved
-   by one or left out, changes a letter *)
+   80 80 (each n); an a then F1 80 80 80, DF BF, DEL, E1 80 80, EF BF
+   BD and F0 BF BF BF (each y). Each value bound of _visible, _utf8
+   and _byte_order_mark, moved by one either way, and each of their
+   checks, left out, changes a letter. The length guards (at + 1, + 2
+   and + 3 below n, and n below 3) are held by the types, which refuse
+   an index not below n; _byte_order_mark's n below 3 moved up to 4
+   cannot be seen, as the only text it would let through, EF BB BF
+   alone, holds no visible ASCII character *)
 fn text_row (): void = let
-  val out = $A.alloc<byte>(44)
+  val out = $A.alloc<byte>(47)
   val () = text_case(out, 0, "a\200")
   val () = text_case(out, 1, "a\300\257")
   val () = text_case(out, 2, "a\340\237\277")
@@ -343,7 +348,10 @@ fn text_row (): void = let
   val () = text_case(out, 41, "a\361\200\200\200")
   val () = text_case(out, 42, "a\337\277")
   val () = text_case(out, 43, "a\177")
-in hash_bytes(out, 44) end
+  val () = text_case(out, 44, "a\341\200\200")
+  val () = text_case(out, 45, "a\357\277\275")
+  val () = text_case(out, 46, "a\360\277\277\277")
+in hash_bytes(out, 47) end
 
 (* A step's end, read: nothing to do with it but let it go *)
 fn ended (change: $GZ.google_authorization_change): void =
