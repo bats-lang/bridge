@@ -16,6 +16,8 @@ so a commit that passes keeps passing:
   lock (`bats lock --dev`) is pinned too.
 * `publish.yml` and `relock-pins.yml` in bats-lang/repository-prototype are
   called by commit, never `@main`.
+* Node, which runs the dynamic tests, is the exact version `check.yml`
+  names.
 
 Pins move only through a reviewed pull request that runs the same CI. The
 daily `relock.yml` (the shared `relock-pins.yml`) relocks against the
@@ -57,8 +59,9 @@ useful.)
 * What a call cannot take is unrepresentable in the atom's type:
   google_authorize takes `google_scopes(t)` of at least one
   `google_scope`, each made only by `google_scope_of` (printable
-  ASCII), and a token or an account as a `google_text`, made only by
-  `google_text_of` (printable ASCII).
+  ASCII), and a token or an account as a `google_text` (printable
+  ASCII), made by `google_text_of` or decoded from an answer; the
+  scopes an answer grants are a `google_granted`, which no call takes.
 * The atom's dynamic test passes through every constructor,
   `...Unexpected` included, with a stand-in for the platform. The app
   matches every answer with `case+` and handles each constructor
@@ -83,11 +86,14 @@ and the rule for an atom's answers:
   past its try.
 * Bats reads the text with the json package and decides there, with
   `case+`: each outcome the platform documents, and each case it does
-  not recognise, which keeps the text verbatim. A text over 1 MiB, in
-  any form, is a case of its own, keeping its whole length and its
-  first 1 MiB. An outcome that came with a text keeps it (for
-  google_authorize, `Authorized` and `NotAuthorized` too), so a field
-  the atom does not read is not dropped.
+  not recognise, which keeps the text (as UTF-8, as TextEncoder writes
+  it: a lone surrogate, which only the String form can hold, becomes
+  U+FFFD). A text over 1 MiB is kept as its whole length and its first
+  1 MiB, whatever its form: a case of its own, or, with an answer code
+  JS never gives, kept so by that case.
+  An outcome that came with a text keeps it (for google_authorize,
+  `Authorized` and `NotAuthorized` too), so a field the atom does not
+  read is not dropped.
 * A credential in a kept text (an access token) is kept; the app hides
   it where it shows the text.
 * The atom's dynamic test plays the documented answers, a fixed list

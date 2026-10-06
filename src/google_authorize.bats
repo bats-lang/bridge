@@ -66,9 +66,9 @@ staload "./decompress.bats"
 (* A status's number in CommonStatusCodes (DEVELOPER_ERROR is 10) *)
 #pub fn google_status_number (status: google_status): [n:nat | n < 100] int n
 
-(* A token, scopes or an account, to hand Google or as Google gave it:
-   a text of printable ASCII (0x21 to 0x7E), made only by
-   google_text_of or by this module from an answer *)
+(* A token or an account, to hand Google or as Google gave it: a text
+   of printable ASCII (0x21 to 0x7E), made by google_text_of, or by
+   this module from an answer *)
 #pub absvtype google_text = ptr
 
 (* bytes[0, n) as a google_text, when they are printable ASCII *)
@@ -80,6 +80,16 @@ staload "./decompress.bats"
 (* A google_text no call took *)
 #pub fn google_text_free (text: google_text): void
 
+(* The scopes Google granted: each a text of printable ASCII,
+   separated by spaces (RFC 6749, 3.3), made only by this module from an
+   answer, so no call takes it as a token or an account *)
+#pub absvtype google_granted = ptr
+
+(* A google_granted's bytes, consumed *)
+#pub fn google_granted_bytes (granted: google_granted): [l:agz][n:pos] @($A.arr(byte, l, n), int n)
+
+#pub fn google_granted_free (granted: google_granted): void
+
 (* How JS wrote what came back: as JSON (JSON.stringify, an Error as
    its own properties and its name, a BigInt as its digits); as String
    gives it, when JSON.stringify threw or gave nothing; as its type,
@@ -87,8 +97,10 @@ staload "./decompress.bats"
    could not be kept *)
 #pub datatype google_form = AsJson | AsString | AsType | AsTypeTextUnkept
 
-(* What came back, as JS wrote it, kept verbatim for a report (an
-   access token in it too: one who prints it hides that): at most 1 MiB *)
+(* What came back, as JS wrote it and TextEncoder kept it as UTF-8 (a
+   lone surrogate, which only the String form can hold, becomes
+   U+FFFD), for a report (an access token in it too: one who prints it
+   hides that): at most 1 MiB *)
 #pub datavtype google_said = {n:nat | n <= 1048576} GoogleSaid of (google_form, dblob(n))
 
 #pub fn google_said_free (said: google_said): void
@@ -99,6 +111,15 @@ staload "./decompress.bats"
 #pub datavtype google_cut = {l:agz} GoogleCut of (google_form, int, $A.arr(byte, l, 1048576))
 
 #pub fn google_cut_free (cut: google_cut): void
+
+(* A text JS kept with an answer code it never gives, its form unknown:
+   whole, at most 1 MiB; or its whole length in bytes and its first
+   1 MiB *)
+#pub datavtype google_raw =
+  | {n:nat | n <= 1048576} RawWhole of dblob(n)
+  | {l:agz} RawCut of (int, $A.arr(byte, l, 1048576))
+
+#pub fn google_raw_free (raw: google_raw): void
 
 (* Where the call was when what JS kept came: the plugin's answer
    resolved or was rejected; or looking the plugin up, reading the
@@ -196,7 +217,7 @@ staload "./decompress.bats"
      was *)
   | NothingKept of google_stage
   (* An answer code JS never gives, and the text it kept, if any *)
-  | OddAnswer of (int, $R.option([n:nat] dblob(n)))
+  | OddAnswer of (int, $R.option(google_raw))
 
 #pub fn google_unexpected_free (unexpected: google_unexpected): void
 
@@ -208,7 +229,7 @@ staload "./decompress.bats"
      account the grant is for, when the answer names one; and the
      answer as JS wrote it (the token in it too), with any field this
      module does not read *)
-  | {w:asking} Authorized(w) of (google_text, google_text, $R.option(google_text), google_said)
+  | {w:asking} Authorized(w) of (google_text, google_granted, $R.option(google_text), google_said)
   (* The reader must consent first, and nothing was shown; the answer
      as JS wrote it *)
   | NotAuthorized(Silently) of google_said
@@ -408,6 +429,11 @@ fn _free_said (said: $R.option(google_said)): void =
 
 fn _free_error (error: $J.parse_error): void = let val _ = $J.parse_error_pos(error) in end
 
+implement google_raw_free (raw) =
+  case+ raw of
+  | ~RawWhole(blob) => blob_free(blob)
+  | ~RawCut(_, bytes) => $A.free<byte>(bytes)
+
 implement google_unexpected_free (unexpected) =
   case+ unexpected of
   | ~AnswerUndefined() => ()
@@ -431,7 +457,7 @@ implement google_unexpected_free (unexpected) =
   | ~ThrownUndefined(_) => ()
   | ~ThrownTooLarge(_, cut) => google_cut_free(cut)
   | ~NothingKept(_) => ()
-  | ~OddAnswer(_, text) => (case+ text of ~$R.some(blob) => blob_free(blob) | ~$R.none() => ())
+  | ~OddAnswer(_, text) => (case+ text of ~$R.some(raw) => google_raw_free(raw) | ~$R.none() => ())
 
 (* ------------------------------------------------------------
    Reading what JS wrote
@@ -457,6 +483,21 @@ in
     val () = blob_free(text)
   in Over(GoogleCut(form, n, bytes)) end
 end
+
+(* An odd answer's text, capped as _kept caps one *)
+fn _raw (text: $R.option([n:nat] dblob(n))): $R.option(google_raw) =
+  case+ text of
+  | ~$R.none() => $R.none()
+  | ~$R.some(blob) => let
+      val n = blob_len(blob)
+    in
+      if n <= 1048576 then $R.some(RawWhole(blob))
+      else let
+        val bytes = $A.alloc<byte>(1048576)
+        val () = blob_read(blob, 0, bytes, _first(n))
+        val () = blob_free(blob)
+      in $R.some(RawCut(n, bytes)) end
+    end
 
 (* What a JSON text holds: a value json's parse_text reads, or json's
    error (an empty text ends before any value, at 0) *)
@@ -540,6 +581,7 @@ fun _copy {l,c:agz}{size,total:nat}{count:nat | count <= size}{at:nat | at + cou
 datavtype text_rep = {l:agz}{n:pos} TextRep of ($A.arr(byte, l, n), int n)
 $UNSAFE begin
 assume google_text = text_rep
+assume google_granted = text_rep
 end
 
 (* A JSON value as a google_text: a non-empty string of printable
@@ -589,7 +631,7 @@ fun _scopes_put {sz:nat}{l:agz}{at:nat | at <= 1048576} .<sz>.
 
 (* A JSON value as the scopes granted: a non-empty list of strings of
    printable ASCII, written separated by spaces, or why not *)
-fn _scopes_of (value: $J.json_v): $R.result(google_text, scopes_flaw) =
+fn _scopes_of (value: $J.json_v): $R.result(google_granted, scopes_flaw) =
   case+ value of
   | ~$J.json_arr(list) => let
       val out = $A.alloc<byte>(1048576)
@@ -706,7 +748,7 @@ fn _rejection (said: google_said): failure =
 (* An authorization JS wrote as JSON, decoded: a token, none (the
    authorization is null), or a failure *)
 datavtype answer =
-  | AnswerToken of (google_text, google_text, $R.option(google_text), google_said)
+  | AnswerToken of (google_text, google_granted, $R.option(google_text), google_said)
   | AnswerNone of google_said
   | AnswerFailed of failure
 
@@ -721,7 +763,7 @@ in
       val () = _free_value(account)
     in AnswerFailed(FailedOther(TokenUnusable(flaw, said))) end
   | ~$R.ok(token) => let
-      val scopes = (case+ scopes of ~$R.some(v) => _scopes_of(v) | ~$R.none() => $R.err(ScopesMissing())): $R.result(google_text, scopes_flaw)
+      val scopes = (case+ scopes of ~$R.some(v) => _scopes_of(v) | ~$R.none() => $R.err(ScopesMissing())): $R.result(google_granted, scopes_flaw)
     in
       case+ scopes of
       | ~$R.err(flaw) => let
@@ -731,7 +773,7 @@ in
       | ~$R.ok(scopes) => (case+ account of
         | ~$R.none() => let
             val () = google_text_free(token)
-            val () = google_text_free(scopes)
+            val () = google_granted_free(scopes)
           in AnswerFailed(FailedOther(AccountUnusable(TextMissing(), said))) end
         | ~$R.some(value) => (case+ value of
           | ~$J.json_null() => AnswerToken(token, scopes, $R.none(), said)
@@ -739,7 +781,7 @@ in
             | ~$R.ok(named) => AnswerToken(token, scopes, $R.some(named), said)
             | ~$R.err(flaw) => let
                 val () = google_text_free(token)
-                val () = google_text_free(scopes)
+                val () = google_granted_free(scopes)
               in AnswerFailed(FailedOther(AccountUnusable(flaw, said))) end)))
     end
 end
@@ -846,7 +888,7 @@ fn _rejected (came: came): failure =
 fn _answer (answered: answered): answer =
   case+ answered of
   | ~NoPlugin() => AnswerFailed(FailedUnavailable($R.none()))
-  | ~Odd(number, text) => AnswerFailed(FailedOther(OddAnswer(number, text)))
+  | ~Odd(number, text) => AnswerFailed(FailedOther(OddAnswer(number, _raw(text))))
   | ~Answered(stage, came) => (case+ stage of
     | StageResolved() => (case+ came of
       | ~CameText(~Whole(said)) => (case+ said of
@@ -906,7 +948,7 @@ fn _change (answered: answered): google_authorization_change = let
 in
   case+ answered of
   | ~NoPlugin() => ChangeUnavailable($R.none())
-  | ~Odd(number, text) => ChangeUnexpected(OddAnswer(number, text))
+  | ~Odd(number, text) => ChangeUnexpected(OddAnswer(number, _raw(text)))
   | ~Answered(stage, came) => (case+ stage of
     | StageResolved() => (case+ came of
       | ~CameUndefined() => Changed()
@@ -923,7 +965,7 @@ fn {} _free_authorization {w:asking} (answer: google_authorization(w)): void =
   case+ answer of
   | ~Authorized(token, scopes, account, said) => let
       val () = google_text_free(token)
-      val () = google_text_free(scopes)
+      val () = google_granted_free(scopes)
       val () = google_said_free(said)
     in case+ account of ~$R.some(named) => google_text_free(named) | ~$R.none() => () end
   | ~NotAuthorized(said) => google_said_free(said)
@@ -954,11 +996,11 @@ in
     val text = _text(~1)
   in
     (* only the lookup is done there, so only its codes (3x) come *)
-    if number / 10 <> 3 then PluginUnexpected(OddAnswer(number, text))
+    if number / 10 <> 3 then PluginUnexpected(OddAnswer(number, _raw(text)))
     else PluginUnexpected((case+ _answered(number, text) of
       | ~Answered(_, came) => _thrown(LookupThrew(), came)
       | ~NoPlugin() => OddAnswer(number, $R.none())
-      | ~Odd(odd, kept) => OddAnswer(odd, kept)): google_unexpected)
+      | ~Odd(odd, kept) => OddAnswer(odd, _raw(kept))): google_unexpected)
   end
 end
 
@@ -1008,9 +1050,11 @@ fun _scopes_put {l:agz}{size:pos}{t:pos}{at:nat | at + t <= size} .<t>.
       val () = $A.write_byte(out, at + n, 32)
     in _scopes_put(rest, out, at + n + 1) end
 
-(* Asks JS, may_ask 0 for authorizationForScopes and 1 for
-   authorizeScopes; resolves with the resolver's id and JS's code *)
-fn _ask {t:pos | t <= 1048576} (scopes: google_scopes(t), may_ask: int)
+(* Which call _ask makes: authorizationForScopes, or authorizeScopes *)
+datatype asked_call = CallSilently | CallMayAsk
+
+(* Asks JS for call; resolves with the resolver's id and JS's code *)
+fn _ask {t:pos | t <= 1048576} (scopes: google_scopes(t), call: asked_call)
   : @(int, $P.promise(Int, $P.Pending)) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
@@ -1019,18 +1063,19 @@ fn _ask {t:pos | t <= 1048576} (scopes: google_scopes(t), may_ask: int)
   val () = _scopes_put(scopes, out, 0)
   val @(frozen, borrowed) = $A.freeze<byte>(out)
   val () = _bats_js_google_authorize(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(borrowed) end, stop, may_ask, id)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(borrowed) end, stop,
+    (case+ call of CallSilently() => 0 | CallMayAsk() => 1): int, id)
   val () = $A.drop<byte>(frozen, borrowed)
   val () = $A.free<byte>($A.thaw<byte>(frozen))
 in @(id, p) end
 
 implement google_authorization_for_scopes{t}(scopes) = let
-  val @(id, p) = _ask(scopes, 0)
+  val @(id, p) = _ask(scopes, CallSilently())
 in $P.and_then<Int><google_authorization(Silently)>(p, llam (code) =>
   $P.ret<google_authorization(Silently)>(_found(_answer(_answered(code, _text(id)))))) end
 
 implement google_authorize_scopes{t}(scopes) = let
-  val @(id, p) = _ask(scopes, 1)
+  val @(id, p) = _ask(scopes, CallMayAsk())
 in $P.and_then<Int><google_authorization(MayAsk)>(p, llam (code) =>
   $P.ret<google_authorization(MayAsk)>(_asked(_answer(_answered(code, _text(id)))))) end
 
@@ -1053,6 +1098,12 @@ implement google_text_bytes (text) =
 
 implement google_text_free (text) =
   case+ text of ~TextRep(bytes, _) => $A.free<byte>(bytes)
+
+implement google_granted_bytes (granted) =
+  case+ granted of ~TextRep(bytes, n) => @(bytes, n)
+
+implement google_granted_free (granted) =
+  case+ granted of ~TextRep(bytes, _) => $A.free<byte>(bytes)
 
 implement google_clear_token(token) = let
   val @(p, r) = $P.create<Int>()

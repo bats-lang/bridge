@@ -17,7 +17,7 @@ fn free_authorization {w:$GZ.asking} (answer: $GZ.google_authorization(w)): void
   case+ answer of
   | ~$GZ.Authorized(token, scopes, account, said) => let
       val () = $GZ.google_text_free(token)
-      val () = $GZ.google_text_free(scopes)
+      val () = $GZ.google_granted_free(scopes)
       val () = $GZ.google_said_free(said)
     in case+ account of ~$R.some(named) => $GZ.google_text_free(named) | ~$R.none() => () end
   | ~$GZ.NotAuthorized(said) => $GZ.google_said_free(said)
@@ -243,7 +243,11 @@ in
       val () = hash_text("its form unknown")
     in
       case+ said of
-      | ~$R.some(blob) => let val () = hash_blob(blob) in $BD.blob_free(blob) end
+      | ~$R.some(~$GZ.RawWhole(blob)) => let val () = hash_blob(blob) in $BD.blob_free(blob) end
+      | ~$R.some(~$GZ.RawCut(total, first)) => let
+          val () = hash_text("cut, whole length:")
+          val () = hash_number(total)
+        in hash_bytes(first, 300) end
       | ~$R.none() => hash_text("no text")
     end
 end
@@ -264,6 +268,13 @@ fn hash_google_text (text: $GZ.google_text): void = let
 in
   if n <= 300 then hash_bytes(a, n)
   else let val () = $A.free<byte>(a) in hash_text("(a text over 300 bytes)") end
+end
+
+fn hash_granted (granted: $GZ.google_granted): void = let
+  val @(a, n) = $GZ.google_granted_bytes(granted)
+in
+  if n <= 300 then hash_bytes(a, n)
+  else let val () = $A.free<byte>(a) in hash_text("(scopes over 300 bytes)") end
 end
 
 (* ------------------------------------------------------------
@@ -318,9 +329,9 @@ end
 (* An authorization: its scopes and account in the hash, then the token
    cleared and the account's grant revoked, so the plugin prints the
    token and the account as they came back *)
-fn told_authorized (token: $GZ.google_text, scopes: $GZ.google_text, account: $R.option($GZ.google_text), said: $GZ.google_said): step = let
+fn told_authorized (token: $GZ.google_text, scopes: $GZ.google_granted, account: $R.option($GZ.google_text), said: $GZ.google_said): step = let
   val () = hash_text("authorized")
-  val () = hash_google_text(scopes)
+  val () = hash_granted(scopes)
   val () = hash_said(said)
 in
   case+ account of
@@ -445,6 +456,13 @@ fun times {left:nat} .<left>. (first: step, call: call, left: int left): step =
 #define CLEARS 80
 #define REVOKES 80
 
+#define PRESENCES 7
+
+(* The plugin looked up left times, each said *)
+fun presences {left:nat} .<left>. (left: int left): void =
+  if left <= 0 then ()
+  else let val () = hash_presence($GZ.google_authorize_available()) in presences(left - 1) end
+
 implement main0 () = let
   val () = hash_presence($GZ.google_authorize_available())
   val () = split_scope()
@@ -453,7 +471,7 @@ implement main0 () = let
   val s = times(s, Asked(), PROMPTING)
   val s = times(s, QueuedClear(), CLEARS)
   val s = times(s, QueuedRevoke(), REVOKES)
-(* and the plugin looked up once more at the end: check.mjs makes that
-   lookup throw in the app *)
+(* and the plugin looked up PRESENCES more times at the end: check.mjs
+   makes each of those lookups throw in the app *)
 in $P.finish<$GZ.google_authorization_change>(s, llam(change) => let
-  val () = free_change(change) in hash_presence($GZ.google_authorize_available()) end) end
+  val () = free_change(change) in presences(PRESENCES) end) end

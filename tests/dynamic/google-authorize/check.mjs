@@ -7,10 +7,14 @@
 // The answers are the plugin's documented ones, a fixed list of nasty
 // ones (values JSON has no form for, throwing getters and Proxy traps,
 // cycles, huge and odd strings, thenables, answers just under and over
-// the 1 MiB cap), answers bridge's JS never gives (put in as they reach
-// the app), and a fuzz of random values from a fixed seed. Then it
-// checks that every call settled exactly once with a known outcome, and
-// that every unexpected one carries a non-empty text.
+// the 1 MiB cap, a lookup, arguments and method that throw, a text that
+// cannot be kept), answers bridge's JS never gives (put in as they reach
+// the app), and a fuzz of random values from a fixed seed; after its
+// last call the app looks the plugin up again, and each of those
+// lookups throws. Then it checks that each call handed to
+// google_authorize's JS was settled exactly once, that every call the
+// app made ended in a known outcome, and that every unexpected one
+// carries its text or is a case that has none.
 import { JSDOM } from 'jsdom';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -125,9 +129,34 @@ const fill = (list, count, next) => {
 let oddAnswer = null;
 let textWithheld = false;
 let lookupThrow = null;
+// What the app's last lookups of the plugin throw, one each, once its
+// last call is made: an Error, undefined, a text over 1 MiB, a cycle
+// (written as String gives it), a value only its type can say, and an
+// Error whose text, then also its type, cannot be kept
+let endThrows = [];
+const unwritable = () => ({ toJSON() { throw error('no JSON'); }, toString() { throw error('no String'); } });
+const END_THROWS = () => [
+  [error('the last lookup threw'), 0], [undefined, 0], [big(), 0], [cyclic(), 0], [unwritable(), 0],
+  [error('its text not kept'), 1], [error('nothing kept'), 2],
+];
+// The resolver ids the app has handed to google_authorize's JS and not
+// yet seen settled (an id is used again once its call has settled), and
+// what went wrong: a settle of an id not outstanding, or a call handed
+// an id still outstanding
+const outstanding = new Set();
+const settleProblems = [];
 const skipped = { authorizationForScopes: 0, authorizeScopes: 0, clearAuthorizationToken: 0, revokeAccess: 0 };
 const instantiate = WebAssembly.instantiate;
 WebAssembly.instantiate = async (bytes, imports) => {
+  for (const name of ['bats_js_google_authorize', 'bats_js_google_clear_token', 'bats_js_google_revoke_access']) {
+    const call = imports.env[name];
+    imports.env[name] = (...a) => {
+      const id = a[a.length - 1];
+      if (outstanding.has(id)) settleProblems.push(`id ${id} handed while outstanding`);
+      outstanding.add(id);
+      return call(...a);
+    };
+  }
   const text = imports.env.bats_js_google_authorize_text;
   imports.env.bats_js_google_authorize_text = id => {
     const h = text(id);
@@ -138,6 +167,7 @@ WebAssembly.instantiate = async (bytes, imports) => {
   const exports = { ...result.instance.exports };
   const answer = exports.bats_on_permission_result;
   exports.bats_on_permission_result = (id, v) => {
+    if (!outstanding.delete(id)) settleProblems.push(`id ${id} settled, not outstanding`);
     if (oddAnswer !== null) { v = oddAnswer; oddAnswer = null; }
     return answer(id, v);
   };
@@ -191,6 +221,8 @@ const rejections = () => [
   () => Promise.reject(failure('INVALID_OPTIONS', 'scopes must be a non-empty list')),
   () => Promise.reject({ code: true }),
   () => Promise.reject({ code: ['NETWORK_ERROR'] }),
+  () => Promise.reject({ code: {} }),
+  () => Promise.reject({ toJSON() { throw error('no JSON'); }, toString() { return 'lone \ud800 surrogate'; } }),
   () => Promise.reject(failure(null, 'a null code')),
   () => Promise.reject(failure(undefined, 'no code')),
   () => Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform')),
@@ -308,6 +340,8 @@ const answers = () => [
   () => Promise.resolve(revoked()),
   () => Promise.resolve(Object.assign(cyclic(), authorization('token-9', ['scope-a'], null))),
   () => Promise.resolve(big()),
+  () => Promise.resolve({ authorization: { accessToken: 'token-s', account: null } }),
+  oddly(7, () => Promise.resolve(padded(CAP + 1))),
   () => { encodeThrows = 1; return Promise.resolve(authorization('token-e', ['scope-a'], null)); },
   () => { encodeThrows = 2; return Promise.resolve(authorization('token-e', ['scope-a'], null)); },
   oddly(7, () => Promise.resolve(authorization('token-odd', ['scope-a'], null))),
@@ -339,6 +373,8 @@ async function run(label, native) {
       () => Promise.resolve(),
       () => Promise.resolve({ odd: 'resolved with something' }),
       () => Promise.resolve(hostile()),
+      () => Promise.resolve(big()),
+      () => { encodeThrows = 2; return Promise.resolve({ odd: 'nothing kept' }); },
       () => Promise.reject(failure('INTERNAL_ERROR', '8: failed')),
       ...rejections(),
     ], COUNTS.clearAuthorizationToken, next),
@@ -360,22 +396,25 @@ async function run(label, native) {
     calls[method]++;
     const f = queues[method].shift();
     if (!f) throw new Error(`${method}: no answer queued`);
-    // the app looks the plugin up once more after its last call: that
-    // lookup throws
-    if (Object.values(queues).every(q => q.length === 0)) lookupThrow = { thrown: error('the last lookup threw'), method: null };
+    // after its last call the app looks the plugin up END_THROWS more
+    // times: each of those lookups throws
+    if (Object.values(queues).every(q => q.length === 0)) endThrows = END_THROWS();
     return f(method);
   };
   const plugins = { GoogleAuthorize: Object.fromEntries(Object.keys(COUNTS).map(m => [m, plugin(m)])) };
   if (native) globalThis.Capacitor = {
     isNativePlatform: () => true,
     get Plugins() {
+      if (endThrows.length) {
+        const [thrown, keepThrows] = endThrows.shift();
+        encodeThrows = keepThrows;
+        throw thrown;
+      }
       if (lookupThrow !== null) {
         const { thrown, method } = lookupThrow;
         lookupThrow = null;
-        if (method !== null) {
-          queues[method].shift();
-          skipped[method]++;
-        }
+        queues[method].shift();
+        skipped[method]++;
         throw thrown;
       }
       return plugins;
@@ -418,10 +457,14 @@ const FORMS = ['as JSON', 'as String', 'as its type', 'as its type, its text unk
 function check(label, native, lines, calls, queues) {
   const text = lines.map(l => l.slice(6));
   const problems = [];
-  const end = native ? text.lastIndexOf('presence') : text.length - 1;
+  // the app's last lookups: each a lookup that threw (in a browser, no
+  // plugin)
+  const end = native ? text.indexOf('presence') : text.length - END_THROWS().length;
   if (text[0] !== (native ? 'available' : 'unavailable')) problems.push(`first line ${text[0]}`);
-  if (native ? !(text[end + 1] === 'unexpected' && text[end + 2] === 'thrown' && text[end + 3] === 'the lookup')
-    : text[end] !== 'unavailable') problems.push(`last presence ${text.slice(end).join(' / ')}`);
+  const last = text.slice(end);
+  if (native ? last.filter(t => t === 'presence').length !== END_THROWS().length
+      || last.some((t, i) => t === 'presence' && !(last[i + 1] === 'unexpected' && /^(thrown|nothing kept)/.test(last[i + 2])))
+    : last.some(t => t !== 'unavailable')) problems.push(`last presences ${last.join(' / ')}`);
   let asked = 0, answered = 0;
   text.forEach((t, i) => {
     if (i === 0 || i >= end) return;
@@ -446,6 +489,11 @@ function check(label, native, lines, calls, queues) {
     } else problems.push(`line ${i}: ${which} with no form`);
   });
   if (asked !== answered) problems.push(`${asked} calls, ${answered} outcomes`);
+  // each call handed to google_authorize's JS settled exactly once
+  problems.push(...settleProblems);
+  for (const id of outstanding) problems.push(`id ${id} never settled`);
+  outstanding.clear();
+  settleProblems.length = 0;
   if (native) {
     for (const [m, q] of Object.entries(queues)) if (q.length) problems.push(`${m}: ${q.length} answers left`);
     for (const [m, n] of Object.entries(COUNTS))

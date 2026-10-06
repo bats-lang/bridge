@@ -5,6 +5,6 @@
 staload GZ = "wasm.bats-packages.dev/bridge/src/google_authorize.sats"
 
 (* A caller's own bytes are no token: the atom takes a google_text,
-   which only google_text_of makes *)
+   which google_text_of makes, or which is decoded from an answer *)
 fn f {l:agz} (blank: !$A.borrow(byte, l, 1)): $P.promise($GZ.google_authorization_change, $P.Chained) =
   $GZ.google_clear_token(blank)
