@@ -2014,17 +2014,22 @@ fn emit_js_account {n:nat | n + 6000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
+(* Google authorization with no sign-in, in the app (GoogleAuthorize,
+   bats-lang/capacitor-plugins' google-authorize). Scopes cross separated
+   by spaces (RFC 6749 3.3). An answer: the token's blob (positive), 0
+   not authorized, -1 canceled, -2 failed; a clear or a revoke: 0 done,
+   -2 failed. The granted scopes (part 0), the account (1), the
+   platform's code (2) and message (3) are kept by request for
+   bats_js_google_authorize_part. An answer the plugin does not document
+   (no authorization, no access token or a blank one, granted scopes
+   that are not a non-empty list of scope-tokens, an account named that
+   is not a non-blank string) fails with no code and says what it was.
+   No plugin is Capacitor's own code for a platform without the
+   method *)
 fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3600] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  // Google authorization with no sign-in, in the app (GoogleAuthorize,\n")
-  val () = $B.bput(b,"  // bats-lang/capacitor-plugins' google-authorize). Scopes cross separated\n")
-  val () = $B.bput(b,"  // by spaces (RFC 6749 3.3). An answer: the token's blob (positive), 0\n")
-  val () = $B.bput(b,"  // not authorized, -1 canceled, -2 failed; a clear or a revoke: 0 done,\n")
-  val () = $B.bput(b,"  // -2 failed. The granted scopes (part 0), the account (1), the platform's\n")
-  val () = $B.bput(b,"  // code (2) and message (3) are kept by request for bats_js_google_authorize_part;\n")
-  val () = $B.bput(b,"  // an answer the plugin does not document fails with no code and says what it was\n")
-  val () = $B.bput(b,"  // No plugin is Capacitor's own code for a platform without the method\n")
+  val () = $B.bput(b,"  // GoogleAuthorize (google_authorize.bats says the codes and parts)\n")
   val () = $B.bput(b,"  const googleParts = new Map();\n")
   val () = $B.bput(b,"  const googleScopeList = (p, l) => readString(p, l).split(' ').filter(s => s);\n")
   val () = $B.bput(b,"  const googleText = s => typeof s === 'string' && s ? pendBlob(utf8.encode(s)) : 0;\n")
@@ -2036,6 +2041,7 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    return -2;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  const googleOdd = (id, what) => googleFailed(id, { message: what });\n")
+  val () = $B.bput(b,"  const googleSeen = x => typeof x === 'string' && /[!-~]/.test(x);\n")
   val () = $B.bput(b,"  function batsJsGoogleAuthorizeAvailable() { return ")
   val () = put_plugin_call(b, PluginGoogleAuthorize())
   val () = $B.bput(b," ? 1 : 0; }\n")
@@ -2048,9 +2054,12 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    settleBy(id, () => mayAsk ? g.authorizeScopes({ scopes }) : g.authorizationForScopes({ scopes }), r => {\n")
   val () = $B.bput(b,"      const a = r && r.authorization;\n")
   val () = $B.bput(b,"      if (a === null && !mayAsk) { googleKeep(id); return 0; }\n")
-  val () = $B.bput(b,"      if (!a || typeof a.accessToken !== 'string' || !a.accessToken) return googleOdd(id, 'The answer has no access token');\n")
-  val () = $B.bput(b,"      const granted = Array.isArray(a.grantedScopes) && a.grantedScopes.every(s => typeof s === 'string' && s && !/\\s/.test(s));\n")
-  val () = $B.bput(b,"      if (!granted) return googleOdd(id, 'The scopes granted are not a list of scopes');\n")
+  val () = $B.bput(b,"      if (!a) return googleOdd(id, 'The answer has no authorization');\n")
+  val () = $B.bput(b,"      if (!googleSeen(a.accessToken)) return googleOdd(id, 'The answer has no access token');\n")
+  val () = $B.bput(b,"      const s = a.grantedScopes;\n")
+  val () = $B.bput(b,"      if (!Array.isArray(s) || !s.length || !s.every(x => typeof x === 'string' && /^[\\x21\\x23-\\x5b\\x5d-\\x7e]+$/.test(x)))\n")
+  val () = $B.bput(b,"        return googleOdd(id, 'The scopes granted are not a list of scopes');\n")
+  val () = $B.bput(b,"      if (a.account !== null && !googleSeen(a.account)) return googleOdd(id, 'The account named is not one');\n")
   val () = $B.bput(b,"      googleKeep(id, a.grantedScopes.join(' '), a.account);\n")
   val () = $B.bput(b,"      return pendBlob(utf8.encode(a.accessToken));\n")
   val () = $B.bput(b,"    }, e => {\n")

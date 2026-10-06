@@ -59,8 +59,9 @@ useful.)
   of at least one `google_scope`, whose text `google_scope_of` proves
   not empty and checks holds no whitespace, once, as it is made; the
   plugin's own check of its options (`INVALID_OPTIONS`) then cannot be
-  reached from Bats. Static reject fixtures hold it
-  (`tests/static/reject/google-scope-*`).
+  reached from Bats. A token or an account is a `google_text`, made only
+  by `google_text_of` from bytes holding a visible ASCII character. Static reject fixtures hold it
+  (`tests/static/reject/google-scope-*`, `google-token-bytes`).
 * The atom's dynamic test drives every constructor, `...Unexpected`
   included, through a stand-in for the platform. The app matches every
   answer with `case+` and handles each constructor visibly (quire's

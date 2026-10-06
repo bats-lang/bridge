@@ -73,11 +73,11 @@ staload "./decompress.bats"
    here, once. Linear: its blobs are JS's until they are freed; an
    answer no consumer takes is freed by promise's dispose. *)
 #pub datavtype google_authorization(asking) =
-  (* The access token; the scopes granted, separated by spaces (none
-     when the answer lists none); and the account the grant is for (an
-     email address on Android), when the answer names one *)
+  (* The access token; the scopes granted, separated by spaces (at
+     least one: a grant of none is unexpected); and the account the grant
+     is for (an email address on Android), when the answer names one *)
   | {w:asking} Authorized(w) of
-      ([n:pos] dblob(n), $R.option([k:pos] dblob(k)), $R.option([a:pos] dblob(a)))
+      ([n:pos] dblob(n), [k:pos] dblob(k), $R.option([a:pos] dblob(a)))
   (* The reader must consent first, and nothing was shown *)
   | NotAuthorized(Silently)
   (* The reader backed out of the consent screen (Google's result said
@@ -120,7 +120,9 @@ staload "./decompress.bats"
    recognise is Google's to refuse *)
 #pub abstype google_scope = ptr
 
-(* text as a scope, when it holds no whitespace *)
+(* text as a scope, when it is RFC 6749's scope-token (NQCHAR bytes:
+   0x21, 0x23 to 0x5B, 0x5D to 0x7E), so it holds no whitespace of any
+   kind *)
 #pub fn google_scope_of {n:pos | n < 256} (text: string n): $R.option(google_scope)
 
 (* A scope's text *)
@@ -146,18 +148,29 @@ staload "./decompress.bats"
   (scopes: google_scopes(k))
   : $P.promise(google_authorization(MayAsk), $P.Chained)
 
-(* Takes the access token token[0, token_len) out of Play services'
-   cache: clearAuthorizationToken *)
-#pub fun google_clear_token
-  {l:agz}{n:pos}
-  (token: !$A.borrow(byte, l, n), token_len: int n)
+(* A token or an account to hand Google: bytes holding at least one
+   visible ASCII character (0x21 to 0x7E), so never empty or blank
+   (what the plugin refuses as INVALID_OPTIONS), checked once by
+   google_text_of, the only way to make one, which copies them *)
+#pub absvtype google_text = ptr
+
+(* bytes[0, n) as a google_text, when they hold a visible ASCII
+   character *)
+#pub fn google_text_of {l:agz}{n:pos | n <= 4096} (bytes: !$A.borrow(byte, l, n), n: int n): $R.option(google_text)
+
+(* A google_text no call took *)
+#pub fn google_text_free (text: google_text): void
+
+(* Takes the access token out of Play services' cache:
+   clearAuthorizationToken *)
+#pub fun google_clear_token (token: google_text)
   : $P.promise(google_authorization_change, $P.Chained)
 
-(* Takes back account[0, account_len)'s grant of scopes (an Authorized
-   answer's account, never empty by its type): revokeAccess *)
+(* Takes back the account's grant of scopes (an Authorized answer's
+   account): revokeAccess *)
 #pub fun google_revoke_access
-  {la:agz}{na:pos}{k:pos | k <= 8}
-  (account: !$A.borrow(byte, la, na), account_len: int na, scopes: google_scopes(k))
+  {k:pos | k <= 8}
+  (account: google_text, scopes: google_scopes(k))
   : $P.promise(google_authorization_change, $P.Chained)
 
 (* ============================================================
@@ -348,7 +361,7 @@ fn _failure (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob
    none *)
 datavtype answer =
   | AnswerToken of
-      ([n:pos] dblob(n), $R.option([k:pos] dblob(k)), $R.option([a:pos] dblob(a)))
+      ([n:pos] dblob(n), [k:pos] dblob(k), $R.option([a:pos] dblob(a)))
   | AnswerNone
   | AnswerCanceled
   | AnswerFailed of failure
@@ -361,10 +374,17 @@ fn _answer (resolver_id: int, code: Int): answer = let
 in
   if code > 0 then
     (case+ _nonempty(code) of
-     | ~$R.some(token) => let
-         val () = _free_part(failure)
-         val () = _free_part(message)
-       in AnswerToken(token, scopes, account) end
+     | ~$R.some(token) => (case+ scopes of
+       | ~$R.some(granted) => let
+           val () = _free_part(failure)
+           val () = _free_part(message)
+         in AnswerToken(token, granted, account) end
+       (* JS answers a grant of no scope as failed, so a token comes with
+          scopes; one without is an answer this module does not document *)
+       | ~$R.none() => let
+           val () = blob_free(token)
+           val () = _free_part(account)
+         in AnswerFailed(_failure(failure, message)) end)
      | ~$R.none() => let
          val () = _free_part(scopes)
          val () = _free_part(account)
@@ -443,7 +463,7 @@ fn {} _free_authorization {w:asking} (answer: google_authorization(w)): void =
   case+ answer of
   | ~Authorized(token, scopes, account) => let
       val () = blob_free(token)
-      val () = _free_part(scopes)
+      val () = blob_free(scopes)
     in _free_part(account) end
   | ~NotAuthorized() => ()
   | ~AuthorizeCanceled() => ()
@@ -472,16 +492,18 @@ $UNSAFE begin
 assume google_scope = [n:pos | n < 256] string n
 end
 
-(* Whether text[at, n) holds no whitespace (space, tab, line feed,
-   carriage return, form feed: what splits scopes) *)
+(* Whether text[at, n) is a scope-token: RFC 6749's NQCHAR bytes only *)
 fun _no_space {n:pos}{at:nat | at <= n} .<n - at>. (text: string n, n: int n, at: int at): bool =
   if at >= n then true
   else let
     val c = char2int0(string_get_at(text, at))
   in
-    if c = 32 then false else if c = 9 then false else if c = 10 then false
-    else if c = 13 then false else if c = 12 then false
-    else _no_space(text, n, at + 1)
+    (* RFC 6749's scope-token: NQCHAR, 0x21, 0x23 to 0x5B, 0x5D to
+       0x7E; no whitespace of any kind, and nothing non-ASCII *)
+    if c = 0x21 then _no_space(text, n, at + 1)
+    else if c >= 0x23 && c <= 0x5B then _no_space(text, n, at + 1)
+    else if c >= 0x5D && c <= 0x7E then _no_space(text, n, at + 1)
+    else false
   end
 
 implement google_scope_of (text) = let
@@ -537,23 +559,53 @@ implement google_authorize_scopes{k}(scopes) = let
 in $P.and_then<Int><google_authorization(MayAsk)>(p, llam (code) =>
   $P.ret<google_authorization(MayAsk)>(_asked(_answer(id, code)))) end
 
-implement google_clear_token{l}{n}(token, token_len) = let
+datavtype text_rep = {l:agz}{n:pos} TextRep of ($A.arr(byte, l, n), int n)
+$UNSAFE begin
+assume google_text = text_rep
+end
+
+(* Whether bytes[at, n) hold a visible ASCII character *)
+fun _visible {l:agz}{n:pos}{at:nat | at <= n} .<n - at>. (bytes: !$A.borrow(byte, l, n), n: int n, at: int at): bool =
+  if at >= n then false
+  else let
+    val c = byte2int0($A.read<byte>(bytes, at))
+  in if c >= 0x21 && c <= 0x7E then true else _visible(bytes, n, at + 1) end
+
+implement google_text_of {l}{n} (bytes, n) =
+  if ~_visible(bytes, n, 0) then $R.none()
+  else let
+    val copy = $A.alloc<byte>(n)
+    val () = $A.write_borrow(copy, 0, bytes, n)
+  in $R.some(TextRep(copy, n)) end
+
+implement google_text_free (text) =
+  case+ text of ~TextRep(bytes, _) => $A.free<byte>(bytes)
+
+implement google_clear_token(token) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
+  val ~TextRep(bytes, n) = token
+  val @(frozen, borrowed) = $A.freeze<byte>(bytes)
   val () = _bats_js_google_clear_token(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(token) end, token_len, id)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(borrowed) end, n, id)
+  val () = $A.drop<byte>(frozen, borrowed)
+  val () = $A.free<byte>($A.thaw<byte>(frozen))
 in $P.and_then<Int><google_authorization_change>(p, llam (code) =>
   $P.ret<google_authorization_change>(_change(id, code))) end
 
-implement google_revoke_access{la}{na}{k}(account, account_len, scopes) = let
+implement google_revoke_access{k}(account, scopes) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val out = $A.alloc<byte>(SCOPES_BYTES)
   val stop = _scopes_put(scopes, out, 0)
   val @(frozen, borrowed) = $A.freeze<byte>(out)
+  val ~TextRep(account_bytes, account_len) = account
+  val @(account_frozen, account_borrowed) = $A.freeze<byte>(account_bytes)
   val () = _bats_js_google_revoke_access(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(account) end, account_len,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(account_borrowed) end, account_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(borrowed) end, stop, id)
+  val () = $A.drop<byte>(account_frozen, account_borrowed)
+  val () = $A.free<byte>($A.thaw<byte>(account_frozen))
   val () = $A.drop<byte>(frozen, borrowed)
   val () = $A.free<byte>($A.thaw<byte>(frozen))
 in $P.and_then<Int><google_authorization_change>(p, llam (code) =>

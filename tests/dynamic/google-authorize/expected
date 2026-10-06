@@ -24,6 +24,12 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-2"}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -35,8 +41,11 @@ authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"refused-token"}
 clearAuthorizationToken: {"accessToken":"odd-token"}
 clearAuthorizationToken: {"accessToken":"showing-token"}
+revokeAccess: {"account":"refused@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+revokeAccess: {"account":"odd@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+revokeAccess: {"account":"showing@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 hash: #available
-hash: #not a scope
+hash: #nnnnnnnnny
 hash: #authorization for scopes
 hash: #authorized
 hash: #scope-a scope-b
@@ -145,8 +154,33 @@ hash: #authorization for scopes
 hash: #unexpected
 hash: #SUCCESS
 hash: #0: 
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The answer has no authorization
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The answer has no access token
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The scopes granted are not a list of scopes
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The account named is not one
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The account named is not one
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The account named is not one
 hash: #authorize scopes
 hash: #authorized
+hash: #scope-a scope-c
 hash: #no account
 hash: #changed
 hash: #authorize scopes
@@ -156,7 +190,7 @@ hash: #consent showing
 hash: #authorize scopes
 hash: #unexpected
 hash: #no code
-hash: #The answer has no access token
+hash: #The answer has no authorization
 hash: #authorize scopes
 hash: #refused
 hash: #DEVELOPER_ERROR
@@ -181,9 +215,36 @@ hash: #clear
 hash: #unexpected
 hash: #CONSENT_SHOWING
 hash: #not documented here
+hash: #clear
+hash: #not a token
+hash: #revoke
+hash: #refused
+hash: #NETWORK_ERROR
+hash: #07
+hash: #7: offline
+hash: #revoke
+hash: #unexpected
+hash: #UNEXPECTED
+hash: #IllegalStateException: odd
+hash: #revoke
+hash: #unexpected
+hash: #CONSENT_SHOWING
+hash: #not documented here
 == browser page
 hash: #unavailable
-hash: #not a scope
+hash: #nnnnnnnnny
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
@@ -249,4 +310,12 @@ hash: #unavailable
 hash: #clear
 hash: #unavailable
 hash: #clear
+hash: #unavailable
+hash: #clear
+hash: #not a token
+hash: #revoke
+hash: #unavailable
+hash: #revoke
+hash: #unavailable
+hash: #revoke
 hash: #unavailable

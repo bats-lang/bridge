@@ -47,6 +47,13 @@ async function run(label, native) {
     // refusal
     ...STATUSES.map(code => () => Promise.reject(failure(code, `${code} from Play services`))),
     () => Promise.reject(failure('SUCCESS', '0: ')),
+    // answers the plugin does not document
+    () => Promise.resolve({}),
+    () => Promise.resolve(authorization('   ', ['scope-a'], null)),
+    () => Promise.resolve(authorization('token-4', [], null)),
+    () => Promise.resolve(authorization('token-4', ['scope-a'], '')),
+    () => Promise.resolve(authorization('token-4', ['scope-a'], 42)),
+    () => Promise.resolve(authorization('token-4', ['scope-a'], '  ')),
   ];
   // authorizeScopes: granted with no account; canceled; another consent
   // screen showing; no authorization, which the plugin never answers;
@@ -73,7 +80,13 @@ async function run(label, native) {
           if (o.accessToken === 'showing-token') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
           return Promise.resolve();
         },
-        revokeAccess: o => { console.log(`revokeAccess: ${JSON.stringify(o)}`); return Promise.resolve(); },
+        revokeAccess: o => {
+          console.log(`revokeAccess: ${JSON.stringify(o)}`);
+          if (o.account === 'refused@example.com') return Promise.reject(failure('NETWORK_ERROR', '7: offline'));
+          if (o.account === 'odd@example.com') return Promise.reject(failure('UNEXPECTED', 'IllegalStateException: odd'));
+          if (o.account === 'showing@example.com') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
+          return Promise.resolve();
+        },
       },
     },
   };
