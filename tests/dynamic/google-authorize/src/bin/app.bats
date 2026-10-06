@@ -296,14 +296,7 @@ fn text_case {l:agz}{at:nat | at < 51}{n:pos | n < 256} (out: !$A.arr(byte, l, 5
    byte below 80 after E4, F1 and F4, E4 7F 80, F1 7F 80 80 and F4 7F
    80 80 (each n); an a then F1 80 80 80, DF BF, DEL, E1 80 80, EF BF
    BD and F0 BF BF BF (each y); EE BB BF then a, F0 BB BF 80 then a,
-   EF BA BF then a, and EF BB BE then a (each y). Each value bound of
-   _visible and _utf8 and each byte _byte_order_mark compares with,
-   moved by one either way, and each of their checks, left out,
-   changes a letter. The length guards (at + 1, + 2 and + 3 below n,
-   and n below 3) are held by the types, which refuse an index not
-   below n; _byte_order_mark's n below 3 moved up to 4 cannot be seen,
-   as the only text it would let through, EF BB BF alone, holds no
-   visible ASCII character *)
+   EF BA BF then a, and EF BB BE then a (each y) *)
 fn text_row (): void = let
   val out = $A.alloc<byte>(51)
   val () = text_case(out, 0, "a\200")
