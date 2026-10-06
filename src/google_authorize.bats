@@ -81,7 +81,9 @@ staload "./decompress.bats"
   (* The reader must consent first, and nothing was shown *)
   | NotAuthorized(Silently)
   (* The reader backed out of the consent screen (Google's result said
-     so, or the screen returned nothing) *)
+     so, or the screen ended with RESULT_CANCELED and returned nothing;
+     one that returned nothing with any other result code is
+     AuthorizeUnexpected) *)
   | AuthorizeCanceled(MayAsk)
   (* Another call's consent screen was showing (CONSENT_SHOWING) *)
   | ConsentShowing(MayAsk)
@@ -97,8 +99,11 @@ staload "./decompress.bats"
      refusal); the plugin's INVALID_OPTIONS, which google_scopes' type
      keeps a call from earning; CONSENT_SHOWING from
      authorizationForScopes, which shows no consent screen; an answer
-     the plugin does not document (JS says what: no access token, or
-     granted scopes that are not a list of scopes) *)
+     the plugin does not document (JS says what: no authorization at
+     all, as an empty answer or a null one from authorizeScopes; an
+     access token missing or blank; granted scopes that are not a
+     non-empty list of scope-tokens; an account named that is not a
+     non-blank string) *)
   | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* How clearing a token or revoking a grant ended, each as

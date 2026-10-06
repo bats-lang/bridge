@@ -305,9 +305,10 @@ implement main0 () = let
     val () = ended(change) in found_times(15) end)
   (* answers authorizationForScopes does not document: no authorization,
      a blank token, no scope granted, an account that is empty, not a
-     string, or blank: 6 asks *)
+     string, or blank, a granted scope that is not a scope-token, and
+     one that is not a string: 8 asks *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
-    val () = ended(change) in found_times(6) end)
+    val () = ended(change) in found_times(8) end)
   (* granted with no account, asked with a consent screen allowed *)
   val s8 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7d, llam(change) => let
     val () = ended(change) in asked() end)

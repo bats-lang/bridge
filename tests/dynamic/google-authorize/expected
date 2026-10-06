@@ -30,6 +30,8 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-2"}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -181,6 +183,14 @@ hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
 hash: #The account named is not one
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The scopes granted are not a list of scopes
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The scopes granted are not a list of scopes
 hash: #authorize scopes
 hash: #authorized
 hash: #scope-a scope-c
@@ -248,6 +258,10 @@ hash: #not documented here
 == browser page
 hash: #unavailable
 hash: #nnnnnnnnny
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
