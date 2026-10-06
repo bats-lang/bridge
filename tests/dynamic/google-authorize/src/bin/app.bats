@@ -25,9 +25,9 @@ fn {} free_authorization {w:$GZ.asking} (answer: $GZ.google_authorization(w)): v
     in free_part(account) end
   | ~$GZ.NotAuthorized() => ()
   | ~$GZ.AuthorizeCanceled(message) => free_part(message)
-  | ~$GZ.ConsentShowing() => ()
+  | ~$GZ.ConsentShowing(message) => free_part(message)
   | ~$GZ.AuthorizeRefused(_, message) => free_part(message)
-  | ~$GZ.AuthorizeUnavailable() => ()
+  | ~$GZ.AuthorizeUnavailable(message) => free_part(message)
   | ~$GZ.AuthorizeUnexpected(code, message) => let
       val () = free_part(code)
     in free_message(message) end
@@ -38,7 +38,7 @@ implement $P.dispose<$GZ.google_authorization_change>(change) =
   case+ change of
   | ~$GZ.Changed() => ()
   | ~$GZ.ChangeRefused(_, message) => free_part(message)
-  | ~$GZ.ChangeUnavailable() => ()
+  | ~$GZ.ChangeUnavailable(message) => free_part(message)
   | ~$GZ.ChangeUnexpected(code, message) => let
       val () = free_part(code)
     in free_message(message) end
@@ -104,6 +104,27 @@ fn hash_refused (status: $GZ.google_status, message: $R.option([n:pos] $BD.dblob
   val () = hash_bytes(digits, 2)
 in hash_message(message) end
 
+(* copy[at + j, at + count) := piece[j, count) *)
+fun copy_piece {l,c:agz}{m:pos}{at:nat}{count:pos | count <= 7; at + count <= m}{j:nat | j <= count} .<count - j>.
+  (piece: !$A.arr(byte, l, 7), copy: !$A.arr(byte, c, m), at: int at, count: int count, j: int j): void =
+  if j >= count then ()
+  else let
+    val () = $A.set<byte>(copy, at + j, $A.get<byte>(piece, j))
+  in copy_piece(piece, copy, at, count, j + 1) end
+
+(* copy[at, m) := the message's bytes [at, m), read 7 at a time into a
+   piece of its own, so a read starts and ends anywhere in it *)
+fun read_by_sevens {m:pos | m <= 4096}{l:agz}{at:nat | at <= m} .<m - at>.
+  (said: !$GZ.google_message(m), copy: !$A.arr(byte, l, m), m: int m, at: int at): void =
+  if at >= m then ()
+  else let
+    val count = (if m - at < 7 then m - at else 7): [count:pos | count <= 7; at + count <= m] int count
+    val piece = $A.alloc<byte>(7)
+    val () = $GZ.google_message_read(said, at, piece, count)
+    val () = copy_piece(piece, copy, at, count, 0)
+    val () = $A.free<byte>(piece)
+  in read_by_sevens(said, copy, m, at + count) end
+
 (* An answer not recognised: "unexpected", its code, then its message *)
 fn hash_unexpected (code: $R.option([n:pos] $BD.dblob(n)), message: $R.option([m:pos] $GZ.google_message(m))): void = let
   val () = hash_text("unexpected")
@@ -118,7 +139,7 @@ in
       in hash_text("too long") end
       else let
         val copy = $A.alloc<byte>(m)
-        val () = $GZ.google_message_read(said, 0, copy, m)
+        val () = read_by_sevens(said, copy, m, 0)
         val () = $GZ.google_message_free(said)
       in hash_bytes(copy, m) end
     end
@@ -135,7 +156,10 @@ fn told_change (change: $GZ.google_authorization_change): step =
   case+ change of
   | ~$GZ.Changed() => let val () = hash_text("changed") in done() end
   | ~$GZ.ChangeRefused(status, message) => let val () = hash_refused(status, message) in done() end
-  | ~$GZ.ChangeUnavailable() => let val () = hash_text("unavailable") in done() end
+  | ~$GZ.ChangeUnavailable(message) => let
+      val () = hash_text("unavailable")
+      val () = hash_message(message)
+    in done() end
   | ~$GZ.ChangeUnexpected(code, message) => let val () = hash_unexpected(code, message) in done() end
 
 (* a's bytes as a google_text, a freed; none when they are not
@@ -213,7 +237,10 @@ fn told_found (answer: $GZ.google_authorization($GZ.Silently)): step =
   | ~$GZ.Authorized(token, scopes, account) => told_authorized(token, scopes, account)
   | ~$GZ.NotAuthorized() => let val () = hash_text("not authorized") in done() end
   | ~$GZ.AuthorizeRefused(status, message) => let val () = hash_refused(status, message) in done() end
-  | ~$GZ.AuthorizeUnavailable() => let val () = hash_text("unavailable") in done() end
+  | ~$GZ.AuthorizeUnavailable(message) => let
+      val () = hash_text("unavailable")
+      val () = hash_message(message)
+    in done() end
   | ~$GZ.AuthorizeUnexpected(code, message) => let val () = hash_unexpected(code, message) in done() end
 
 fn told_asked (answer: $GZ.google_authorization($GZ.MayAsk)): step =
@@ -223,9 +250,15 @@ fn told_asked (answer: $GZ.google_authorization($GZ.MayAsk)): step =
       val () = hash_text("canceled")
       val () = hash_message(message)
     in done() end
-  | ~$GZ.ConsentShowing() => let val () = hash_text("consent showing") in done() end
+  | ~$GZ.ConsentShowing(message) => let
+      val () = hash_text("consent showing")
+      val () = hash_message(message)
+    in done() end
   | ~$GZ.AuthorizeRefused(status, message) => let val () = hash_refused(status, message) in done() end
-  | ~$GZ.AuthorizeUnavailable() => let val () = hash_text("unavailable") in done() end
+  | ~$GZ.AuthorizeUnavailable(message) => let
+      val () = hash_text("unavailable")
+      val () = hash_message(message)
+    in done() end
   | ~$GZ.AuthorizeUnexpected(code, message) => let val () = hash_unexpected(code, message) in done() end
 
 (* Asks for drive.appdata with no UI *)
@@ -278,7 +311,7 @@ fn ended (change: $GZ.google_authorization_change): void =
   case+ change of
   | ~$GZ.Changed() => ()
   | ~$GZ.ChangeRefused(_, message) => free_part(message)
-  | ~$GZ.ChangeUnavailable() => ()
+  | ~$GZ.ChangeUnavailable(message) => free_part(message)
   | ~$GZ.ChangeUnexpected(code, message) => let
       val () = free_part(code)
     in free_message(message) end
@@ -331,8 +364,8 @@ implement main0 () = let
   val s7c = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7b, llam(change) => let
     val () = ended(change) in found_times(16) end)
   (* answers JS cannot pass on (check.mjs says which), a status with
-     an empty message, rejections that are not an object whose code and
-     message are each text or absent, and rejections that are taken *)
+     an empty message, rejections JS takes apart (check.mjs says how),
+     and rejections that are taken *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
     val () = ended(change) in found_times(23) end)
   (* granted with no account, asked with a consent screen allowed *)
@@ -391,17 +424,30 @@ implement main0 () = let
     val () = ended(change) in clear_text("quiet-token") end)
   val s22 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s21, llam(change) => let
     val () = ended(change) in revoke_text("silent@example.com") end)
-  (* a clear rejected with a string: unexpected, no code, JS's message *)
+  (* a clear rejected with a string: unexpected, no code, the string *)
   val s23 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s22, llam(change) => let
     val () = ended(change) in clear_text("string-token") end)
   (* a token holding a byte that is not printable ASCII (0xFF) is none:
      nothing asked *)
   val s24 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s23, llam(change) => let
     val () = ended(change) in clear_text("a\377b") end)
-  (* a clear rejected with an error whose message is a number, and a
-     revoke rejected with null: each unexpected, no code, JS's message *)
+  (* a clear rejected with an error whose message is a number
+     (unexpected, its code, JS's message), and a revoke rejected with
+     null (unexpected, no code, JS's message) *)
   val s25 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s24, llam(change) => let
     val () = ended(change) in clear_text("number-token") end)
   val s26 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s25, llam(change) => let
     val () = ended(change) in revoke_text("null@example.com") end)
-in $P.finish<$GZ.google_authorization_change>(s26, llam(change) => ended(change)) end
+  (* the platform's UNIMPLEMENTED, with its message, for each call *)
+  val s27 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s26, llam(change) => let
+    val () = ended(change) in found() end)
+  val s28 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s27, llam(change) => let
+    val () = ended(change) in asked() end)
+  val s29 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s28, llam(change) => let
+    val () = ended(change) in clear_text("unimplemented-token") end)
+  val s30 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s29, llam(change) => let
+    val () = ended(change) in revoke_text("unimplemented@example.com") end)
+  (* answer codes bridge's JS never gives (check.mjs puts them in) *)
+  val s31 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s30, llam(change) => let
+    val () = ended(change) in found_times(3) end)
+in $P.finish<$GZ.google_authorization_change>(s31, llam(change) => ended(change)) end

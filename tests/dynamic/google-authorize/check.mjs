@@ -21,6 +21,22 @@ const failure = (code, message) => Object.assign(new Error(message || code || 'f
 const STATUSES = ['SERVICE_VERSION_UPDATE_REQUIRED', 'SERVICE_DISABLED', 'SIGN_IN_REQUIRED', 'INVALID_ACCOUNT',
   'RESOLUTION_REQUIRED', 'ERROR', 'INTERRUPTED', 'TIMEOUT', 'API_NOT_CONNECTED', 'DEAD_CLIENT', 'REMOTE_EXCEPTION',
   'CONNECTION_SUSPENDED_DURING_CALL', 'RECONNECTION_TIMED_OUT_DURING_UPDATE', 'RECONNECTION_TIMED_OUT'];
+// An answer code bridge's JS never gives, put in place of the next
+// failure's (-2) as it reaches the app, its code and message kept: what
+// the app does with a code it does not know
+let oddAnswer = 0;
+const instantiate = WebAssembly.instantiate;
+WebAssembly.instantiate = async (bytes, imports) => {
+  const result = await instantiate(bytes, imports);
+  const exports = { ...result.instance.exports };
+  const answer = exports.bats_on_permission_result;
+  exports.bats_on_permission_result = (id, v) => {
+    if (oddAnswer && v === -2) { v = oddAnswer; oddAnswer = 0; }
+    return answer(id, v);
+  };
+  return { module: result.module, instance: { exports } };
+};
+const oddly = (code, f) => () => { oddAnswer = code; return f(); };
 const authorization = (accessToken, grantedScopes, account) => ({ authorization: { accessToken, grantedScopes, account } });
 
 async function run(label, native) {
@@ -70,9 +86,10 @@ async function run(label, native) {
     () => Promise.resolve({ authorization: { accessToken: 'token-4', grantedScopes: ['scope-a'] } }),
     // a status with an empty message: no message kept
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' })),
-    // rejections that are not an object whose code and message are each
-    // text or absent: no value, a string, null, an error whose code is a
-    // number and one whose message is a number
+    // rejections JS takes apart: no value and null (neither an object nor
+    // text: JS's message), a string (its message), an error whose code is
+    // a number (JS's message, then its own) and one whose message is a
+    // number (its code kept, JS's message)
     () => Promise.reject(),
     () => Promise.reject('refused as a string'),
     () => Promise.reject(null),
@@ -84,6 +101,13 @@ async function run(label, native) {
     () => Promise.reject({}),
     () => Promise.reject(Object.assign(new Error('m'), { code: null })),
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR', message: null })),
+    // the platform's UNIMPLEMENTED, with its message
+    () => Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform')),
+    // answer codes bridge's JS never gives: with a code and a message
+    // kept, with a code alone, and the least int
+    oddly(-9, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
+    oddly(-9, () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' }))),
+    oddly(-2147483648, () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' }))),
   ];
   // authorizeScopes: granted with no account; the plugin's CANCELED;
   // another consent screen showing; no authorization, which the plugin
@@ -104,6 +128,8 @@ async function run(label, native) {
     () => Promise.reject(failure('UNEXPECTED', 'The consent screen completed but returned nothing')),
     () => Promise.reject(failure(null, 'no code given')),
     () => Promise.reject(failure('SOMETHING_NEW', 'new in Play services')),
+    // the platform's UNIMPLEMENTED, with its message
+    () => Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform')),
   ];
   if (native) globalThis.Capacitor = {
     isNativePlatform: () => true,
@@ -118,10 +144,11 @@ async function run(label, native) {
           if (o.accessToken === 'showing-token') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
           // a status with an empty message: no message kept
           if (o.accessToken === 'quiet-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR' }));
-          // a rejection that is not an error: unexpected, no code, JS's message
+          // a rejection that is a string: unexpected, no code, the string
           if (o.accessToken === 'string-token') return Promise.reject('refused as a string');
-          // an error whose message is a number: unexpected, no code, JS's message
+          // an error whose message is a number: unexpected, its code, JS's message
           if (o.accessToken === 'number-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR', message: 8 }));
+          if (o.accessToken === 'unimplemented-token') return Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform'));
           return Promise.resolve();
         },
         revokeAccess: o => {
@@ -133,6 +160,7 @@ async function run(label, native) {
           if (o.account === 'silent@example.com') return Promise.reject();
           // null: unexpected, no code, JS's message
           if (o.account === 'null@example.com') return Promise.reject(null);
+          if (o.account === 'unimplemented@example.com') return Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform'));
           return Promise.resolve();
         },
       },

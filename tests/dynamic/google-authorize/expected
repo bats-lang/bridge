@@ -70,6 +70,13 @@ revokeAccess: {"account":"silent@example.com","scopes":["https://www.googleapis.
 clearAuthorizationToken: {"accessToken":"string-token"}
 clearAuthorizationToken: {"accessToken":"number-token"}
 revokeAccess: {"account":"null@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+clearAuthorizationToken: {"accessToken":"unimplemented-token"}
+revokeAccess: {"account":"unimplemented@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 hash: #available
 hash: #nnny
 hash: #authorization for scopes
@@ -248,23 +255,23 @@ hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #The rejection is neither an object nor text
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #refused as a string
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #The rejection is neither an object nor text
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #The code of the rejection is not text; its message: 7: offline
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #NETWORK_ERROR
+hash: #The message of the rejection is not text
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
@@ -288,6 +295,7 @@ hash: #canceled
 hash: #The reader backed out of the consent screen
 hash: #authorize scopes
 hash: #consent showing
+hash: #CONSENT_SHOWING
 hash: #authorize scopes
 hash: #unexpected
 hash: #no code
@@ -352,161 +360,274 @@ hash: #no message
 hash: #revoke
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #The rejection is neither an object nor text
 hash: #clear
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #refused as a string
 hash: #clear
 hash: #not a token
 hash: #clear
 hash: #unexpected
-hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #INTERNAL_ERROR
+hash: #The message of the rejection is not text
 hash: #revoke
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each text or absent
+hash: #The rejection is neither an object nor text
+hash: #authorization for scopes
+hash: #unavailable
+hash: #Not implemented on this platform
+hash: #authorize scopes
+hash: #unavailable
+hash: #Not implemented on this platform
+hash: #clear
+hash: #unavailable
+hash: #Not implemented on this platform
+hash: #revoke
+hash: #unavailable
+hash: #Not implemented on this platform
+hash: #authorization for scopes
+hash: #unexpected
+hash: #NETWORK_ERROR
+hash: #the answer code was -9, which this call never gives; its message: 7: offline
+hash: #authorization for scopes
+hash: #unexpected
+hash: #NETWORK_ERROR
+hash: #the answer code was -9, which this call never gives
+hash: #authorization for scopes
+hash: #unexpected
+hash: #NETWORK_ERROR
+hash: #the answer code was -2147483648, which this call never gives
 == browser page
 hash: #unavailable
 hash: #nnny
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorization for scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #authorize scopes
 hash: #unavailable
+hash: #no message
 hash: #clear
 hash: #unavailable
+hash: #no message
 hash: #clear
 hash: #unavailable
+hash: #no message
 hash: #clear
 hash: #unavailable
+hash: #no message
 hash: #clear
 hash: #not a token
 hash: #revoke
 hash: #unavailable
+hash: #no message
 hash: #revoke
 hash: #unavailable
+hash: #no message
 hash: #revoke
 hash: #unavailable
+hash: #no message
 hash: #clear
 hash: #unavailable
+hash: #no message
 hash: #revoke
 hash: #unavailable
+hash: #no message
 hash: #clear
 hash: #unavailable
+hash: #no message
 hash: #clear
 hash: #not a token
 hash: #clear
 hash: #unavailable
+hash: #no message
 hash: #revoke
 hash: #unavailable
+hash: #no message
+hash: #authorization for scopes
+hash: #unavailable
+hash: #no message
+hash: #authorize scopes
+hash: #unavailable
+hash: #no message
+hash: #clear
+hash: #unavailable
+hash: #no message
+hash: #revoke
+hash: #unavailable
+hash: #no message
+hash: #authorization for scopes
+hash: #unavailable
+hash: #no message
+hash: #authorization for scopes
+hash: #unavailable
+hash: #no message
+hash: #authorization for scopes
+hash: #unavailable
+hash: #no message
