@@ -42,6 +42,16 @@ staload "./decompress.bats"
    back with this *)
 #pub fun history_back(): void
 
+(* Who restores the scroll position when the history goes back or
+   forward to an entry of the page (history.scrollRestoration): the
+   browser (ScrollAuto, its default), or the page itself
+   (ScrollManual). An app that pushes entries of its own (push_state)
+   for what is open over it says ScrollManual, so going back over them
+   does not move what it shows *)
+#pub datatype scroll_restoration = ScrollAuto | ScrollManual
+
+#pub fun history_scroll_restoration(mode: scroll_restoration): void
+
 (* Leaves the page for the https address url[0, url_len) (a sign-in
    page, say an OAuth authorization, which comes back to the page's own
    address): whether it is left. An address that is not https:// is
@@ -90,6 +100,7 @@ extern void bats_js_replace_state(void*, int);
 extern void bats_js_push_state(void*, int);
 extern void bats_js_reload(void);
 extern void bats_js_history_back(void);
+extern void bats_js_history_scroll_restoration(int);
 extern int bats_js_navigate_away(void*, int);
 %}
 extern fun _bats_js_get_url
@@ -106,6 +117,8 @@ extern fun _bats_js_reload
   (): void = "mac#bats_js_reload"
 extern fun _bats_js_history_back
   (): void = "mac#bats_js_history_back"
+extern fun _bats_js_history_scroll_restoration
+  (manual: int): void = "mac#bats_js_history_scroll_restoration"
 extern fun _bats_js_navigate_away
   (url: ptr, url_len: int): int = "mac#bats_js_navigate_away"
 end
@@ -151,6 +164,10 @@ implement push_state{lb}{n}(url, url_len) =
 implement reload() = _bats_js_reload()
 
 implement history_back() = _bats_js_history_back()
+
+(* JS's code: 1 manual, 0 auto *)
+implement history_scroll_restoration(mode) =
+  _bats_js_history_scroll_restoration(case+ mode of ScrollManual() => 1 | ScrollAuto() => 0)
 
 implement navigate_away{lb}{n}(url, url_len) =
   if ~is_https(url, url_len) then false

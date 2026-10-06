@@ -1,7 +1,8 @@
 // Runs dist/pwa/app.wasm through the bridge.js that pwa generated, in
 // jsdom, twice: playing the native app with Capacitor's App plugin, and
 // a browser (no Capacitor). App prints each listener added and each
-// minimizeApp; Back is pressed three times (each press calls the
+// minimizeApp; history.scrollRestoration is printed once the app has
+// started; Back is pressed three times (each press calls the
 // backButton listeners, as App does). Each hash the app sets is
 // printed.
 import { JSDOM } from 'jsdom';
@@ -44,6 +45,7 @@ async function run(label, { native }) {
   unlinkSync(tmp);
   await loadWASM(readFileSync('dist/pwa/app.wasm'), document.getElementById('bats-root'), {});
   await settle();
+  console.log(`scrollRestoration: ${win.history.scrollRestoration}`);
   for (let i = 0; i < 3; i++) {
     console.log('back');
     listeners.forEach(f => f({ canGoBack: false }));

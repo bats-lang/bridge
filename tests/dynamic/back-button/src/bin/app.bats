@@ -40,8 +40,10 @@ val popped = ref<int>(0)
    whether Back is heard is put in the hash. Each Back heard is put in
    the hash, and the second moves the app to the background. Then an
    entry is pushed and taken back (history_back), which the popstate
-   callback puts in the hash *)
+   callback puts in the hash. The scroll is the app's to restore *)
 implement main0 () = let
+  (* the app restores its own scroll: check.mjs prints it *)
+  val () = $NAV.history_scroll_restoration($NAV.ScrollManual())
   val () = (if $BB.back_button_available() then hash_text("back-heard") else hash_text("back-not-heard"))
   val () = $BB.listen_back_button(0, llam() => let
       val () = !heard := !heard + 1

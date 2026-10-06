@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 90500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 90500] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 90800 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 90800] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -478,8 +478,8 @@ fn emit_js_window {n:nat | n + 1300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_nav {n:nat | n + 1400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1400] $B.builder(m)): void = let
+fn emit_js_nav {n:nat | n + 1600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1600] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Navigation ---\n")
   val () = $B.bput(b,"\n")
@@ -528,6 +528,9 @@ fn emit_js_nav {n:nat | n + 1400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsJsHistoryBack() {\n")
   val () = $B.bput(b,"    try { root.ownerDocument.defaultView.history.back(); } catch(e) {}\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsHistoryScrollRestoration(manual) {\n")
+  val () = $B.bput(b,"    try { root.ownerDocument.defaultView.history.scrollRestoration = manual ? 'manual' : 'auto'; } catch(e) {}\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -1511,8 +1514,8 @@ fn emit_js_extra {n:nat | n + 4640 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 5470 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5470] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5540 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5540] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1560,6 +1563,7 @@ fn emit_js_imports {n:nat | n + 5470 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_idb_delete_database: batsJsIdbDeleteDatabase,\n")
   val () = $B.bput(b,"      bats_js_reload: batsJsReload,\n")
   val () = $B.bput(b,"      bats_js_history_back: batsJsHistoryBack,\n")
+  val () = $B.bput(b,"      bats_js_history_scroll_restoration: batsJsHistoryScrollRestoration,\n")
   val () = $B.bput(b,"      // Event listener\n")
   val () = $B.bput(b,"      bats_js_add_event_listener: batsJsAddEventListener,\n")
   val () = $B.bput(b,"      bats_js_add_document_listener: batsJsAddDocumentListener,\n")
@@ -2288,8 +2292,8 @@ fn _emit_2 {n:nat | n + 4850 <= $B.BUILDER_CAP}
   val () = emit_js_window(b)
 in end
 
-fn _emit_3 {n:nat | n + 6140 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6140] $B.builder(m)): void = let
+fn _emit_3 {n:nat | n + 6340 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6340] $B.builder(m)): void = let
   val () = emit_js_nav(b)
   val () = emit_js_dom_read(b)
 in end
@@ -2339,23 +2343,23 @@ fn _emit_11 {n:nat | n + 25340 <= $B.BUILDER_CAP}
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 9160 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9160] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 9230 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9230] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 32470 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 32470] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 32670 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 32670] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 57060 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 57060] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 57130 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 57130] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
