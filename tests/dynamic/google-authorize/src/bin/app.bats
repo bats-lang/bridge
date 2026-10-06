@@ -230,18 +230,19 @@ fn asked (): step =
     in $P.and_then<$GZ.google_authorization($GZ.MayAsk)><$GZ.google_authorization_change>(asked, llam(answer) => told_asked(answer)) end
 
 (* Whether text is a scope: y or n at out[at] *)
-fn scope_case {l:agz}{at:nat | at < 10}{n:pos | n < 256} (out: !$A.arr(byte, l, 10), at: int at, text: string n): void =
+fn scope_case {l:agz}{at:nat | at < 12}{n:pos | n < 256} (out: !$A.arr(byte, l, 12), at: int at, text: string n): void =
   case+ $GZ.google_scope_of(text) of
   | ~$R.some(_) => $A.set<byte>(out, at, int2byte0(121))
   | ~$R.none() => $A.set<byte>(out, at, int2byte0(110))
 
-(* Only a scope-token is a scope: no whitespace of any kind, no quote or
-   backslash, nothing non-ASCII. One hash, ten letters alone, a y or n
-   for each of: a space, a tab, a line feed, a carriage return, a form feed,
-   a vertical tab, an ideographic space, a quote, a backslash, then
-   drive.appdata's scope *)
+(* Only a scope-token is a scope: no whitespace of any kind, no other
+   control character, no quote or backslash, nothing non-ASCII. One
+   hash, twelve letters alone, a y or n for each of: a space, a tab, a
+   line feed, a carriage return, a form feed, a vertical tab, an
+   ideographic space, a quote, a backslash, a control character that is
+   not whitespace (0x01), DEL (0x7F), then drive.appdata's scope *)
 fn split_scope (): void = let
-  val out = $A.alloc<byte>(10)
+  val out = $A.alloc<byte>(12)
   val () = scope_case(out, 0, "scope-a scope-b")
   val () = scope_case(out, 1, "scope-a\tscope-b")
   val () = scope_case(out, 2, "scope-a\nscope-b")
@@ -251,8 +252,10 @@ fn split_scope (): void = let
   val () = scope_case(out, 6, "\343\200\200")
   val () = scope_case(out, 7, "scope\"a")
   val () = scope_case(out, 8, "scope\\a")
-  val () = scope_case(out, 9, "https://www.googleapis.com/auth/drive.appdata")
-in hash_bytes(out, 10) end
+  val () = scope_case(out, 9, "scope\001a")
+  val () = scope_case(out, 10, "scope\177a")
+  val () = scope_case(out, 11, "https://www.googleapis.com/auth/drive.appdata")
+in hash_bytes(out, 12) end
 
 (* A step's end, read: nothing to do with it but let it go *)
 fn ended (change: $GZ.google_authorization_change): void =
@@ -311,14 +314,14 @@ implement main0 () = let
   (* answers authorizationForScopes does not document: no authorization,
      a null answer, a blank token, no scope granted, an account that is empty, not a
      string, or blank, a granted scope holding a space, one that is not
-     a string, one holding a quote, a backslash or a letter outside
-     ASCII (none a scope-token), no access token, one that is not a
+     a string, one holding a quote, a backslash, a letter outside
+     ASCII, a control character (0x01) or DEL (none a scope-token), no access token, one that is not a
      string, a token and an account holding no visible
      ASCII character, an answer with no account key, and a token and an
      account over 4096 bytes; then a status with an empty message and a
-     rejection with no value, neither keeping a message: 21 asks *)
+     rejection with no value, neither keeping a message: 23 asks *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
-    val () = ended(change) in found_times(21) end)
+    val () = ended(change) in found_times(23) end)
   (* granted with no account, asked with a consent screen allowed *)
   val s8 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7d, llam(change) => let
     val () = ended(change) in asked() end)

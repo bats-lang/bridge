@@ -61,6 +61,8 @@ async function run(label, native) {
     () => Promise.resolve(authorization('token-4', ['scope-a', 'a"b'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a', 'a\\b'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a', 'caf\u00e9'], null)),
+    () => Promise.resolve(authorization('token-4', ['scope-a', 'scope\u0001a'], null)),
+    () => Promise.resolve(authorization('token-4', ['scope-a', 'scope\u007fa'], null)),
     () => Promise.resolve({ authorization: { grantedScopes: ['scope-a'], account: null } }),
     () => Promise.resolve(authorization(42, ['scope-a'], null)),
     () => Promise.resolve(authorization('\u00e9\u00e9', ['scope-a'], null)),

@@ -134,8 +134,9 @@ staload "./decompress.bats"
 #pub fun google_authorize_available(): bool
 
 (* An OAuth scope: its text proven not empty by its type and checked to
-   be RFC 6749's scope-token (NQCHAR bytes only: no whitespace, no quote
-   or backslash, nothing non-ASCII; the scopes of a call cross as one
+   be RFC 6749's scope-token (NQCHAR bytes only, 0x21, 0x23 to 0x5B and
+   0x5D to 0x7E: no whitespace or other control character, no DEL, no
+   quote or backslash, nothing non-ASCII; the scopes of a call cross as one
    text, separated by spaces, RFC 6749 3.3), once, by google_scope_of,
    the only way to make one, so no call asks for an empty or blank
    scope, or splits one in two (quire#334). The set of scopes is open: one Google does not
@@ -143,8 +144,9 @@ staload "./decompress.bats"
 #pub abstype google_scope = ptr
 
 (* text as a scope, when it is RFC 6749's scope-token (NQCHAR bytes:
-   0x21, 0x23 to 0x5B, 0x5D to 0x7E), so it holds no whitespace of any
-   kind *)
+   0x21, 0x23 to 0x5B, 0x5D to 0x7E), so it holds no whitespace or
+   other control character, no DEL, no quote or backslash and nothing
+   non-ASCII *)
 #pub fn google_scope_of {n:pos | n < 256} (text: string n): $R.option(google_scope)
 
 (* A scope's text *)
