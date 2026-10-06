@@ -80,31 +80,29 @@ and the rule for an atom's answers:
   `String` of it; when that throws too, its type; nothing for undefined.
   When the text cannot be kept, its type is kept instead, and when that
   cannot be either, nothing. The answer code says where the call was
-  (resolved, rejected, or which step threw) and how the text was
-  written. The check that the plugin is there answers the same way when
-  its lookup throws. Every call settles: nothing in it can throw past
-  its tries.
+  (resolved, rejected, which step threw, or a method that returned no
+  promise) and how the text was written. The check that the plugin is
+  there answers the same way when its lookup throws.
 * Bats reads the text with the json package and decides there, with
   `case+`: each outcome the platform documents, and each case it does
   not recognise, which keeps the text (as UTF-8, as TextEncoder writes
   it: a lone surrogate, which only the String form can hold, becomes
-  U+FFFD). A text over 1 MiB is kept as its whole length and its first
-  1 MiB, whatever its form: a case of its own, or, with an answer code
-  JS never gives, kept so by that case.
-  An outcome that came with a text keeps it (for google_authorize,
-  `Authorized` and `NotAuthorized` too), so a field the atom does not
-  read is not dropped.
+  U+FFFD). A text over 1 MiB is kept as its whole length and its first 1
+  MiB, whatever its form: a case of its own, or, with an answer code JS
+  never gives, kept so by that case. An outcome that came with a text
+  keeps it (for google_authorize, `Authorized` and `NotAuthorized` too),
+  so a field the atom does not read is not dropped.
 * A credential in a kept text (an access token) is kept; the app hides
   it where it shows the text.
-* The atom's dynamic test plays the documented answers, a fixed list
-  of nasty ones (values JSON has no form for, throwing getters and
-  Proxy traps, cycles, huge and odd strings, thenables, answers just
-  under and over the cap, a lookup, arguments and method that throw, a
-  text that cannot be kept), answers JS never gives, and a fuzz from a
-  fixed seed, and checks that every call settles once with a known
-  outcome, and every unexpected one keeps its text or is a case that
-  has none. Where the output would hold the engine's own wording (a
-  revoked Proxy's message), it names it instead.
+* The atom's dynamic test plays the documented answers, a fixed list of
+  nasty ones (values JSON has no form for, throwing getters and Proxy
+  traps, cycles, huge and odd strings, thenables, answers at and just
+  over the cap, a lookup, arguments and method that throw, a method that
+  returns no promise, a text that cannot be kept), answers JS never
+  gives, and a fuzz from a fixed seed, and checks that every call
+  settles once with a known outcome, and every unexpected one keeps its
+  text or is a case that has none. Where the output would hold the
+  engine's own wording (a revoked Proxy's message), it names it instead.
 
 ## Adversarial review before merge
 

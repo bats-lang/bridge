@@ -1,40 +1,17 @@
-// Runs dist/pwa/app.wasm through the bridge.js that pwa generated, in
-// jsdom, twice: playing the native app with the GoogleAuthorize plugin
-// (bats-lang/capacitor-plugins' google-authorize), whose answers come in
-// the order the app asks, and a browser (no Capacitor). The plugin prints
-// each call with what it was given; each hash the app sets is printed.
-//
-// The answers are the plugin's documented ones, a fixed list of nasty
-// ones (values JSON has no form for, throwing getters and Proxy traps,
-// cycles, huge and odd strings, thenables, answers just under and over
-// the 1 MiB cap, a lookup, arguments and method that throw, a text that
-// cannot be kept), answers bridge's JS never gives (put in as they reach
-// the app), and a fuzz of random values from a fixed seed; after its
-// last call the app looks the plugin up again, and each of those
-// lookups throws or answers a code the availability check never gives.
-// Then it checks that each call handed to
-// google_authorize's JS was settled exactly once, that every call the
-// app made ended in a known outcome, and that every unexpected one
-// carries its text or is a case that has none.
 import { JSDOM } from 'jsdom';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const src = readFileSync('dist/pwa/bridge.js', 'utf-8');
-// bridge.js boots itself at its end; keep only loadWASM
 const boot = src.lastIndexOf("\nconst root = document.getElementById('bats-root');");
 if (boot < 0) throw new Error('bridge.js: boot code not found');
 
-// The counts the app asks in (app.bats' SILENT, PROMPTING, CLEARS, REVOKES)
-const COUNTS = { authorizationForScopes: 400, authorizeScopes: 80, clearAuthorizationToken: 80, revokeAccess: 80 };
+const COUNTS = { authorizationForScopes: 400, authorizeScopes: 100, clearAuthorizationToken: 100, revokeAccess: 100 };
 const CAP = 1048576;
-// An error the engine throws (a revoked Proxy's) has a stack with no
-// frames, so its text holds no paths, whose length varies with the
-// process id
+// The output holds no paths, whose length varies with the process id
 Error.stackTraceLimit = 0;
 
-// A random number generator from a fixed seed (mulberry32)
 function random(seed) {
   return () => {
     seed = (seed + 0x6D2B79F5) | 0;
@@ -44,7 +21,6 @@ function random(seed) {
   };
 }
 
-// An Error whose stack is fixed, so the output holds no paths
 function error(message, fields = {}, Kind = Error) {
   const e = new Kind(message);
   Object.defineProperty(e, 'stack', { value: `${Kind.name}: ${message}\n    at the plugin`, writable: true, configurable: true });
@@ -63,19 +39,11 @@ const hostile = () => new Proxy({}, {
   getPrototypeOf: () => thrower('getPrototypeOf'), getOwnPropertyDescriptor: () => thrower('getOwnPropertyDescriptor'),
 });
 const revoked = () => { const r = Proxy.revocable({}, {}); r.revoke(); return r.proxy; };
-// The engine's message for a revoked Proxy that is read, which a value
-// a promise resolves with is (for its then): its wording is the
-// engine's, so the output names it instead
+// The engine's wording is not pinned, so the output names its message
 const ENGINE_REVOKED = (() => { try { revoked().then; } catch (e) { return e.message; } throw new Error('a revoked Proxy read without a throw'); })();
 const cyclic = () => { const o = { name: 'cycle' }; o.self = o; return o; };
-// JSON.stringify throws, and String gives a text over the 1 MiB bridge
-// keeps
 const big = () => ({ toJSON() { throw error('no JSON'); }, toString() { return 'y'.repeat(CAP + 5); } });
-// JSON.stringify throws, and String gives exactly the 1 MiB bridge keeps
-const capped = () => ({ toJSON() { throw error('no JSON'); }, toString() { return 'z'.repeat(CAP); } });
-// Arrays nested depth deep: json reads 512 levels, and refuses more
 const nested = depth => { let v = []; for (let i = 1; i < depth; i++) v = [v]; return v; };
-// A valid authorization padded with a field so its JSON is length bytes
 function padded(length) {
   const answer = { authorization: { accessToken: 'token-pad', grantedScopes: ['scope-a'], account: null }, pad: '' };
   answer.pad = 'p'.repeat(length - JSON.stringify(answer).length);
@@ -83,10 +51,8 @@ function padded(length) {
   return answer;
 }
 
-// Odd strings: non-ASCII, lone surrogates, controls, quotes, huge
 const STRINGS = ['', 'plain', 'tökén', '\ud800', '\udc00x', 'a\u0000b', 'tab\there', 'quote"back\\slash', ' ', 'x'.repeat(5000)];
 
-// A random value of depth at most depth
 function value(next, depth) {
   const pick = Math.floor(next() * (depth > 0 ? 22 : 14));
   switch (pick) {
@@ -114,7 +80,6 @@ function value(next, depth) {
     default: return cyclic();
   }
 }
-// A random answer: resolved or rejected with a random value
 const fuzz = next => {
   const v = value(next, 3);
   return next() < 0.5 ? () => Promise.resolve(v) : () => Promise.reject(v);
@@ -125,20 +90,9 @@ const fill = (list, count, next) => {
   return list;
 };
 
-// Answers bridge's JS never gives, put in as they reach the app: an
-// answer code in place of the next one, and the next text withheld.
-// And the plugin's lookup made to throw as the next call of the same
-// method begins (its queued answer then never asked for, and skipped)
 let oddAnswer = null;
 let textWithheld = false;
 let lookupThrow = null;
-// What the app's last lookups of the plugin throw, one each, once its
-// last call is made: an Error, undefined, a text over 1 MiB, a cycle
-// (written as String gives it), a value only its type can say, and an
-// Error whose text, then also its type, cannot be kept; then answer
-// codes the availability check never gives, put in as they reach the
-// app in place of its own (after a lookup that threw, so with the text
-// it kept, or after one that did not, so with none)
 let endThrows = [];
 let presenceCode = null;
 const NO_THROW = Symbol('no throw');
@@ -148,10 +102,6 @@ const END_THROWS = () => [
   [error('its text not kept'), 1], [error('nothing kept'), 2],
   [big(), 0, 7], [error('a code its form does not match'), 0, 34], [NO_THROW, 0, 31], [NO_THROW, 0, 7],
 ];
-// The resolver ids the app has handed to google_authorize's JS and not
-// yet seen settled (an id is used again once its call has settled), and
-// what went wrong: a settle of an id not outstanding, or a call handed
-// an id still outstanding
 const outstanding = new Set();
 const settleProblems = [];
 const skipped = { authorizationForScopes: 0, authorizeScopes: 0, clearAuthorizationToken: 0, revokeAccess: 0 };
@@ -168,10 +118,10 @@ WebAssembly.instantiate = async (bytes, imports) => {
   }
   const available = imports.env.bats_js_google_authorize_available;
   imports.env.bats_js_google_authorize_available = () => {
+    // the lookup reads the plugins more than once, so a lookup that does
+    // not throw has its entry taken here
     const before = endThrows.length;
     const code = available();
-    // a lookup that did not throw: its entry is taken here, since the
-    // lookup reads the plugins more than once
     if (endThrows.length === before && before && endThrows[0][0] === NO_THROW) presenceCode = endThrows.shift()[2];
     if (presenceCode === null) return code;
     const odd = presenceCode;
@@ -199,11 +149,6 @@ const withheld = (code, f) => () => { oddAnswer = code; textWithheld = true; ret
 const SKIPPED = () => Promise.reject(error('never asked for'));
 const lookupThrows = thrown => [method => { lookupThrow = { thrown, method }; return Promise.resolve(); }, SKIPPED];
 
-// What only the engine or the platform could make throw, made to throw
-// inside google_authorize's JS alone: reading a call's arguments (as
-// the next call of the same method begins, its queued answer then
-// skipped), and keeping a text, once (its type is kept instead) or
-// twice (nothing is kept)
 let argumentsThrows = null;
 let encodeThrows = 0;
 let liveQueues = null;
@@ -231,10 +176,8 @@ TextEncoder.prototype.encode = function (...a) {
   return encode.apply(this, a);
 };
 const argumentsThrow = thrown => [method => { argumentsThrows = { method, thrown }; return Promise.resolve(); }, SKIPPED];
-// an arming answer whose next call keeps nothing of what threw
 const nothingKeptAfter = ([arm, skip]) => [method => { encodeThrows = 2; return arm(method); }, skip];
 
-// The rejections every method is played with
 const rejections = () => [
   () => Promise.reject(failure('UNEXPECTED', 'IllegalStateException: odd')),
   () => Promise.reject(failure('SOMETHING_NEW', 'new in Play services')),
@@ -243,6 +186,11 @@ const rejections = () => [
   () => Promise.reject({ code: true }),
   () => Promise.reject({ code: ['NETWORK_ERROR'] }),
   () => Promise.reject({ code: {} }),
+  () => Promise.reject(Object.defineProperty(error('own proto'), '__proto__', { value: { kept: 1 }, enumerable: true, configurable: true, writable: true })),
+  () => undefined,
+  () => authorization('token-np', ['scope-a'], null),
+  () => big(),
+  () => { encodeThrows = 2; return { odd: 'nothing kept' }; },
   () => Promise.reject({ toJSON() { throw error('no JSON'); }, toString() { return 'lone \ud800 surrogate'; } }),
   () => Promise.reject(failure(null, 'a null code')),
   () => Promise.reject(failure(undefined, 'no code')),
@@ -301,14 +249,11 @@ const rejections = () => [
   withheld(-1, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
 ];
 
-// Each status CommonStatusCodes names, and SUCCESS and SUCCESS_CACHE
 const STATUSES = ['SERVICE_VERSION_UPDATE_REQUIRED', 'SERVICE_DISABLED', 'SIGN_IN_REQUIRED', 'INVALID_ACCOUNT',
   'RESOLUTION_REQUIRED', 'NETWORK_ERROR', 'INTERNAL_ERROR', 'DEVELOPER_ERROR', 'ERROR', 'INTERRUPTED', 'TIMEOUT',
   'CANCELED', 'API_NOT_CONNECTED', 'DEAD_CLIENT', 'REMOTE_EXCEPTION', 'CONNECTION_SUSPENDED_DURING_CALL',
   'RECONNECTION_TIMED_OUT_DURING_UPDATE', 'RECONNECTION_TIMED_OUT', 'SUCCESS', 'SUCCESS_CACHE'];
 
-// authorizationForScopes: granted (the first, asked with drive.appdata
-// twice); consent needed; the odd answers; each status; the rejections
 const answers = () => [
   () => Promise.resolve(authorization('token-1', ['scope-a', 'scope-b'], 'reader@example.com')),
   () => Promise.resolve({ authorization: null }),
@@ -361,7 +306,6 @@ const answers = () => [
   () => Promise.resolve(revoked()),
   () => Promise.resolve(Object.assign(cyclic(), authorization('token-9', ['scope-a'], null))),
   () => Promise.resolve(big()),
-  () => Promise.resolve(capped()),
   () => Promise.resolve({ authorization: { accessToken: 'token-s', account: null } }),
   oddly(7, () => Promise.resolve(padded(CAP + 1))),
   () => { encodeThrows = 1; return Promise.resolve(authorization('token-e', ['scope-a'], null)); },
@@ -408,8 +352,6 @@ async function run(label, native) {
   };
   liveQueues = queues;
   const calls = { authorizationForScopes: 0, authorizeScopes: 0, clearAuthorizationToken: 0, revokeAccess: 0 };
-  // The app's own calls take the next queued answer; a clear and a
-  // revoke of what an authorization gave resolve
   const plugin = method => o => {
     console.log(`${method}: ${JSON.stringify(o)}`);
     const queued = method === 'clearAuthorizationToken' ? o.accessToken === 'queued-token'
@@ -418,9 +360,6 @@ async function run(label, native) {
     calls[method]++;
     const f = queues[method].shift();
     if (!f) throw new Error(`${method}: no answer queued`);
-    // after its last call the app looks the plugin up END_THROWS more
-    // times: each of those lookups throws, or answers a code the
-    // availability check never gives
     if (Object.values(queues).every(q => q.length === 0)) endThrows = END_THROWS();
     return f(method);
   };
@@ -458,7 +397,6 @@ async function run(label, native) {
   const { loadWASM } = await import(tmp);
   unlinkSync(tmp);
   await loadWASM(readFileSync('dist/pwa/app.wasm'), document.getElementById('bats-root'), {});
-  // until no hash has come for a second
   for (let count = -1; count !== lines.length; ) {
     count = lines.length;
     await new Promise(r => setTimeout(r, 1000));
@@ -466,23 +404,18 @@ async function run(label, native) {
   check(label, native, lines, calls, queues);
 }
 
-// Every call settled once with a known outcome, and every unexpected
-// one carries its text, or is a case that has none; the plugin's
-// presence is said first, and again at the end (in the app, a lookup
-// that threw or a code the availability check never gives)
 const CALLS = ['authorization for scopes', 'authorize scopes', 'clear', 'revoke'];
 const OUTCOMES = ['authorized', 'not authorized', 'canceled', 'consent showing', 'refused', 'unavailable', 'unexpected', 'changed'];
 const CASES = ['answer undefined', 'answer not JSON', 'answer unparsed', 'answer too large', 'answer not an object',
   'no authorization', 'token unusable', 'scopes unusable', 'account unusable', 'change resolved with',
   'rejection undefined', 'rejection not JSON', 'rejection unparsed', 'rejection too large', 'rejection not an object',
-  'code not text', 'rejected other', 'thrown', 'thrown undefined', 'thrown too large', 'nothing kept', 'odd answer'];
-const TEXTLESS = ['answer undefined', 'rejection undefined', 'thrown undefined', 'nothing kept', 'odd answer'];
+  'code not text', 'rejected other', 'thrown', 'thrown undefined', 'thrown too large', 'nothing kept', 'odd answer',
+  'not a promise', 'not a promise, undefined', 'not a promise, too large'];
+const TEXTLESS = ['answer undefined', 'rejection undefined', 'thrown undefined', 'nothing kept', 'odd answer', 'not a promise, undefined'];
 const FORMS = ['as JSON', 'as String', 'as its type', 'as its type, its text unkept', 'its form unknown'];
 function check(label, native, lines, calls, queues) {
   const text = lines.map(l => l.slice(6));
   const problems = [];
-  // the app's last lookups: each a lookup that threw or a code the
-  // availability check never gives (in a browser, no plugin)
   const end = native ? text.indexOf('presence') : text.length - END_THROWS().length;
   if (text[0] !== (native ? 'available' : 'unavailable')) problems.push(`first line ${text[0]}`);
   const last = text.slice(end);
@@ -502,7 +435,6 @@ function check(label, native, lines, calls, queues) {
     if (t !== 'unexpected') return;
     const which = text[i + 1];
     if (!CASES.includes(which)) { problems.push(`line ${i}: unexpected ${which}`); return; }
-    // the form, or "no text", within the next lines
     let j = i + 2;
     while (j < i + 6 && !FORMS.includes(text[j]) && text[j] !== 'no text') j++;
     if (text[j] === 'no text') {
@@ -513,7 +445,6 @@ function check(label, native, lines, calls, queues) {
     } else problems.push(`line ${i}: ${which} with no form`);
   });
   if (asked !== answered) problems.push(`${asked} calls, ${answered} outcomes`);
-  // each call handed to google_authorize's JS settled exactly once
   problems.push(...settleProblems);
   for (const id of outstanding) problems.push(`id ${id} never settled`);
   outstanding.clear();

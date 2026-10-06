@@ -2014,19 +2014,9 @@ fn emit_js_account {n:nat | n + 6000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-(* Google authorization with no sign-in, in the app (GoogleAuthorize,
-   bats-lang/capacitor-plugins' google-authorize). Scopes cross separated
-   by spaces (RFC 6749 3.3). JS decides nothing: it writes what came back
-   as text (googleSay: JSON, an Error as its own properties and name, a
-   BigInt as its digits; else as String gives it; else its type; nothing
-   for undefined) for bats_js_google_authorize_text, and answers the
-   stage times 10 plus the form: stage 1 resolved, 2 rejected, 3 the
-   plugin's lookup threw, 4 reading the arguments threw, 5 the method
-   threw; form 1 JSON, 2 String, 3 its type, 4 undefined (no text), 5
-   its type because the text could not be kept, 6 nothing kept. 0 when
-   there is no plugin. The availability check answers 1 or 0, or a
-   lookup that threw as a call does, its text kept under -1. Every call
-   settles: nothing in it can throw past its try *)
+(* GoogleAuthorize (google_authorize.bats). JS only writes down what
+   came back, and Bats decides (CLAUDE.md, "An atom's JS only writes the
+   answer down") *)
 fn emit_js_google_authorize {n:nat | n + 2600 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2600] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
@@ -2039,9 +2029,9 @@ fn emit_js_google_authorize {n:nat | n + 2600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const t = JSON.stringify(v, (k, x) => {\n")
   val () = $B.bput(b,"        if (typeof x == 'bigint') return String(x);\n")
   val () = $B.bput(b,"        if (!(x instanceof Error)) return x;\n")
-  val () = $B.bput(b,"        const o = { name: x.name };\n")
-  val () = $B.bput(b,"        for (const n of Object.getOwnPropertyNames(x)) o[n] = x[n];\n")
-  val () = $B.bput(b,"        return o;\n")
+  val () = $B.bput(b,"        return Object.fromEntries([['name', x.name], ...Object.getOwnPropertyNames(x).map(n => [n, x[n]])]);\n")
+  val () = $B.bput(b,"")
+  val () = $B.bput(b,"")
   val () = $B.bput(b,"      });\n")
   val () = $B.bput(b,"      if (typeof t == 'string') return [1, t];\n")
   val () = $B.bput(b,"    } catch (e) {}\n")
@@ -2072,7 +2062,7 @@ fn emit_js_google_authorize {n:nat | n + 2600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      stage = 4;\n")
   val () = $B.bput(b,"      const a = args();\n")
   val () = $B.bput(b,"      stage = 5;\n")
-  val () = $B.bput(b,"      const p = call(g, a);\n")
+  val () = $B.bput(b,"      const p = call(g, a);\n      let promised = false;\n      try { promised = p instanceof Promise; } catch (e) {}\n      if (!promised) return settle(id, googleKeep(id, p, 6));\n")
   val () = $B.bput(b,"      settleBy(id, () => p, r => googleKeep(id, r, 1), e => googleKeep(id, e, 2));\n")
   val () = $B.bput(b,"    } catch (x) { settle(id, googleKeep(id, x, stage)); }\n")
   val () = $B.bput(b,"  }\n")

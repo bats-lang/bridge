@@ -38,14 +38,9 @@ implement $P.dispose<$GZ.google_authorization($GZ.Silently)>(answer) = free_auth
 implement $P.dispose<$GZ.google_authorization($GZ.MayAsk)>(answer) = free_authorization(answer)
 implement $P.dispose<$GZ.google_authorization_change>(change) = free_change(change)
 
-(* ------------------------------------------------------------
-   The hash: each line check.mjs prints is one hash, numbered, so no
-   two are the same and each fires hashchange
-   ------------------------------------------------------------ *)
 
 val line_number = ref<int>(0)
 
-(* out[at, at + count): n's last count digits, its sign aside *)
 fun digits_put {l:agz}{size:nat}{at:nat}{count:nat | at + count <= size} .<count>.
   (out: !$A.arr(byte, l, size), at: int at, count: int count, n: int): void =
   if count <= 0 then ()
@@ -55,7 +50,6 @@ fun digits_put {l:agz}{size:nat}{at:nat}{count:nat | at + count <= size} .<count
     val () = $A.set<byte>(out, at + count - 1, int2byte0(48 + digit))
   in digits_put(out, at, count - 1, n / 10) end
 
-(* out[to + j, to + count) := from[j, count) *)
 fun copy_into {l,c:agz}{size,total:nat}{count:nat | count <= size}{to:nat | to + count <= total}{j:nat | j <= count} .<count - j>.
   (from: !$A.arr(byte, l, size), count: int count, out: !$A.arr(byte, c, total), to: int to, j: int j): void =
   if j >= count then ()
@@ -63,7 +57,6 @@ fun copy_into {l,c:agz}{size,total:nat}{count:nat | count <= size}{to:nat | to +
     val () = $A.set<byte>(out, to + j, $A.get<byte>(from, j))
   in copy_into(from, count, out, to, j + 1) end
 
-(* The hash set to the next line's number, a space, then a[0, n) *)
 fn hash_bytes {l:agz}{size:nat}{n:nat | n <= size; n <= 4096} (a: $A.arr(byte, l, size), n: int n): void = let
   val number = !line_number
   val () = !line_number := number + 1
@@ -86,15 +79,12 @@ in a end
 fn hash_text {n:pos | n < 256} (s: string n): void =
   hash_bytes(bytes(s), g1u2i(string1_length(s)))
 
-(* n in decimal, after its sign *)
 fn hash_number (n: int): void = let
   val out = $A.alloc<byte>(12)
   val () = $A.set<byte>(out, 0, int2byte0(if n < 0 then 45 else 43))
   val () = digits_put(out, 1, 11, n)
 in hash_bytes(out, 12) end
 
-(* A blob's text when it is at most 300 bytes, else its length and its
-   first 300: a hash is one line of check.mjs's output *)
 fn hash_blob {n:nat} (blob: !$BD.dblob(n)): void = let
   val n = $BD.blob_len(blob)
 in
@@ -118,7 +108,6 @@ fn hash_form (form: $GZ.google_form): void =
   | $GZ.AsType() => hash_text("as its type")
   | $GZ.AsTypeTextUnkept() => hash_text("as its type, its text unkept")
 
-(* json's error: its name, then where *)
 fn hash_parse_error (error: $J.parse_error): void =
   case+ error of
   | ~$J.UnexpectedEnd(at) => let val () = hash_text("UnexpectedEnd") in hash_number(at) end
@@ -133,7 +122,6 @@ fn hash_parse_error (error: $J.parse_error): void =
   | ~$J.TooDeep(at) => let val () = hash_text("TooDeep") in hash_number(at) end
   | ~$J.TrailingData(at) => let val () = hash_text("TrailingData") in hash_number(at) end
 
-(* What the plugin answered, as JS wrote it: its form, then its text *)
 fn hash_said (said: $GZ.google_said): void = let
   val ~$GZ.GoogleSaid(form, text) = said
   val () = hash_form(form)
@@ -208,10 +196,8 @@ fn hash_stage (stage: $GZ.google_stage): void =
   | $GZ.StageLookup() => hash_text("the lookup")
   | $GZ.StageArguments() => hash_text("the arguments")
   | $GZ.StageMethod() => hash_text("the method")
+  | $GZ.StageReturned() => hash_text("returned")
 
-(* An unexpected answer: "unexpected", its case, what it carries but
-   the text, then the text as hash_said or hash_cut writes it, or "no
-   text" *)
 fn hash_unexpected (unexpected: $GZ.google_unexpected): void = let
   val () = hash_text("unexpected")
 in
@@ -236,6 +222,9 @@ in
   | ~$GZ.Thrown(what, said) => let val () = hash_text("thrown") val () = hash_throw(what) in hash_said(said) end
   | ~$GZ.ThrownUndefined(what) => let val () = hash_text("thrown undefined") val () = hash_throw(what) in hash_text("no text") end
   | ~$GZ.ThrownTooLarge(what, cut) => let val () = hash_text("thrown too large") val () = hash_throw(what) in hash_cut(cut) end
+  | ~$GZ.NotAPromise(said) => let val () = hash_text("not a promise") in hash_said(said) end
+  | ~$GZ.NotAPromiseUndefined() => let val () = hash_text("not a promise, undefined") in hash_text("no text") end
+  | ~$GZ.NotAPromiseTooLarge(cut) => let val () = hash_text("not a promise, too large") in hash_cut(cut) end
   | ~$GZ.NothingKept(stage) => let val () = hash_text("nothing kept") val () = hash_stage(stage) in hash_text("no text") end
   | ~$GZ.OddAnswer(number, said) => let
       val () = hash_text("odd answer")
@@ -252,7 +241,6 @@ in
     end
 end
 
-(* Whether the plugin is there *)
 fn hash_presence (presence: $GZ.google_presence): void =
   case+ presence of
   | ~$GZ.PluginPresent() => hash_text("available")
@@ -277,9 +265,6 @@ in
   else let val () = $A.free<byte>(a) in hash_text("(scopes over 300 bytes)") end
 end
 
-(* ------------------------------------------------------------
-   The calls
-   ------------------------------------------------------------ *)
 
 vtypedef step = $P.promise($GZ.google_authorization_change, $P.Chained)
 
@@ -297,7 +282,6 @@ fn told_change (change: $GZ.google_authorization_change): step =
   | ~$GZ.ChangeUnavailable(said) => let val () = hash_unavailable(said) in done() end
   | ~$GZ.ChangeUnexpected(unexpected) => let val () = hash_unexpected(unexpected) in done() end
 
-(* The scope the app asks for: drive.appdata, checked once *)
 fn drive_appdata_scope (): $R.option($GZ.google_scope(45)) =
   $GZ.google_scope_of("https://www.googleapis.com/auth/drive.appdata")
 
@@ -326,9 +310,6 @@ in
     in done() end
 end
 
-(* An authorization: its scopes and account in the hash, then the token
-   cleared and the account's grant revoked, so the plugin prints the
-   token and the account as they came back *)
 fn told_authorized (token: $GZ.google_text, scopes: $GZ.google_granted, account: $R.option($GZ.google_text), said: $GZ.google_said): step = let
   val () = hash_text("authorized")
   val () = hash_granted(scopes)
@@ -381,7 +362,6 @@ fn found (): step =
       val () = hash_text("authorization for scopes")
     in $P.and_then<$GZ.google_authorization($GZ.Silently)><$GZ.google_authorization_change>($GZ.google_authorization_for_scopes($GZ.OneScope(scope)), llam(answer) => told_found(answer)) end
 
-(* drive.appdata listed twice, so the plugin prints a list of two *)
 fn found_twice (): step =
   case+ drive_appdata_scope() of
   | ~$R.none() => let val () = hash_text("not a scope") in done() end
@@ -406,14 +386,11 @@ fn queued_revoke (): step =
   | ~$R.some(account) => revoke(account)
   | ~$R.none() => let val () = hash_text("not an account") in done() end
 
-(* Whether text is a scope: y or n at out[at] *)
 fn scope_case {l:agz}{at:nat | at < 4}{n:pos | n < 256} (out: !$A.arr(byte, l, 4), at: int at, text: string n): void =
   case+ $GZ.google_scope_of(text) of
   | ~$R.some(_) => $A.set<byte>(out, at, int2byte0(121))
   | ~$R.none() => $A.set<byte>(out, at, int2byte0(110))
 
-(* A scope is printable ASCII: y or n for two scopes with a space
-   between, a tab, a letter outside ASCII, then drive.appdata's *)
 fn split_scope (): void = let
   val out = $A.alloc<byte>(4)
   val () = scope_case(out, 0, "scope-a scope-b")
@@ -422,7 +399,6 @@ fn split_scope (): void = let
   val () = scope_case(out, 3, "https://www.googleapis.com/auth/drive.appdata")
 in hash_bytes(out, 4) end
 
-(* A token or account that is not printable ASCII is no google_text *)
 fn texts (): void = let
   val () = (case+ text_of("a b") of
     | ~$R.some(t) => let val () = $GZ.google_text_free(t) in hash_text("a b: a text") end
@@ -442,23 +418,18 @@ fn call_step (call: call): step =
   | QueuedClear() => queued_clear()
   | QueuedRevoke() => queued_revoke()
 
-(* call left times, one after another, after first *)
 fun times {left:nat} .<left>. (first: step, call: call, left: int left): step =
   if left <= 0 then first
   else times($P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(first, llam(change) => let
     val () = free_change(change) in call_step(call) end), call, left - 1)
 
-(* check.mjs plays the plugin, its answers queued per method in the
-   order of these calls, and a browser with no Capacitor. The counts
-   are check.mjs's queues' lengths, which it checks *)
 #define SILENT 400
-#define PROMPTING 80
-#define CLEARS 80
-#define REVOKES 80
+#define PROMPTING 100
+#define CLEARS 100
+#define REVOKES 100
 
 #define PRESENCES 11
 
-(* The plugin looked up left times, each said *)
 fun presences {left:nat} .<left>. (left: int left): void =
   if left <= 0 then ()
   else let val () = hash_presence($GZ.google_authorize_available()) in presences(left - 1) end
@@ -471,8 +442,5 @@ implement main0 () = let
   val s = times(s, Asked(), PROMPTING)
   val s = times(s, QueuedClear(), CLEARS)
   val s = times(s, QueuedRevoke(), REVOKES)
-(* and the plugin looked up PRESENCES more times at the end: in the
-   app, check.mjs makes each of those lookups throw, or answer a code the
-   availability check never gives *)
 in $P.finish<$GZ.google_authorization_change>(s, llam(change) => let
   val () = free_change(change) in presences(PRESENCES) end) end
