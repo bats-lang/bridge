@@ -58,7 +58,14 @@ const hostile = () => new Proxy({}, {
   getPrototypeOf: () => thrower('getPrototypeOf'), getOwnPropertyDescriptor: () => thrower('getOwnPropertyDescriptor'),
 });
 const revoked = () => { const r = Proxy.revocable({}, {}); r.revoke(); return r.proxy; };
+// The engine's message for a revoked Proxy that is read, which a value
+// a promise resolves with is (for its then): its wording is the
+// engine's, so the output names it instead
+const ENGINE_REVOKED = (() => { try { revoked().then; } catch (e) { return e.message; } throw new Error('a revoked Proxy read without a throw'); })();
 const cyclic = () => { const o = { name: 'cycle' }; o.self = o; return o; };
+// JSON.stringify throws, and String gives a text over the 1 MiB bridge
+// keeps
+const big = () => ({ toJSON() { throw error('no JSON'); }, toString() { return 'y'.repeat(CAP + 5); } });
 // Arrays nested depth deep: json reads 512 levels, and refuses more
 const nested = depth => { let v = []; for (let i = 1; i < depth; i++) v = [v]; return v; };
 // A valid authorization padded with a field so its JSON is length bytes
@@ -141,11 +148,49 @@ const withheld = (code, f) => () => { oddAnswer = code; textWithheld = true; ret
 const SKIPPED = () => Promise.reject(error('never asked for'));
 const lookupThrows = thrown => [method => { lookupThrow = { thrown, method }; return Promise.resolve(); }, SKIPPED];
 
+// What only the engine or the platform could make throw, made to throw
+// inside google_authorize's JS alone: reading a call's arguments (as
+// the next call of the same method begins, its queued answer then
+// skipped), and keeping a text, once (its type is kept instead) or
+// twice (nothing is kept)
+let argumentsThrows = null;
+let encodeThrows = 0;
+let liveQueues = null;
+const within = name => {
+  const limit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 50;
+  const stack = new Error().stack;
+  Error.stackTraceLimit = limit;
+  return stack.includes(name);
+};
+const decode = TextDecoder.prototype.decode;
+TextDecoder.prototype.decode = function (...a) {
+  if (argumentsThrows !== null && within('googleCall')) {
+    const { method, thrown } = argumentsThrows;
+    argumentsThrows = null;
+    liveQueues[method].shift();
+    skipped[method]++;
+    throw thrown;
+  }
+  return decode.apply(this, a);
+};
+const encode = TextEncoder.prototype.encode;
+TextEncoder.prototype.encode = function (...a) {
+  if (encodeThrows > 0 && within('googleKeep')) { encodeThrows--; throw error('keeping the text threw'); }
+  return encode.apply(this, a);
+};
+const argumentsThrow = thrown => [method => { argumentsThrows = { method, thrown }; return Promise.resolve(); }, SKIPPED];
+// an arming answer whose next call keeps nothing of what threw
+const nothingKeptAfter = ([arm, skip]) => [method => { encodeThrows = 2; return arm(method); }, skip];
+
 // The rejections every method is played with
 const rejections = () => [
   () => Promise.reject(failure('UNEXPECTED', 'IllegalStateException: odd')),
   () => Promise.reject(failure('SOMETHING_NEW', 'new in Play services')),
   () => Promise.reject(failure('', 'an empty code')),
+  () => Promise.reject(failure('INVALID_OPTIONS', 'scopes must be a non-empty list')),
+  () => Promise.reject({ code: true }),
+  () => Promise.reject({ code: ['NETWORK_ERROR'] }),
   () => Promise.reject(failure(null, 'a null code')),
   () => Promise.reject(failure(undefined, 'no code')),
   () => Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform')),
@@ -182,10 +227,24 @@ const rejections = () => [
   ...lookupThrows(error('the lookup threw')),
   ...lookupThrows(cyclic()),
   ...lookupThrows(hostile()),
+  () => Promise.reject(big()),
+  () => { throw undefined; },
+  () => { throw big(); },
+  ...argumentsThrow(error('reading the arguments threw')),
+  ...argumentsThrow(undefined),
+  ...argumentsThrow(big()),
+  ...nothingKeptAfter(lookupThrows(error('the lookup threw'))),
+  ...nothingKeptAfter(argumentsThrow(error('reading the arguments threw'))),
+  ...lookupThrows(big()),
+  ...lookupThrows(undefined),
+  () => { encodeThrows = 2; throw error('the method threw'); },
+  () => { encodeThrows = 1; return Promise.reject(failure('NETWORK_ERROR', 'its text not kept')); },
+  () => { encodeThrows = 2; return Promise.reject(failure('NETWORK_ERROR', 'nothing kept')); },
   oddly(7, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
-  oddly(12, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
-  oddly(44, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
+  oddly(14, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
+  oddly(61, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
   oddly(0, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
+  withheld(11, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
   withheld(-1, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
 ];
 
@@ -248,6 +307,9 @@ const answers = () => [
   () => Promise.resolve({ authorization: hostile() }),
   () => Promise.resolve(revoked()),
   () => Promise.resolve(Object.assign(cyclic(), authorization('token-9', ['scope-a'], null))),
+  () => Promise.resolve(big()),
+  () => { encodeThrows = 1; return Promise.resolve(authorization('token-e', ['scope-a'], null)); },
+  () => { encodeThrows = 2; return Promise.resolve(authorization('token-e', ['scope-a'], null)); },
   oddly(7, () => Promise.resolve(authorization('token-odd', ['scope-a'], null))),
   withheld(1, () => Promise.resolve(authorization('token-odd', ['scope-a'], null))),
   ...STATUSES.map(code => () => Promise.reject(failure(code, `${code} from Play services`))),
@@ -286,6 +348,7 @@ async function run(label, native) {
       ...rejections(),
     ], COUNTS.revokeAccess, next),
   };
+  liveQueues = queues;
   const calls = { authorizationForScopes: 0, authorizeScopes: 0, clearAuthorizationToken: 0, revokeAccess: 0 };
   // The app's own calls take the next queued answer; a clear and a
   // revoke of what an authorization gave resolve
@@ -297,6 +360,9 @@ async function run(label, native) {
     calls[method]++;
     const f = queues[method].shift();
     if (!f) throw new Error(`${method}: no answer queued`);
+    // the app looks the plugin up once more after its last call: that
+    // lookup throws
+    if (Object.values(queues).every(q => q.length === 0)) lookupThrow = { thrown: error('the last lookup threw'), method: null };
     return f(method);
   };
   const plugins = { GoogleAuthorize: Object.fromEntries(Object.keys(COUNTS).map(m => [m, plugin(m)])) };
@@ -306,8 +372,10 @@ async function run(label, native) {
       if (lookupThrow !== null) {
         const { thrown, method } = lookupThrow;
         lookupThrow = null;
-        queues[method].shift();
-        skipped[method]++;
+        if (method !== null) {
+          queues[method].shift();
+          skipped[method]++;
+        }
         throw thrown;
       }
       return plugins;
@@ -320,7 +388,7 @@ async function run(label, native) {
     let line;
     try { line = decodeURIComponent(hash); } catch (x) { line = `(raw) ${hash}`; }
     lines.push(line);
-    console.log(`hash: #${line}`);
+    console.log(`hash: #${line.split(ENGINE_REVOKED).join("(the engine's message for a revoked Proxy)")}`);
   });
   const tmp = join(tmpdir(), `bridge-google-authorize-${process.pid}-${native ? 'app' : 'browser'}.mjs`);
   writeFileSync(tmp, src.slice(0, boot) + '\n');
@@ -336,29 +404,46 @@ async function run(label, native) {
 }
 
 // Every call settled once with a known outcome, and every unexpected
-// one carries a non-empty text
+// one carries its text, or is a case that has none; the plugin's
+// presence is said first, and again at the end (in the app, a lookup
+// that threw)
 const CALLS = ['authorization for scopes', 'authorize scopes', 'clear', 'revoke'];
 const OUTCOMES = ['authorized', 'not authorized', 'canceled', 'consent showing', 'refused', 'unavailable', 'unexpected', 'changed'];
-const CASES = ['answer not JSON', 'answer unparsed', 'answer too large', 'no authorization object', 'token not printable',
-  'scopes not printable', 'account not printable', 'rejection not JSON', 'rejection unparsed', 'rejection too large',
-  'rejection text', 'rejection not object', 'code not text', 'rejected other', 'decode threw', 'odd answer'];
+const CASES = ['answer undefined', 'answer not JSON', 'answer unparsed', 'answer too large', 'answer not an object',
+  'no authorization', 'token unusable', 'scopes unusable', 'account unusable', 'change resolved with',
+  'rejection undefined', 'rejection not JSON', 'rejection unparsed', 'rejection too large', 'rejection not an object',
+  'code not text', 'rejected other', 'thrown', 'thrown undefined', 'thrown too large', 'nothing kept', 'odd answer'];
+const TEXTLESS = ['answer undefined', 'rejection undefined', 'thrown undefined', 'nothing kept', 'odd answer'];
+const FORMS = ['as JSON', 'as String', 'as its type', 'as its type, its text unkept', 'its form unknown'];
 function check(label, native, lines, calls, queues) {
   const text = lines.map(l => l.slice(6));
   const problems = [];
+  const end = native ? text.lastIndexOf('presence') : text.length - 1;
+  if (text[0] !== (native ? 'available' : 'unavailable')) problems.push(`first line ${text[0]}`);
+  if (native ? !(text[end + 1] === 'unexpected' && text[end + 2] === 'thrown' && text[end + 3] === 'the lookup')
+    : text[end] !== 'unavailable') problems.push(`last presence ${text.slice(end).join(' / ')}`);
   let asked = 0, answered = 0;
   text.forEach((t, i) => {
+    if (i === 0 || i >= end) return;
     if (CALLS.includes(t)) {
       asked++;
       if (!OUTCOMES.includes(text[i + 1])) problems.push(`line ${i}: ${t} then ${text[i + 1]}`);
     }
-    // the first line says whether the plugin is there
-    if (i > 0 && OUTCOMES.includes(t)) answered++;
-    if (t === 'unexpected') {
-      if (!CASES.includes(text[i + 1])) problems.push(`line ${i}: unexpected ${text[i + 1]}`);
-      // after the case, the form (or an odd code's number), then the text
-      const reason = text[i + 3];
-      if (!reason || reason === '(empty)') problems.push(`line ${i}: no reason`);
-    }
+    if (OUTCOMES.includes(t)) answered++;
+  });
+  text.forEach((t, i) => {
+    if (t !== 'unexpected') return;
+    const which = text[i + 1];
+    if (!CASES.includes(which)) { problems.push(`line ${i}: unexpected ${which}`); return; }
+    // the form, or "no text", within the next lines
+    let j = i + 2;
+    while (j < i + 6 && !FORMS.includes(text[j]) && text[j] !== 'no text') j++;
+    if (text[j] === 'no text') {
+      if (!TEXTLESS.includes(which)) problems.push(`line ${i}: ${which} with no text`);
+    } else if (FORMS.includes(text[j])) {
+      const reason = text[j + 1] === 'cut, whole length:' ? text[j + 3] : text[j + 1];
+      if (!reason || reason === '(empty)') problems.push(`line ${i}: ${which} with an empty text`);
+    } else problems.push(`line ${i}: ${which} with no form`);
   });
   if (asked !== answered) problems.push(`${asked} calls, ${answered} outcomes`);
   if (native) {
@@ -366,7 +451,7 @@ function check(label, native, lines, calls, queues) {
     for (const [m, n] of Object.entries(COUNTS))
       if (calls[m] + skipped[m] !== n) problems.push(`${m}: ${calls[m]} asked and ${skipped[m]} skipped of ${n}`);
   }
-  console.log(`${label}: ${problems.length ? problems.join('; ') : `every call of ${asked} settled once, each unexpected one with a text`}`);
+  console.log(`${label}: ${problems.length ? problems.join('; ') : `every call of ${asked} settled once, each unexpected one with its text or a case that has none`}`);
   if (problems.length) process.exitCode = 1;
 }
 

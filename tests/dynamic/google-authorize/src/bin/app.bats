@@ -15,11 +15,12 @@ fn free_said (said: $R.option($GZ.google_said)): void =
 
 fn free_authorization {w:$GZ.asking} (answer: $GZ.google_authorization(w)): void =
   case+ answer of
-  | ~$GZ.Authorized(token, scopes, account) => let
+  | ~$GZ.Authorized(token, scopes, account, said) => let
       val () = $GZ.google_text_free(token)
       val () = $GZ.google_text_free(scopes)
+      val () = $GZ.google_said_free(said)
     in case+ account of ~$R.some(named) => $GZ.google_text_free(named) | ~$R.none() => () end
-  | ~$GZ.NotAuthorized() => ()
+  | ~$GZ.NotAuthorized(said) => $GZ.google_said_free(said)
   | ~$GZ.AuthorizeCanceled(said) => $GZ.google_said_free(said)
   | ~$GZ.ConsentShowing(said) => $GZ.google_said_free(said)
   | ~$GZ.AuthorizeRefused(_, said) => $GZ.google_said_free(said)
@@ -115,6 +116,7 @@ fn hash_form (form: $GZ.google_form): void =
   | $GZ.AsJson() => hash_text("as JSON")
   | $GZ.AsString() => hash_text("as String")
   | $GZ.AsType() => hash_text("as its type")
+  | $GZ.AsTypeTextUnkept() => hash_text("as its type, its text unkept")
 
 (* What the plugin answered, as JS wrote it: its form, then its text *)
 (* json's error: its name, then where *)
@@ -149,34 +151,109 @@ fn hash_status (status: $GZ.google_status): void = let
   val () = hash_text($GZ.google_status_name(status))
 in hash_number($GZ.google_status_number(status)) end
 
+fn hash_kind (kind: $GZ.json_kind): void =
+  case+ kind of
+  | $GZ.KindNull() => hash_text("null")
+  | $GZ.KindBool() => hash_text("a boolean")
+  | $GZ.KindNumber() => hash_text("a number")
+  | $GZ.KindString() => hash_text("a string")
+  | $GZ.KindArray() => hash_text("an array")
+  | $GZ.KindObject() => hash_text("an object")
+
+fn hash_text_flaw (flaw: $GZ.text_flaw): void =
+  case+ flaw of
+  | $GZ.TextMissing() => hash_text("missing")
+  | $GZ.TextNotString() => hash_text("not a string")
+  | $GZ.TextEmpty() => hash_text("empty")
+  | $GZ.TextNotPrintable() => hash_text("not printable")
+
+fn hash_scopes_flaw (flaw: $GZ.scopes_flaw): void =
+  case+ flaw of
+  | $GZ.ScopesMissing() => hash_text("missing")
+  | $GZ.ScopesNotList() => hash_text("not a list")
+  | $GZ.ScopesEmpty() => hash_text("an empty list")
+  | $GZ.ScopeNotString() => hash_text("a scope not a string")
+  | $GZ.ScopeEmpty() => hash_text("an empty scope")
+  | $GZ.ScopeNotPrintable() => hash_text("a scope not printable")
+  | $GZ.ScopesTooLong() => hash_text("too long")
+
+fn hash_authorization_flaw (flaw: $GZ.authorization_flaw): void =
+  case+ flaw of
+  | $GZ.AuthorizationMissing() => hash_text("missing")
+  | $GZ.AuthorizationNull() => hash_text("null")
+  | $GZ.AuthorizationNotObject() => hash_text("not an object")
+
+fn hash_code (code: $GZ.rejection_code): void =
+  case+ code of
+  | $GZ.CodeUnexpected() => hash_text("UNEXPECTED")
+  | $GZ.CodeInvalidOptions() => hash_text("INVALID_OPTIONS")
+  | $GZ.CodeSuccess() => hash_text("SUCCESS")
+  | $GZ.CodeSuccessCache() => hash_text("SUCCESS_CACHE")
+  | $GZ.CodeConsentShowing() => hash_text("CONSENT_SHOWING")
+  | $GZ.CodeUnknown() => hash_text("an unknown code")
+  | $GZ.CodeEmpty() => hash_text("the empty code")
+  | $GZ.CodeNull() => hash_text("a null code")
+  | $GZ.CodeMissing() => hash_text("no code")
+
+fn hash_throw (what: $GZ.google_throw): void =
+  case+ what of
+  | $GZ.LookupThrew() => hash_text("the lookup")
+  | $GZ.ArgumentsThrew() => hash_text("the arguments")
+  | $GZ.MethodThrew() => hash_text("the method")
+
+fn hash_stage (stage: $GZ.google_stage): void =
+  case+ stage of
+  | $GZ.StageResolved() => hash_text("resolved")
+  | $GZ.StageRejected() => hash_text("rejected")
+  | $GZ.StageLookup() => hash_text("the lookup")
+  | $GZ.StageArguments() => hash_text("the arguments")
+  | $GZ.StageMethod() => hash_text("the method")
+
+(* An unexpected answer: "unexpected", its case, what it carries but
+   the text, then the text as hash_said or hash_cut writes it, or "no
+   text" *)
 fn hash_unexpected (unexpected: $GZ.google_unexpected): void = let
   val () = hash_text("unexpected")
 in
   case+ unexpected of
+  | ~$GZ.AnswerUndefined() => let val () = hash_text("answer undefined") in hash_text("no text") end
   | ~$GZ.AnswerNotJson(said) => let val () = hash_text("answer not JSON") in hash_said(said) end
   | ~$GZ.AnswerUnparsed(said, error) => let val () = hash_text("answer unparsed") val () = hash_parse_error(error) in hash_said(said) end
   | ~$GZ.AnswerTooLarge(cut) => let val () = hash_text("answer too large") in hash_cut(cut) end
-  | ~$GZ.NoAuthorizationObject(said) => let val () = hash_text("no authorization object") in hash_said(said) end
-  | ~$GZ.TokenNotPrintable(said) => let val () = hash_text("token not printable") in hash_said(said) end
-  | ~$GZ.ScopesNotPrintable(said) => let val () = hash_text("scopes not printable") in hash_said(said) end
-  | ~$GZ.AccountNotPrintable(said) => let val () = hash_text("account not printable") in hash_said(said) end
+  | ~$GZ.AnswerNotObject(kind, said) => let val () = hash_text("answer not an object") val () = hash_kind(kind) in hash_said(said) end
+  | ~$GZ.NoAuthorization(flaw, said) => let val () = hash_text("no authorization") val () = hash_authorization_flaw(flaw) in hash_said(said) end
+  | ~$GZ.TokenUnusable(flaw, said) => let val () = hash_text("token unusable") val () = hash_text_flaw(flaw) in hash_said(said) end
+  | ~$GZ.ScopesUnusable(flaw, said) => let val () = hash_text("scopes unusable") val () = hash_scopes_flaw(flaw) in hash_said(said) end
+  | ~$GZ.AccountUnusable(flaw, said) => let val () = hash_text("account unusable") val () = hash_text_flaw(flaw) in hash_said(said) end
+  | ~$GZ.ChangeResolvedWith(said) => let val () = hash_text("change resolved with") in hash_said(said) end
+  | ~$GZ.RejectionUndefined() => let val () = hash_text("rejection undefined") in hash_text("no text") end
   | ~$GZ.RejectionNotJson(said) => let val () = hash_text("rejection not JSON") in hash_said(said) end
   | ~$GZ.RejectionUnparsed(said, error) => let val () = hash_text("rejection unparsed") val () = hash_parse_error(error) in hash_said(said) end
   | ~$GZ.RejectionTooLarge(cut) => let val () = hash_text("rejection too large") in hash_cut(cut) end
-  | ~$GZ.RejectionText(said) => let val () = hash_text("rejection text") in hash_said(said) end
-  | ~$GZ.RejectionNotObject(said) => let val () = hash_text("rejection not object") in hash_said(said) end
-  | ~$GZ.CodeNotText(said) => let val () = hash_text("code not text") in hash_said(said) end
-  | ~$GZ.RejectedOther(said) => let val () = hash_text("rejected other") in hash_said(said) end
-  | ~$GZ.DecodeThrew(said) => let val () = hash_text("decode threw") in hash_said(said) end
+  | ~$GZ.RejectionNotObject(kind, said) => let val () = hash_text("rejection not an object") val () = hash_kind(kind) in hash_said(said) end
+  | ~$GZ.CodeNotText(kind, said) => let val () = hash_text("code not text") val () = hash_kind(kind) in hash_said(said) end
+  | ~$GZ.RejectedOther(code, said) => let val () = hash_text("rejected other") val () = hash_code(code) in hash_said(said) end
+  | ~$GZ.Thrown(what, said) => let val () = hash_text("thrown") val () = hash_throw(what) in hash_said(said) end
+  | ~$GZ.ThrownUndefined(what) => let val () = hash_text("thrown undefined") val () = hash_throw(what) in hash_text("no text") end
+  | ~$GZ.ThrownTooLarge(what, cut) => let val () = hash_text("thrown too large") val () = hash_throw(what) in hash_cut(cut) end
+  | ~$GZ.NothingKept(stage) => let val () = hash_text("nothing kept") val () = hash_stage(stage) in hash_text("no text") end
   | ~$GZ.OddAnswer(number, said) => let
       val () = hash_text("odd answer")
       val () = hash_number(number)
+      val () = hash_text("its form unknown")
     in
       case+ said of
       | ~$R.some(blob) => let val () = hash_blob(blob) in $BD.blob_free(blob) end
       | ~$R.none() => hash_text("no text")
     end
 end
+
+(* Whether the plugin is there *)
+fn hash_presence (presence: $GZ.google_presence): void =
+  case+ presence of
+  | ~$GZ.PluginPresent() => hash_text("available")
+  | ~$GZ.PluginAbsent() => hash_text("unavailable")
+  | ~$GZ.PluginUnexpected(unexpected) => let val () = hash_text("presence") in hash_unexpected(unexpected) end
 
 fn hash_unavailable (said: $R.option($GZ.google_said)): void = let
   val () = hash_text("unavailable")
@@ -241,9 +318,10 @@ end
 (* An authorization: its scopes and account in the hash, then the token
    cleared and the account's grant revoked, so the plugin prints the
    token and the account as they came back *)
-fn told_authorized (token: $GZ.google_text, scopes: $GZ.google_text, account: $R.option($GZ.google_text)): step = let
+fn told_authorized (token: $GZ.google_text, scopes: $GZ.google_text, account: $R.option($GZ.google_text), said: $GZ.google_said): step = let
   val () = hash_text("authorized")
   val () = hash_google_text(scopes)
+  val () = hash_said(said)
 in
   case+ account of
   | ~$R.none() => let
@@ -256,8 +334,8 @@ end
 
 fn told_found (answer: $GZ.google_authorization($GZ.Silently)): step =
   case+ answer of
-  | ~$GZ.Authorized(token, scopes, account) => told_authorized(token, scopes, account)
-  | ~$GZ.NotAuthorized() => let val () = hash_text("not authorized") in done() end
+  | ~$GZ.Authorized(token, scopes, account, said) => told_authorized(token, scopes, account, said)
+  | ~$GZ.NotAuthorized(said) => let val () = hash_text("not authorized") val () = hash_said(said) in done() end
   | ~$GZ.AuthorizeRefused(status, said) => let
       val () = hash_text("refused")
       val () = hash_status(status)
@@ -268,7 +346,7 @@ fn told_found (answer: $GZ.google_authorization($GZ.Silently)): step =
 
 fn told_asked (answer: $GZ.google_authorization($GZ.MayAsk)): step =
   case+ answer of
-  | ~$GZ.Authorized(token, scopes, account) => told_authorized(token, scopes, account)
+  | ~$GZ.Authorized(token, scopes, account, said) => told_authorized(token, scopes, account, said)
   | ~$GZ.AuthorizeCanceled(said) => let
       val () = hash_text("canceled")
       val () = hash_said(said)
@@ -368,11 +446,14 @@ fun times {left:nat} .<left>. (first: step, call: call, left: int left): step =
 #define REVOKES 80
 
 implement main0 () = let
-  val () = (if $GZ.google_authorize_available() then hash_text("available") else hash_text("unavailable"))
+  val () = hash_presence($GZ.google_authorize_available())
   val () = split_scope()
   val () = texts()
   val s = times(found_twice(), Found(), SILENT - 1)
   val s = times(s, Asked(), PROMPTING)
   val s = times(s, QueuedClear(), CLEARS)
   val s = times(s, QueuedRevoke(), REVOKES)
-in $P.finish<$GZ.google_authorization_change>(s, llam(change) => free_change(change)) end
+(* and the plugin looked up once more at the end: check.mjs makes that
+   lookup throw in the app *)
+in $P.finish<$GZ.google_authorization_change>(s, llam(change) => let
+  val () = free_change(change) in hash_presence($GZ.google_authorize_available()) end) end

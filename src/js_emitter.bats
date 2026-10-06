@@ -2016,20 +2016,25 @@ in end
 
 (* Google authorization with no sign-in, in the app (GoogleAuthorize,
    bats-lang/capacitor-plugins' google-authorize). Scopes cross separated
-   by spaces (RFC 6749 3.3). JS decides nothing: it writes what the
-   plugin answered as text (googleSay: JSON, an Error as its own
-   properties and name, a BigInt as its digits; else as String gives
-   it; else its type) for bats_js_google_authorize_text, and answers 1,
-   2 or 3 by how it wrote it, negated for a rejection, times 11 when
-   calling the plugin threw, 0 when there is no plugin. Every call
+   by spaces (RFC 6749 3.3). JS decides nothing: it writes what came back
+   as text (googleSay: JSON, an Error as its own properties and name, a
+   BigInt as its digits; else as String gives it; else its type; nothing
+   for undefined) for bats_js_google_authorize_text, and answers the
+   stage times 10 plus the form: stage 1 resolved, 2 rejected, 3 the
+   plugin's lookup threw, 4 reading the arguments threw, 5 the method
+   threw; form 1 JSON, 2 String, 3 its type, 4 undefined (no text), 5
+   its type because the text could not be kept, 6 nothing kept. 0 when
+   there is no plugin. The availability check answers 1 or 0, or a
+   lookup that threw as a call does, its text kept under -1. Every call
    settles: nothing in it can throw past its try *)
-fn emit_js_google_authorize {n:nat | n + 2100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2100] $B.builder(m)): void = let
+fn emit_js_google_authorize {n:nat | n + 2600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2600] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // GoogleAuthorize: google_authorize.bats\n")
   val () = $B.bput(b,"  const googleTexts = new Map();\n")
   val () = $B.bput(b,"  const googleScopeList = (p, l) => readString(p, l).split(' ').filter(s => s);\n")
   val () = $B.bput(b,"  function googleSay(v) {\n")
+  val () = $B.bput(b,"    if (v === undefined) return [4, null];\n")
   val () = $B.bput(b,"    try {\n")
   val () = $B.bput(b,"      const t = JSON.stringify(v, (k, x) => {\n")
   val () = $B.bput(b,"        if (typeof x == 'bigint') return String(x);\n")
@@ -2043,26 +2048,37 @@ fn emit_js_google_authorize {n:nat | n + 2100 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    try { return [2, String(v)]; } catch (e) {}\n")
   val () = $B.bput(b,"    return [3, typeof v];\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function googleKeep(id, v, side) {\n")
-  val () = $B.bput(b,"    const [form, text] = googleSay(v);\n")
-  val () = $B.bput(b,"    try { googleTexts.set(id, pendBlob(utf8.encode(text))); return side * form; }\n")
-  val () = $B.bput(b,"    catch (e) { googleTexts.set(id, pendBlob(utf8.encode(typeof v))); return side * 3; }\n")
+  val () = $B.bput(b,"  function googleKeep(id, v, stage) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text === null) return stage * 10 + form;\n")
+  val () = $B.bput(b,"      try { googleTexts.set(id, pendBlob(utf8.encode(text))); return stage * 10 + form; } catch (e) {}\n")
+  val () = $B.bput(b,"      googleTexts.set(id, pendBlob(utf8.encode(typeof v)));\n")
+  val () = $B.bput(b,"      return stage * 10 + 5;\n")
+  val () = $B.bput(b,"    } catch (e) { return stage * 10 + 6; }\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsGoogleAuthorizeAvailable() { return ")
+  val () = $B.bput(b,"  function batsJsGoogleAuthorizeAvailable() {\n")
+  val () = $B.bput(b,"    try { return ")
   val () = put_plugin_call(b, PluginGoogleAuthorize())
-  val () = $B.bput(b," ? 1 : 0; }\n")
-  val () = $B.bput(b,"  function googleCall(id, ask) {\n")
+  val () = $B.bput(b," ? 1 : 0; } catch (x) { return googleKeep(-1, x, 3); }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function googleCall(id, args, call) {\n")
+  val () = $B.bput(b,"    let stage = 3;\n")
   val () = $B.bput(b,"    try {\n")
   val () = $B.bput(b,"      const g = ")
   val () = put_plugin_call(b, PluginGoogleAuthorize())
   val () = $B.bput(b,";\n")
   val () = $B.bput(b,"      if (!g) return settle(id, 0);\n")
-  val () = $B.bput(b,"      settleBy(id, ask(g), r => googleKeep(id, r, 1), e => googleKeep(id, e, -1));\n")
-  val () = $B.bput(b,"    } catch (x) { settle(id, googleKeep(id, x, 11)); }\n")
+  val () = $B.bput(b,"      stage = 4;\n")
+  val () = $B.bput(b,"      const a = args();\n")
+  val () = $B.bput(b,"      stage = 5;\n")
+  val () = $B.bput(b,"      const p = call(g, a);\n")
+  val () = $B.bput(b,"      settleBy(id, () => p, r => googleKeep(id, r, 1), e => googleKeep(id, e, 2));\n")
+  val () = $B.bput(b,"    } catch (x) { settle(id, googleKeep(id, x, stage)); }\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsGoogleAuthorize(sp, sl, mayAsk, id) {\n")
-  val () = $B.bput(b,"    googleCall(id, g => { const scopes = googleScopeList(sp, sl);\n")
-  val () = $B.bput(b,"      return () => mayAsk ? g.authorizeScopes({ scopes }) : g.authorizationForScopes({ scopes }); });\n")
+  val () = $B.bput(b,"    googleCall(id, () => ({ scopes: googleScopeList(sp, sl) }),\n")
+  val () = $B.bput(b,"      (g, o) => mayAsk ? g.authorizeScopes(o) : g.authorizationForScopes(o));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsGoogleAuthorizeText(id) {\n")
   val () = $B.bput(b,"    const h = googleTexts.get(id) || 0;\n")
@@ -2070,12 +2086,11 @@ fn emit_js_google_authorize {n:nat | n + 2100 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    return h;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsGoogleClearToken(tp, tl, id) {\n")
-  val () = $B.bput(b,"    googleCall(id, g => { const accessToken = readString(tp, tl);\n")
-  val () = $B.bput(b,"      return () => g.clearAuthorizationToken({ accessToken }); });\n")
+  val () = $B.bput(b,"    googleCall(id, () => ({ accessToken: readString(tp, tl) }), (g, o) => g.clearAuthorizationToken(o));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsGoogleRevokeAccess(ap, al, sp, sl, id) {\n")
-  val () = $B.bput(b,"    googleCall(id, g => { const account = readString(ap, al), scopes = googleScopeList(sp, sl);\n")
-  val () = $B.bput(b,"      return () => g.revokeAccess({ account, scopes }); });\n")
+  val () = $B.bput(b,"    googleCall(id, () => ({ account: readString(ap, al), scopes: googleScopeList(sp, sl) }),\n")
+  val () = $B.bput(b,"      (g, o) => g.revokeAccess(o));\n")
   val () = $B.bput(b,"  }\n")
 in end
 
