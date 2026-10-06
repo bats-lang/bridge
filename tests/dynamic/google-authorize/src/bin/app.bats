@@ -12,6 +12,11 @@ staload NAV = "wasm.bats-packages.dev/bridge/src/nav.bats"
 fn {} free_part (part: $R.option([n:pos] $BD.dblob(n))): void =
   case+ part of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ()
 
+fn free_message (message: $R.option([m:pos] $GZ.google_message(m))): void =
+  case+ message of
+  | ~$R.some(said) => $GZ.google_message_free(said)
+  | ~$R.none() => ()
+
 fn {} free_authorization {w:$GZ.asking} (answer: $GZ.google_authorization(w)): void =
   case+ answer of
   | ~$GZ.Authorized(token, scopes, account) => let
@@ -23,7 +28,9 @@ fn {} free_authorization {w:$GZ.asking} (answer: $GZ.google_authorization(w)): v
   | ~$GZ.ConsentShowing() => ()
   | ~$GZ.AuthorizeRefused(_, message) => free_part(message)
   | ~$GZ.AuthorizeUnavailable() => ()
-  | ~$GZ.AuthorizeUnexpected(code, message) => let val () = free_part(code) in free_part(message) end
+  | ~$GZ.AuthorizeUnexpected(code, message) => let
+      val () = free_part(code)
+    in free_message(message) end
 
 implement $P.dispose<$GZ.google_authorization($GZ.Silently)>(answer) = free_authorization(answer)
 implement $P.dispose<$GZ.google_authorization($GZ.MayAsk)>(answer) = free_authorization(answer)
@@ -32,7 +39,9 @@ implement $P.dispose<$GZ.google_authorization_change>(change) =
   | ~$GZ.Changed() => ()
   | ~$GZ.ChangeRefused(_, message) => free_part(message)
   | ~$GZ.ChangeUnavailable() => ()
-  | ~$GZ.ChangeUnexpected(code, message) => let val () = free_part(code) in free_part(message) end
+  | ~$GZ.ChangeUnexpected(code, message) => let
+      val () = free_part(code)
+    in free_message(message) end
 
 (* s's bytes in a fresh array of exactly its length *)
 fn bytes {n:pos | n < 256} (s: string n): [l:agz] $A.arr(byte, l, n) = let
@@ -96,10 +105,25 @@ fn hash_refused (status: $GZ.google_status, message: $R.option([n:pos] $BD.dblob
 in hash_message(message) end
 
 (* An answer not recognised: "unexpected", its code, then its message *)
-fn hash_unexpected (code: $R.option([n:pos] $BD.dblob(n)), message: $R.option([n:pos] $BD.dblob(n))): void = let
+fn hash_unexpected (code: $R.option([n:pos] $BD.dblob(n)), message: $R.option([m:pos] $GZ.google_message(m))): void = let
   val () = hash_text("unexpected")
   val () = hash_code(code)
-in hash_message(message) end
+in
+  case+ message of
+  | ~$R.some(said) => let
+      val m = $GZ.google_message_length(said)
+    in
+      if m > 4096 then let
+        val () = $GZ.google_message_free(said)
+      in hash_text("too long") end
+      else let
+        val copy = $A.alloc<byte>(m)
+        val () = $GZ.google_message_read(said, 0, copy, m)
+        val () = $GZ.google_message_free(said)
+      in hash_bytes(copy, m) end
+    end
+  | ~$R.none() => hash_text("no message")
+end
 
 vtypedef step = $P.promise($GZ.google_authorization_change, $P.Chained)
 
@@ -255,7 +279,9 @@ fn ended (change: $GZ.google_authorization_change): void =
   | ~$GZ.Changed() => ()
   | ~$GZ.ChangeRefused(_, message) => free_part(message)
   | ~$GZ.ChangeUnavailable() => ()
-  | ~$GZ.ChangeUnexpected(code, message) => let val () = free_part(code) in free_part(message) end
+  | ~$GZ.ChangeUnexpected(code, message) => let
+      val () = free_part(code)
+    in free_message(message) end
 
 (* Asks for drive.appdata with no UI left times, one after another *)
 fun found_times {left:pos} .<left>. (left: int left): step =
