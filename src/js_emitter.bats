@@ -2258,6 +2258,7 @@ fn emit_js_imports_platform {n:nat | n + 3000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_google_authorize_part: batsJsGoogleAuthorizePart,\n")
   val () = $B.bput(b,"      bats_js_google_clear_token: batsJsGoogleClearToken,\n")
   val () = $B.bput(b,"      bats_js_google_revoke_access: batsJsGoogleRevokeAccess,\n")
+  val () = $B.bput(b,"      bats_js_google_said: (p, l, n) => pendBlob(utf8.encode(readString(p, l).replace('#', n))),\n")
   val () = $B.bput(b,"      bats_js_backup_file_available: batsJsBackupFileAvailable,\n")
   val () = $B.bput(b,"      bats_js_backup_file_write: batsJsBackupFileWrite,\n")
   val () = $B.bput(b,"      bats_js_backup_file_read: batsJsBackupFileRead,\n")

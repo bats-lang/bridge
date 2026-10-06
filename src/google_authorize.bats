@@ -97,8 +97,9 @@ staload "./decompress.bats"
      null nor a string of printable ASCII, a missing one among them)
      or a rejection that is not an object whose code and message are
      each text or absent carries no code and a message JS gives saying
-     which it was. An answer code JS never gives (0 from authorizeScopes,
-     a token that is empty or comes without scopes) carries neither *)
+     which it was. A case this module finds itself (a rejection with no
+     code and no message, an answer code JS never gives) carries no code
+     and a message naming the case, so every Unexpected has a reason *)
   | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* How clearing a token or revoking a grant ended *)
@@ -117,7 +118,10 @@ staload "./decompress.bats"
      or none) carries its code and message, each none when null,
      missing or empty; a rejection that is not an object whose code and
      message are each text or absent carries no code and a message JS
-     gives saying so *)
+     gives saying so; a case this module finds itself (a rejection with
+     no code and no message, an answer code JS never gives) carries no
+     code and a message naming the case, so every Unexpected has a
+     reason *)
   | ChangeUnexpected of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* Whether the app has the plugin: false in a browser *)
@@ -188,6 +192,7 @@ extern void bats_js_google_authorize(void*, int, int, int);
 extern int bats_js_google_authorize_part(int, int);
 extern void bats_js_google_clear_token(void*, int, int);
 extern void bats_js_google_revoke_access(void*, int, void*, int, int);
+extern int bats_js_google_said(void*, int, int);
 %}
 extern fun _bats_js_google_authorize_available
   (): int = "mac#bats_js_google_authorize_available"
@@ -196,6 +201,8 @@ extern fun _bats_js_google_authorize
   : void = "mac#bats_js_google_authorize"
 extern fun _bats_js_google_authorize_part
   (resolver_id: int, part: int): int = "mac#bats_js_google_authorize_part"
+extern fun _bats_js_google_said
+  (text: ptr, text_len: int, number: int): int = "mac#bats_js_google_said"
 extern fun _bats_js_google_clear_token
   (token: ptr, token_len: int, resolver_id: int)
   : void = "mac#bats_js_google_clear_token"
@@ -345,9 +352,38 @@ datavtype failure =
   | FailedUnavailable
   | FailedOther of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
+(* A message this module gives for a case it detects itself, with any
+   # in text replaced by number *)
+fn _said {n:pos | n < 256} (text: string n, number: int): $R.option([m:pos] dblob(m)) = let
+  val len = g1u2i(string1_length(text))
+  val out = $A.alloc<byte>(len)
+  val () = $A.write_text(out, 0, $A.text_lit(text), len)
+  val @(frozen, borrowed) = $A.freeze<byte>(out)
+  val handle = _bats_js_google_said($UNSAFE begin $UNSAFE.castvwtp1{ptr}(borrowed) end, len, number)
+  val () = $A.drop<byte>(frozen, borrowed)
+  val () = $A.free<byte>($A.thaw<byte>(frozen))
+in _nonempty(handle) end
+
+(* What failed, when the answer came with no code and no message *)
+fn _no_reason (): failure =
+  FailedOther($R.none(), _said("the answer failed with no code and no message", 0))
+
+(* A case this module finds itself, with the code and message JS kept,
+   if any, and else a message naming the case *)
+fn _found_itself {n:pos | n < 256} (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m)), text: string n, number: int): failure =
+  case+ message of
+  | ~$R.some(kept) => FailedOther(code, $R.some(kept))
+  | ~$R.none() => FailedOther(code, _said(text, number))
+
+(* An answer code this call never gives *)
+fn _odd_code (code: int, failure: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m))): failure =
+  _found_itself(failure, message, "the answer code was #, which this call never gives", code)
+
 fn _failure (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m))): failure =
   case+ code of
-  | ~$R.none() => FailedOther($R.none(), message)
+  | ~$R.none() => (case+ message of
+    | ~$R.none() => _no_reason()
+    | ~$R.some(text) => FailedOther($R.none(), $R.some(text)))
   | ~$R.some(blob) =>
     if _is(blob, "CONSENT_SHOWING") then FailedConsentShowing(blob, message)
     else if _is(blob, "UNIMPLEMENTED") then let
@@ -385,11 +421,11 @@ in
        | ~$R.none() => let
            val () = blob_free(token)
            val () = _free_part(account)
-         in AnswerFailed(_failure(failure, message)) end)
+         in AnswerFailed(_found_itself(failure, message, "a token came without scopes", 0)) end)
      | ~$R.none() => let
          val () = _free_part(scopes)
          val () = _free_part(account)
-       in AnswerFailed(_failure(failure, message)) end)
+       in AnswerFailed(_found_itself(failure, message, "the answer's token was empty", 0)) end)
   else let
     val () = _free_part(scopes)
     val () = _free_part(account)
@@ -398,7 +434,8 @@ in
       val () = _free_part(failure)
       val () = _free_part(message)
     in AnswerNone() end
-    else AnswerFailed(_failure(failure, message))
+    else if code = ~2 then AnswerFailed(_failure(failure, message))
+    else AnswerFailed(_odd_code(code, failure, message))
   end
 end
 
@@ -428,7 +465,7 @@ fn _found (answer: answer): google_authorization(Silently) =
 fn _asked (answer: answer): google_authorization(MayAsk) =
   case+ answer of
   | ~AnswerToken(token, scopes, account) => Authorized(token, scopes, account)
-  | ~AnswerNone() => AuthorizeUnexpected($R.none(), $R.none())
+  | ~AnswerNone() => AuthorizeUnexpected($R.none(), _said("authorizeScopes answered with no authorization", 0))
   | ~AnswerFailed(failure) => (case+ failure of
     | ~FailedStatus(status, message) => (case+ status of
       | StatusCanceled() => AuthorizeCanceled(message)
@@ -450,7 +487,8 @@ in
     val () = _free_part(failure)
     val () = _free_part(message)
   in Changed() end
-  else (case+ _failure(failure, message) of
+  else (case+ (if code = ~2 then _failure(failure, message)
+      else _odd_code(code, failure, message)): failure of
     | ~FailedStatus(status, message) => ChangeRefused(status, message)
     | ~FailedConsentShowing(code, message) => ChangeUnexpected($R.some(code), message)
     | ~FailedUnavailable() => ChangeUnavailable()

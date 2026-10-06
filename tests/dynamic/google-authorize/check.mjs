@@ -78,8 +78,9 @@ async function run(label, native) {
     () => Promise.reject(null),
     () => Promise.reject(Object.assign(new Error('7: offline'), { code: 7 })),
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR', message: 7 })),
-    // rejections that are taken: an object with no code and no message,
-    // an error whose code is null and one whose message is null
+    // rejections that are taken: an object with no code and no message
+    // (unexpected, with bridge's message naming that), an error whose
+    // code is null and one whose message is null
     () => Promise.reject({}),
     () => Promise.reject(Object.assign(new Error('m'), { code: null })),
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR', message: null })),

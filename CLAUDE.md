@@ -51,10 +51,10 @@ useful.)
   outcome is never folded into another.
 * Anything the atom does not recognise is an explicit `...Unexpected`
   constructor carrying the code and the message it came with, or, when
-  JS cannot pass the answer on, no code and a message saying why (an
-  answer code JS never gives carries neither). So is an answer the
-  atom's types rule out (for google_authorize, the plugin's
-  `INVALID_OPTIONS`).
+  JS cannot pass the answer on or the atom finds the case itself, no
+  code and a message naming the case: every `...Unexpected` has a
+  reason. So is an answer the atom's types rule out (for
+  google_authorize, the plugin's `INVALID_OPTIONS`).
 * What a call cannot take is unrepresentable in the atom's type:
   google_authorize takes `google_scopes(t)` of at least one
   `google_scope`, each made only by `google_scope_of` (printable

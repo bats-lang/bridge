@@ -268,7 +268,7 @@ hash: #The rejection is not an object whose code and message are each text or ab
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #no message
+hash: #the answer failed with no code and no message
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
