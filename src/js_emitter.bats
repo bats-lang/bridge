@@ -2016,87 +2016,66 @@ in end
 
 (* Google authorization with no sign-in, in the app (GoogleAuthorize,
    bats-lang/capacitor-plugins' google-authorize). Scopes cross separated
-   by spaces (RFC 6749 3.3). An answer: the token's blob (positive), 0
-   not authorized, -2 failed (a cancel too: Bats decodes CANCELED); a
-   clear or a revoke: 0 done, -2 failed. The granted scopes (part 0),
-   the account (1), the platform's code (2) and message (3) are kept by
-   request for bats_js_google_authorize_part. A rejection that is
-   neither an object nor text answers -3, one whose code is not text
-   -4, whose message is not text -5, both -6 (what is text kept); an
-   authorization with no authorization object -7, an access token that
-   is not printable ASCII -8, scopes that are not a non-empty list of
-   printable ASCII -9, an account that is neither null nor printable
-   ASCII -10. No plugin is Capacitor's own code for a platform without
-   the method *)
-fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3600] $B.builder(m)): void = let
+   by spaces (RFC 6749 3.3). JS decides nothing: it writes what the
+   plugin answered as text (googleSay: JSON, an Error as its own
+   properties and name, a BigInt as its digits; else as String gives
+   it; else its type) for bats_js_google_authorize_text, and answers 1,
+   2 or 3 by how it wrote it, negated for a rejection, times 11 when
+   calling the plugin threw, 0 when there is no plugin. Every call
+   settles: nothing in it can throw past its try *)
+fn emit_js_google_authorize {n:nat | n + 2100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2100] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // GoogleAuthorize: google_authorize.bats\n")
-  val () = $B.bput(b,"  const googleParts = new Map();\n")
+  val () = $B.bput(b,"  const googleTexts = new Map();\n")
   val () = $B.bput(b,"  const googleScopeList = (p, l) => readString(p, l).split(' ').filter(s => s);\n")
-  val () = $B.bput(b,"  const googleText = s => typeof s == 'string' && s ? pendBlob(utf8.encode(s)) : 0;\n")
-  val () = $B.bput(b,"  function googleKeep(id, scopes, account, code, message) {\n")
-  val () = $B.bput(b,"    googleParts.set(id, [googleText(scopes), googleText(account), googleText(code), googleText(message)]);\n")
+  val () = $B.bput(b,"  function googleSay(v) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const t = JSON.stringify(v, (k, x) => {\n")
+  val () = $B.bput(b,"        if (typeof x == 'bigint') return String(x);\n")
+  val () = $B.bput(b,"        if (!(x instanceof Error)) return x;\n")
+  val () = $B.bput(b,"        const o = { name: x.name };\n")
+  val () = $B.bput(b,"        for (const n of Object.getOwnPropertyNames(x)) o[n] = x[n];\n")
+  val () = $B.bput(b,"        return o;\n")
+  val () = $B.bput(b,"      });\n")
+  val () = $B.bput(b,"      if (typeof t == 'string') return [1, t];\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    try { return [2, String(v)]; } catch (e) {}\n")
+  val () = $B.bput(b,"    return [3, typeof v];\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  const googleTextOrNone = x => x == null || typeof x == 'string';\n")
-  val () = $B.bput(b,"  // -2 failed; -3 a rejection neither an object nor text (a string is\n")
-  val () = $B.bput(b,"  // its message); -4 its code not text, -5 its message, -6 both\n")
-  val () = $B.bput(b,"  function googleFailed(id, e) {\n")
-  val () = $B.bput(b,"    if (typeof e == 'string') e = { message: e };\n")
-  val () = $B.bput(b,"    if (!e || typeof e != 'object') return googleOdd(id, -3);\n")
-  val () = $B.bput(b,"    const c = googleTextOrNone(e.code), m = googleTextOrNone(e.message);\n")
-  val () = $B.bput(b,"    googleKeep(id, '', '', c ? e.code : null, m ? e.message : null);\n")
-  val () = $B.bput(b,"    return c ? (m ? -2 : -5) : (m ? -4 : -6);\n")
+  val () = $B.bput(b,"  function googleKeep(id, v, side) {\n")
+  val () = $B.bput(b,"    const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"    try { googleTexts.set(id, pendBlob(utf8.encode(text))); return side * form; }\n")
+  val () = $B.bput(b,"    catch (e) { googleTexts.set(id, pendBlob(utf8.encode(typeof v))); return side * 3; }\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  const googleOdd = (id, n) => { googleKeep(id); return n; };\n")
-  val () = $B.bput(b,"  const googlePrintable = x => typeof x == 'string' && /^[!-~]+$/.test(x);\n")
   val () = $B.bput(b,"  function batsJsGoogleAuthorizeAvailable() { return ")
   val () = put_plugin_call(b, PluginGoogleAuthorize())
   val () = $B.bput(b," ? 1 : 0; }\n")
-  val () = $B.bput(b,"  function batsJsGoogleAuthorize(sp, sl, mayAsk, id) {\n")
-  val () = $B.bput(b,"    const g = ")
+  val () = $B.bput(b,"  function googleCall(id, ask) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const g = ")
   val () = put_plugin_call(b, PluginGoogleAuthorize())
   val () = $B.bput(b,";\n")
-  val () = $B.bput(b,"    if (!g) return settle(id, googleFailed(id, { code: 'UNIMPLEMENTED' }));\n")
-  val () = $B.bput(b,"    const scopes = googleScopeList(sp, sl);\n")
-  val () = $B.bput(b,"    settleBy(id, () => mayAsk ? g.authorizeScopes({ scopes }) : g.authorizationForScopes({ scopes }), r => {\n")
-  val () = $B.bput(b,"      const a = r ? r.authorization : void 0;\n")
-  val () = $B.bput(b,"      if (a === null && !mayAsk) { googleKeep(id); return 0; }\n")
-  val () = $B.bput(b,"      if (!a || typeof a != 'object') return googleOdd(id, -7);\n")
-  val () = $B.bput(b,"      if (!googlePrintable(a.accessToken)) return googleOdd(id, -8);\n")
-  val () = $B.bput(b,"      const s = a.grantedScopes;\n")
-  val () = $B.bput(b,"      if (!Array.isArray(s) || !s.length || !Array.from(s).every(googlePrintable))\n")
-  val () = $B.bput(b,"        return googleOdd(id, -9);\n")
-  val () = $B.bput(b,"      if (a.account !== null && !googlePrintable(a.account)) return googleOdd(id, -10);\n")
-  val () = $B.bput(b,"      googleKeep(id, a.grantedScopes.join(' '), a.account);\n")
-  val () = $B.bput(b,"      return pendBlob(utf8.encode(a.accessToken));\n")
-  val () = $B.bput(b,"    }, e => {\n")
-  val () = $B.bput(b,"      return googleFailed(id, e);\n")
-  val () = $B.bput(b,"    });\n")
+  val () = $B.bput(b,"      if (!g) return settle(id, 0);\n")
+  val () = $B.bput(b,"      settleBy(id, ask(g), r => googleKeep(id, r, 1), e => googleKeep(id, e, -1));\n")
+  val () = $B.bput(b,"    } catch (x) { settle(id, googleKeep(id, x, 11)); }\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function batsJsGoogleAuthorizePart(id, part) {\n")
-  val () = $B.bput(b,"    const parts = googleParts.get(id);\n")
-  val () = $B.bput(b,"    if (!parts) return 0;\n")
-  val () = $B.bput(b,"    const h = parts[part] || 0;\n")
-  val () = $B.bput(b,"    parts[part] = 0;\n")
-  val () = $B.bput(b,"    if (!parts.some(x => x)) googleParts.delete(id);\n")
+  val () = $B.bput(b,"  function batsJsGoogleAuthorize(sp, sl, mayAsk, id) {\n")
+  val () = $B.bput(b,"    googleCall(id, g => { const scopes = googleScopeList(sp, sl);\n")
+  val () = $B.bput(b,"      return () => mayAsk ? g.authorizeScopes({ scopes }) : g.authorizationForScopes({ scopes }); });\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsGoogleAuthorizeText(id) {\n")
+  val () = $B.bput(b,"    const h = googleTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    googleTexts.delete(id);\n")
   val () = $B.bput(b,"    return h;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsGoogleClearToken(tp, tl, id) {\n")
-  val () = $B.bput(b,"    const g = ")
-  val () = put_plugin_call(b, PluginGoogleAuthorize())
-  val () = $B.bput(b,";\n")
-  val () = $B.bput(b,"    if (!g) return settle(id, googleFailed(id, { code: 'UNIMPLEMENTED' }));\n")
-  val () = $B.bput(b,"    const accessToken = readString(tp, tl);\n")
-  val () = $B.bput(b,"    settleBy(id, () => g.clearAuthorizationToken({ accessToken }), () => { googleKeep(id); return 0; }, e => googleFailed(id, e));\n")
+  val () = $B.bput(b,"    googleCall(id, g => { const accessToken = readString(tp, tl);\n")
+  val () = $B.bput(b,"      return () => g.clearAuthorizationToken({ accessToken }); });\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsGoogleRevokeAccess(ap, al, sp, sl, id) {\n")
-  val () = $B.bput(b,"    const g = ")
-  val () = put_plugin_call(b, PluginGoogleAuthorize())
-  val () = $B.bput(b,";\n")
-  val () = $B.bput(b,"    if (!g) return settle(id, googleFailed(id, { code: 'UNIMPLEMENTED' }));\n")
-  val () = $B.bput(b,"    const account = readString(ap, al), scopes = googleScopeList(sp, sl);\n")
-  val () = $B.bput(b,"    settleBy(id, () => g.revokeAccess({ account, scopes }), () => { googleKeep(id); return 0; }, e => googleFailed(id, e));\n")
+  val () = $B.bput(b,"    googleCall(id, g => { const account = readString(ap, al), scopes = googleScopeList(sp, sl);\n")
+  val () = $B.bput(b,"      return () => g.revokeAccess({ account, scopes }); });\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -2259,7 +2238,7 @@ fn emit_js_imports_platform {n:nat | n + 3000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_google_sign_out: batsJsGoogleSignOut,\n")
   val () = $B.bput(b,"      bats_js_google_authorize_available: batsJsGoogleAuthorizeAvailable,\n")
   val () = $B.bput(b,"      bats_js_google_authorize: batsJsGoogleAuthorize,\n")
-  val () = $B.bput(b,"      bats_js_google_authorize_part: batsJsGoogleAuthorizePart,\n")
+  val () = $B.bput(b,"      bats_js_google_authorize_text: batsJsGoogleAuthorizeText,\n")
   val () = $B.bput(b,"      bats_js_google_clear_token: batsJsGoogleClearToken,\n")
   val () = $B.bput(b,"      bats_js_google_revoke_access: batsJsGoogleRevokeAccess,\n")
   val () = $B.bput(b,"      bats_js_backup_file_available: batsJsBackupFileAvailable,\n")

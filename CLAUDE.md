@@ -50,15 +50,10 @@ useful.)
   `AuthorizeCanceled`, `ConsentShowing`, `AuthorizeUnavailable`). One
   outcome is never folded into another.
 * Anything the atom does not recognise is an explicit `...Unexpected`
-  constructor, carrying which case it was as a datatype (for
-  google_authorize, `google_unexpected`): a rejection whose code names
-  no outcome, with its code and message; a part that is not text; an
-  answer JS cannot pass on; an answer JS never gives, with the code
-  and message JS kept. Each case is a constructor, nothing is folded
-  into another, and what came as text is kept as it came. So is an
-  answer the atom's types rule out (for google_authorize, the
-  plugin's `INVALID_OPTIONS`).
-* An outcome that came with a message keeps it.
+  constructor carrying which case it was as a datatype (for
+  google_authorize, `google_unexpected`), with the answer as JS wrote
+  it. So is an answer the atom's types rule out (for google_authorize,
+  the plugin's `INVALID_OPTIONS`).
 * What a call cannot take is unrepresentable in the atom's type:
   google_authorize takes `google_scopes(t)` of at least one
   `google_scope`, each made only by `google_scope_of` (printable
@@ -68,6 +63,31 @@ useful.)
   `...Unexpected` included, with a stand-in for the platform. The app
   matches every answer with `case+` and handles each constructor
   visibly (quire's CLAUDE.md).
+
+## An atom's JS only writes the answer down
+
+How google_authorize takes a platform's answer (bats-lang/quire#334),
+and the rule for an atom's answers:
+
+* JS decides nothing. In one try it calls the platform, and writes what
+  came back, resolved or rejected, as text: `JSON.stringify` with a
+  replacer that writes an Error as its own properties and its name and
+  a BigInt as its digits; when that throws or gives nothing, `String`
+  of it; when that throws too, its type. The answer code says which
+  happened, and whether it resolved, was rejected, or the call threw.
+  Every call settles: nothing in it can throw past its try.
+* Bats reads the text with the json package and decides there, with
+  `case+`: each outcome the platform documents, and each case it does
+  not recognise, which keeps the text verbatim. A text over 1 MiB is a
+  case of its own, keeping its whole length and its first 1 MiB.
+* A credential in a kept text (an access token) is kept; the app hides
+  it where it shows the text.
+* The atom's dynamic test plays the documented answers, a fixed list
+  of nasty ones (values JSON has no form for, throwing getters and
+  Proxy traps, cycles, huge and odd strings, thenables, answers just
+  under and over the cap), answers JS never gives, and a fuzz from a
+  fixed seed, and checks that every call settles once with a known
+  outcome, and every unexpected one keeps a text.
 
 ## Adversarial review before merge
 
