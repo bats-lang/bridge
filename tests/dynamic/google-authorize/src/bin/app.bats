@@ -316,15 +316,17 @@ implement main0 () = let
      take (G): no authorization (D), a null answer (D), a blank token
      (D), no scope granted (D), an account that is empty, not a string,
      or blank (D), a granted scope holding a space (G), one that is not
-     a string (D), one holding a quote, a backslash, a letter outside
+     a string (D), a blank one and an empty one (D), one holding a quote, a backslash, a letter outside
      ASCII, a control character (0x01) or DEL (G: none a scope-token),
      no access token (D), one that is not a string (D), a token and an
      account holding no visible ASCII character (G), an answer with no
      account key (D), and a token and an account over 4096 bytes (G);
      then a status with an empty message and a rejection with no value,
-     neither keeping a message: 23 asks *)
+     neither keeping a message; then a rejection that is a string and
+     one whose code is a number, each said to be no error whose code
+     and message are text (D): 27 asks *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
-    val () = ended(change) in found_times(23) end)
+    val () = ended(change) in found_times(27) end)
   (* granted with no account, asked with a consent screen allowed *)
   val s8 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7d, llam(change) => let
     val () = ended(change) in asked() end)
@@ -374,10 +376,13 @@ implement main0 () = let
     val () = ended(change) in revoke_text("odd@example.com") end)
   val s20 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s19, llam(change) => let
     val () = ended(change) in revoke_text("showing@example.com") end)
-  (* a clear refused with an empty message, and a revoke rejected with
-     no value: no message kept *)
+  (* a clear refused with an empty message (no message kept), and a
+     revoke rejected with no value (no code or message kept) *)
   val s21 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s20, llam(change) => let
     val () = ended(change) in clear_text("quiet-token") end)
   val s22 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s21, llam(change) => let
     val () = ended(change) in revoke_text("silent@example.com") end)
-in $P.finish<$GZ.google_authorization_change>(s22, llam(change) => ended(change)) end
+  (* a clear rejected with a string, not an error: unexpected, said so *)
+  val s23 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s22, llam(change) => let
+    val () = ended(change) in clear_text("string-token") end)
+in $P.finish<$GZ.google_authorization_change>(s23, llam(change) => ended(change)) end

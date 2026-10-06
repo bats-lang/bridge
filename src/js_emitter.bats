@@ -2024,11 +2024,14 @@ in end
    (no authorization: an answer that is null or no object, or one
    without an authorization, but authorizationForScopes' null; an
    access token missing, not a string or blank; no scope, or one not a
-   string; an account missing, not a string, empty or blank), and a
-   grant the plugin passes on that the atom's types cannot take (a
-   granted scope that is not a scope-token; an access token or an
-   account over 4096 bytes or holding no visible ASCII character), fail
-   with no code and say what they were.
+   string, empty or blank; an account missing, not a string, empty or
+   blank), a grant the plugin passes on that the atom's types cannot
+   take (a granted scope, not blank, that is not a scope-token; an
+   access token or an account over 4096 bytes or holding no visible
+   ASCII character), and a rejection that is not an object whose code
+   and message are each text or absent, fail with no code and say what
+   they were; a rejection with no value keeps no code and no message,
+   and an empty code or message is kept as none.
    No plugin is Capacitor's own code for a platform without the
    method *)
 fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
@@ -2041,7 +2044,10 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function googleKeep(id, scopes, account, code, message) {\n")
   val () = $B.bput(b,"    googleParts.set(id, [googleText(scopes), googleText(account), googleText(code), googleText(message)]);\n")
   val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  const googleTextOrNone = x => x == null || typeof x === 'string';\n")
   val () = $B.bput(b,"  function googleFailed(id, e) {\n")
+  val () = $B.bput(b,"    if (e !== undefined && !(e && typeof e === 'object' && googleTextOrNone(e.code) && googleTextOrNone(e.message)))\n")
+  val () = $B.bput(b,"      e = { message: 'The rejection is not an error whose code and message are text' };\n")
   val () = $B.bput(b,"    googleKeep(id, '', '', e && e.code, e && e.message);\n")
   val () = $B.bput(b,"    return -2;\n")
   val () = $B.bput(b,"  }\n")

@@ -27,7 +27,8 @@
    refusal Play services names (a google_status, with its message), a
    cancel only where the reader canceled, and anything this module does
    not recognise (the plugin's UNEXPECTED, a code it does not document,
-   an answer missing what it must hold) AuthorizeUnexpected or
+   an answer missing what it must hold, a grant the types here cannot
+   carry) AuthorizeUnexpected or
    ChangeUnexpected, with the code and the message as they came, never
    folded into a known outcome.
 
@@ -83,17 +84,23 @@ staload "./decompress.bats"
   (* The reader backed out of the consent screen (Google's result said
      so, or the screen ended with RESULT_CANCELED and returned nothing;
      one that returned nothing with any other result code is
-     AuthorizeUnexpected) *)
+     AuthorizeUnexpected): authorizeScopes' CANCELED. A CANCELED status
+     Play services gives before any consent screen has the same code
+     and reaches here too, as the plugin cannot tell it apart
+     (bats-lang/capacitor-plugins#8) *)
   | AuthorizeCanceled(MayAsk)
   (* Another call's consent screen was showing (CONSENT_SHOWING) *)
   | ConsentShowing(MayAsk)
   (* Play services refused, with its status and its message, when it
-     gave one *)
+     gave one: any status CommonStatusCodes names, but CANCELED from
+     authorizeScopes (AuthorizeCanceled); CANCELED from
+     authorizationForScopes, which shows nothing to cancel, is one *)
   | {w:asking} AuthorizeRefused(w) of (google_status, $R.option([m:pos] dblob(m)))
   (* No plugin: a browser, or an app without it (UNIMPLEMENTED) *)
   | {w:asking} AuthorizeUnavailable(w)
-  (* An answer this module does not recognise, with the code (none when
-     there was none) and the message as they came, and only these: the
+  (* An answer this module does not recognise, with the code and the
+     message as they came (each none when there was none, or it was
+     empty), and only these: the
      plugin's UNEXPECTED; a rejection with no code, or a code neither
      Play services nor the plugin names (SUCCESS among them, which is no
      refusal); the plugin's INVALID_OPTIONS, which google_scopes' type
@@ -103,9 +110,11 @@ staload "./decompress.bats"
      that is null or not an object, an empty one, or a null
      authorization from authorizeScopes; an access token missing, not a
      string or blank; no scope granted, or a granted scope that is not
-     a string; an account missing from the answer, not a string, empty
-     or blank); or a grant the plugin passes on that bridge does not
-     take: a granted scope that is not RFC 6749's scope-token
+     a string, is empty or is blank; an account missing from the
+     answer, not a string, empty or blank; a rejection that is not an
+     object whose code and message are each text or absent); or a grant
+     the plugin passes on that bridge does not take: a granted scope,
+     not blank, that is not RFC 6749's scope-token
      (bats-lang/capacitor-plugins#9), or an access token or an account
      over 4096 bytes or holding no visible ASCII character (0x21 to
      0x7E), which google_text cannot carry (google_text_of's test and
@@ -124,13 +133,15 @@ staload "./decompress.bats"
   | ChangeRefused of (google_status, $R.option([m:pos] dblob(m)))
   (* No plugin: a browser, or an app without it (UNIMPLEMENTED) *)
   | ChangeUnavailable
-  (* An answer this module does not recognise, with the code (none when
-     there was none) and the message as they came, and only these: the
+  (* An answer this module does not recognise, with the code and the
+     message as they came (each none when there was none, or it was
+     empty), and only these: the
      plugin's UNEXPECTED; a rejection with no code, or a code neither
      Play services nor the plugin names (SUCCESS among them); the
      plugin's INVALID_OPTIONS, which google_text's and google_scopes'
      types keep a call from earning; CONSENT_SHOWING, which neither call
-     documents *)
+     documents; and, JS saying what it was, a rejection that is not an
+     object whose code and message are each text or absent *)
   | ChangeUnexpected of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* Whether the app has the plugin: false in a browser *)
@@ -142,8 +153,9 @@ staload "./decompress.bats"
    quote or backslash, nothing non-ASCII; the scopes of a call cross as one
    text, separated by spaces, RFC 6749 3.3), once, by google_scope_of,
    the only way to make one, so no call asks for an empty or blank
-   scope, or splits one in two (quire#334). The set of scopes is open: one Google does not
-   recognise is Google's to refuse *)
+   scope, or splits one in two (quire#334). The set of scopes is open:
+   one Google does not recognise is sent on, and what Google answers
+   for it is not documented (it may be any outcome above) *)
 #pub abstype google_scope = ptr
 
 (* text as a scope, when it is RFC 6749's scope-token (NQCHAR bytes:
@@ -360,10 +372,11 @@ fn _is {k:pos}{n:pos} (code: !dblob(k), text: string n): bool = let
   val n = g1u2i(string1_length(text))
 in if blob_len(code) <> n then false else _same(code, text, n, 0) end
 
-(* A failure's code, decoded once: one of Play services' statuses, the
-   plugin's own CANCELED and CONSENT_SHOWING, Capacitor's UNIMPLEMENTED
-   (no plugin), or anything else (UNEXPECTED, a code nothing documents,
-   none) *)
+(* A failure's code, decoded once: one of Play services' statuses
+   (CANCELED among them, which is also the plugin's own code for a
+   cancel: _asked tells the calls apart), the plugin's CONSENT_SHOWING,
+   Capacitor's UNIMPLEMENTED (no plugin), or anything else (UNEXPECTED,
+   INVALID_OPTIONS, SUCCESS, a code nothing documents, none) *)
 datavtype failure =
   | FailedStatus of (google_status, $R.option([m:pos] dblob(m)))
   | {c:pos} FailedConsentShowing of (dblob(c), $R.option([m:pos] dblob(m)))

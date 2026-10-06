@@ -59,6 +59,8 @@ async function run(label, native) {
     () => Promise.resolve(authorization('token-4', ['scope-a'], '  ')),
     () => Promise.resolve(authorization('token-4', ['scope-a', 'scope b'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a', 42], null)),
+    () => Promise.resolve(authorization('token-4', ['scope-a', '   '], null)),
+    () => Promise.resolve(authorization('token-4', ['scope-a', ''], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a', 'a"b'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a', 'a\\b'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a', 'caf\u00e9'], null)),
@@ -75,6 +77,10 @@ async function run(label, native) {
     // message kept
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' })),
     () => Promise.reject(),
+    // a rejection that is not an error whose code and message are text:
+    // a string, and an error whose code is a number
+    () => Promise.reject('refused as a string'),
+    () => Promise.reject(Object.assign(new Error('7: offline'), { code: 7 })),
   ];
   // authorizeScopes: granted with no account; the plugin's CANCELED;
   // another consent screen showing; no authorization, which the plugin
@@ -109,6 +115,8 @@ async function run(label, native) {
           if (o.accessToken === 'showing-token') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
           // a status with an empty message: no message kept
           if (o.accessToken === 'quiet-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR' }));
+          // a rejection that is not an error: said to be so
+          if (o.accessToken === 'string-token') return Promise.reject('refused as a string');
           return Promise.resolve();
         },
         revokeAccess: o => {
