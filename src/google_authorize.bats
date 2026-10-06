@@ -101,9 +101,11 @@ staload "./decompress.bats"
      authorizationForScopes, which shows no consent screen; an answer
      the plugin does not document (JS says what: no authorization at
      all, as an empty answer or a null one from authorizeScopes; an
-     access token missing or blank; granted scopes that are not a
-     non-empty list of scope-tokens; an account named that is not a
-     non-blank string) *)
+     access token missing, or holding no visible ASCII character (0x21
+     to 0x7E, google_text_of's test, so a token Authorized gives can
+     always be cleared); granted scopes that are not a non-empty list
+     of scope-tokens; an account missing from the answer, or named and
+     holding no visible ASCII character) *)
   | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* How clearing a token or revoking a grant ended, each as

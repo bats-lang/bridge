@@ -2021,9 +2021,10 @@ in end
    -2 failed. The granted scopes (part 0), the account (1), the
    platform's code (2) and message (3) are kept by request for
    bats_js_google_authorize_part. An answer the plugin does not document
-   (no authorization, no access token or a blank one, granted scopes
-   that are not a non-empty list of scope-tokens, an account named that
-   is not a non-blank string) fails with no code and says what it was.
+   (no authorization, an access token missing or holding no visible
+   ASCII character, granted scopes that are not a non-empty list of
+   scope-tokens, an account missing or named with no visible ASCII
+   character) fails with no code and says what it was.
    No plugin is Capacitor's own code for a platform without the
    method *)
 fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
@@ -2055,11 +2056,11 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const a = r && r.authorization;\n")
   val () = $B.bput(b,"      if (a === null && !mayAsk) { googleKeep(id); return 0; }\n")
   val () = $B.bput(b,"      if (!a) return googleOdd(id, 'The answer has no authorization');\n")
-  val () = $B.bput(b,"      if (!googleSeen(a.accessToken)) return googleOdd(id, 'The answer has no access token');\n")
+  val () = $B.bput(b,"      if (!googleSeen(a.accessToken)) return googleOdd(id, 'The access token is missing or holds no visible ASCII character');\n")
   val () = $B.bput(b,"      const s = a.grantedScopes;\n")
   val () = $B.bput(b,"      if (!Array.isArray(s) || !s.length || !s.every(x => typeof x === 'string' && /^[\\x21\\x23-\\x5b\\x5d-\\x7e]+$/.test(x)))\n")
   val () = $B.bput(b,"        return googleOdd(id, 'The scopes granted are not a list of scopes');\n")
-  val () = $B.bput(b,"      if (a.account !== null && !googleSeen(a.account)) return googleOdd(id, 'The account named is not one');\n")
+  val () = $B.bput(b,"      if (a.account !== null && !googleSeen(a.account)) return googleOdd(id, 'The account is missing or holds no visible ASCII character');\n")
   val () = $B.bput(b,"      googleKeep(id, a.grantedScopes.join(' '), a.account);\n")
   val () = $B.bput(b,"      return pendBlob(utf8.encode(a.accessToken));\n")
   val () = $B.bput(b,"    }, e => {\n")

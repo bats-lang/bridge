@@ -32,6 +32,9 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-2"}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -166,7 +169,7 @@ hash: #The answer has no authorization
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The answer has no access token
+hash: #The access token is missing or holds no visible ASCII character
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
@@ -174,15 +177,19 @@ hash: #The scopes granted are not a list of scopes
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account named is not one
+hash: #The account is missing or holds no visible ASCII character
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account named is not one
+hash: #The account is missing or holds no visible ASCII character
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account named is not one
+hash: #The account is missing or holds no visible ASCII character
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The scopes granted are not a list of scopes
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
@@ -190,7 +197,15 @@ hash: #The scopes granted are not a list of scopes
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #The access token is missing or holds no visible ASCII character
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The account is missing or holds no visible ASCII character
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The account is missing or holds no visible ASCII character
 hash: #authorize scopes
 hash: #authorized
 hash: #scope-a scope-c
@@ -258,6 +273,12 @@ hash: #not documented here
 == browser page
 hash: #unavailable
 hash: #nnnnnnnnny
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
