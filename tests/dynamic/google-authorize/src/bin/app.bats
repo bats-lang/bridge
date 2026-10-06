@@ -329,8 +329,16 @@ implement main0 () = let
   (* a grant whose scopes are not a list: unexpected *)
   val s13b = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s13, llam(change) => let
     val () = ended(change) in asked() end)
+  (* the plugin's UNEXPECTED, a rejection with no code, a code nothing
+     documents, each from authorizeScopes *)
+  val s13c = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s13b, llam(change) => let
+    val () = ended(change) in asked() end)
+  val s13d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s13c, llam(change) => let
+    val () = ended(change) in asked() end)
+  val s13e = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s13d, llam(change) => let
+    val () = ended(change) in asked() end)
   (* a token clear the platform refuses *)
-  val s14 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s13b, llam(change) => let
+  val s14 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s13e, llam(change) => let
     val () = ended(change) in clear_text("refused-token") end)
   (* a token clear that fails unexpectedly *)
   val s15 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s14, llam(change) => let

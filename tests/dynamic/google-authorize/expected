@@ -38,6 +38,9 @@ authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"refused-token"}
 clearAuthorizationToken: {"accessToken":"odd-token"}
 clearAuthorizationToken: {"accessToken":"showing-token"}
@@ -202,6 +205,18 @@ hash: #authorize scopes
 hash: #unexpected
 hash: #no code
 hash: #The scopes granted are not a list of scopes
+hash: #authorize scopes
+hash: #unexpected
+hash: #UNEXPECTED
+hash: #The consent screen completed but returned nothing
+hash: #authorize scopes
+hash: #unexpected
+hash: #no code
+hash: #no code given
+hash: #authorize scopes
+hash: #unexpected
+hash: #SOMETHING_NEW
+hash: #new in Play services
 hash: #clear
 hash: #refused
 hash: #INTERNAL_ERROR
@@ -290,6 +305,12 @@ hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
+hash: #unavailable
+hash: #authorize scopes
+hash: #unavailable
+hash: #authorize scopes
+hash: #unavailable
+hash: #authorize scopes
 hash: #unavailable
 hash: #authorize scopes
 hash: #unavailable

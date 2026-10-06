@@ -2017,7 +2017,7 @@ in end
 (* Google authorization with no sign-in, in the app (GoogleAuthorize,
    bats-lang/capacitor-plugins' google-authorize). Scopes cross separated
    by spaces (RFC 6749 3.3). An answer: the token's blob (positive), 0
-   not authorized, -1 canceled, -2 failed; a clear or a revoke: 0 done,
+   not authorized, -2 failed (a cancel too: Bats decodes CANCELED); a clear or a revoke: 0 done,
    -2 failed. The granted scopes (part 0), the account (1), the
    platform's code (2) and message (3) are kept by request for
    bats_js_google_authorize_part. An answer the plugin does not document
@@ -2063,7 +2063,6 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      googleKeep(id, a.grantedScopes.join(' '), a.account);\n")
   val () = $B.bput(b,"      return pendBlob(utf8.encode(a.accessToken));\n")
   val () = $B.bput(b,"    }, e => {\n")
-  val () = $B.bput(b,"      if (mayAsk && e && e.code === 'CANCELED') { googleKeep(id); return -1; }\n")
   val () = $B.bput(b,"      return googleFailed(id, e);\n")
   val () = $B.bput(b,"    });\n")
   val () = $B.bput(b,"  }\n")

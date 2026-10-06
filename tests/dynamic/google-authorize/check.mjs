@@ -66,6 +66,11 @@ async function run(label, native) {
     () => Promise.reject(failure('DEVELOPER_ERROR', '10: ')),
     () => Promise.reject(failure('CANCELED', '16: ')),
     () => Promise.resolve({ authorization: { accessToken: 'token-3', grantedScopes: 'scope-a', account: null } }),
+    // what the plugin answers UNEXPECTED, a rejection with no code, and a
+    // code nothing documents
+    () => Promise.reject(failure('UNEXPECTED', 'The consent screen completed but returned nothing')),
+    () => Promise.reject(failure(null, 'no code given')),
+    () => Promise.reject(failure('SOMETHING_NEW', 'new in Play services')),
   ];
   if (native) globalThis.Capacitor = {
     isNativePlatform: () => true,

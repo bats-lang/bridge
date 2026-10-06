@@ -155,7 +155,8 @@ staload "./decompress.bats"
 #pub absvtype google_text = ptr
 
 (* bytes[0, n) as a google_text, when they hold a visible ASCII
-   character *)
+   character. At most 4096 bytes: Google's access tokens are at most
+   2048, and an account is an email address *)
 #pub fn google_text_of {l:agz}{n:pos | n <= 4096} (bytes: !$A.borrow(byte, l, n), n: int n): $R.option(google_text)
 
 (* A google_text no call took *)
@@ -356,14 +357,12 @@ fn _failure (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob
       | ~$R.none() => FailedOther($R.some(blob), message))
 
 (* JS's answer, before it is one of an atom's: the codes are the
-   token's blob (positive), 0 not authorized, -1 canceled, anything
-   else failed. Every part is taken, whatever the code, so JS keeps
+   token's blob (positive), 0 not authorized, anything else failed. Every part is taken, whatever the code, so JS keeps
    none *)
 datavtype answer =
   | AnswerToken of
       ([n:pos] dblob(n), [k:pos] dblob(k), $R.option([a:pos] dblob(a)))
   | AnswerNone
-  | AnswerCanceled
   | AnswerFailed of failure
 
 fn _answer (resolver_id: int, code: Int): answer = let
@@ -397,10 +396,6 @@ in
       val () = _free_part(failure)
       val () = _free_part(message)
     in AnswerNone() end
-    else if code = ~1 then let
-      val () = _free_part(failure)
-      val () = _free_part(message)
-    in AnswerCanceled() end
     else AnswerFailed(_failure(failure, message))
   end
 end
@@ -414,23 +409,22 @@ fn _found_failure (failure: failure): google_authorization(Silently) =
   | ~FailedUnavailable() => AuthorizeUnavailable()
   | ~FailedOther(code, message) => AuthorizeUnexpected(code, message)
 
-(* authorizationForScopes' answer: it is never canceled (JS answers -1
-   only for authorizeScopes), so a cancel is unexpected *)
+(* authorizationForScopes' answer: Play services' CANCELED from it
+   (it shows nothing to cancel) is a refusal like any other status *)
 fn _found (answer: answer): google_authorization(Silently) =
   case+ answer of
   | ~AnswerToken(token, scopes, account) => Authorized(token, scopes, account)
   | ~AnswerNone() => NotAuthorized()
-  | ~AnswerCanceled() => AuthorizeUnexpected($R.none(), $R.none())
   | ~AnswerFailed(failure) => _found_failure(failure)
 
 (* authorizeScopes' answer: it always gives an authorization when it
-   resolves, so none is unexpected; its cancel is JS's -1, and Play
-   services' CANCELED (the reader backed out) the same *)
+   resolves (JS answers 0 only for authorizationForScopes), so none is
+   unexpected; Play services' CANCELED, decoded here alone, is the
+   reader backing out, as the plugin documents *)
 fn _asked (answer: answer): google_authorization(MayAsk) =
   case+ answer of
   | ~AnswerToken(token, scopes, account) => Authorized(token, scopes, account)
   | ~AnswerNone() => AuthorizeUnexpected($R.none(), $R.none())
-  | ~AnswerCanceled() => AuthorizeCanceled()
   | ~AnswerFailed(failure) => (case+ failure of
     | ~FailedStatus(status, message) => (case+ status of
       | StatusCanceled() => let val () = _free_part(message) in AuthorizeCanceled() end
