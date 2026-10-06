@@ -100,7 +100,8 @@ staload "./decompress.bats"
      keeps a call from earning; CONSENT_SHOWING from
      authorizationForScopes, which shows no consent screen; an answer
      the plugin does not document (JS says what: no authorization at
-     all, as an empty answer or a null one from authorizeScopes; an
+     all, as an answer that is null or not an object, an empty one, or
+     a null authorization from authorizeScopes; an
      access token missing, over 4096 bytes, or holding no visible ASCII
      character (0x21 to 0x7E; google_text_of's test and bound, so a
      token Authorized gives can always be cleared: Google's access

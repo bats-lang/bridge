@@ -16,8 +16,8 @@ if (boot < 0) throw new Error('bridge.js: boot code not found');
 
 const failure = (code, message) => Object.assign(new Error(message || code || 'failed'), code ? { code } : {});
 // The statuses CommonStatusCodes names (play-services-basement 18.5.0) that
-// a refusal can carry, but NETWORK_ERROR and CANCELED (silent answers
-// above), INTERNAL_ERROR (the clear stub) and DEVELOPER_ERROR (the
+// a refusal can carry, but NETWORK_ERROR and CANCELED (answers in silent,
+// below, before the map of these), INTERNAL_ERROR (the clear stub) and DEVELOPER_ERROR (the
 // prompting answers): 14
 const STATUSES = ['SERVICE_VERSION_UPDATE_REQUIRED', 'SERVICE_DISABLED', 'SIGN_IN_REQUIRED', 'INVALID_ACCOUNT',
   'RESOLUTION_REQUIRED', 'ERROR', 'INTERRUPTED', 'TIMEOUT', 'API_NOT_CONNECTED', 'DEAD_CLIENT', 'REMOTE_EXCEPTION',
@@ -50,6 +50,7 @@ async function run(label, native) {
     () => Promise.reject(failure('SUCCESS', '0: ')),
     // answers the plugin does not document
     () => Promise.resolve({}),
+    () => Promise.resolve(null),
     () => Promise.resolve(authorization('   ', ['scope-a'], null)),
     () => Promise.resolve(authorization('token-4', [], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a'], '')),

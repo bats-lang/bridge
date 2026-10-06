@@ -2021,8 +2021,9 @@ in end
    -2 failed. The granted scopes (part 0), the account (1), the
    platform's code (2) and message (3) are kept by request for
    bats_js_google_authorize_part. An answer the plugin does not document
-   (no authorization, an access token missing, over 4096 bytes or
-   holding no visible ASCII character, granted scopes that are not a
+   (no authorization: an answer that is null or no object, or one
+   without an authorization, but authorizationForScopes' null; an
+   access token missing, over 4096 bytes or holding no visible ASCII character, granted scopes that are not a
    non-empty list of scope-tokens, an account missing, or named over
    4096 bytes or with no visible ASCII character) fails with no code and says what it was.
    No plugin is Capacitor's own code for a platform without the
@@ -2053,7 +2054,7 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    if (!g) return settle(id, googleFailed(id, { code: 'UNIMPLEMENTED' }));\n")
   val () = $B.bput(b,"    const scopes = googleScopeList(sp, sl);\n")
   val () = $B.bput(b,"    settleBy(id, () => mayAsk ? g.authorizeScopes({ scopes }) : g.authorizationForScopes({ scopes }), r => {\n")
-  val () = $B.bput(b,"      const a = r && r.authorization;\n")
+  val () = $B.bput(b,"      const a = r ? r.authorization : void 0;\n")
   val () = $B.bput(b,"      if (a === null && !mayAsk) { googleKeep(id); return 0; }\n")
   val () = $B.bput(b,"      if (!a) return googleOdd(id, 'The answer has no authorization');\n")
   val () = $B.bput(b,"      if (!googleSeen(a.accessToken)) return googleOdd(id, 'The access token is missing, over 4096 bytes, or holds no visible ASCII character');\n")
