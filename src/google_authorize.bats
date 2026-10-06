@@ -20,8 +20,16 @@
 
    Android only: a browser has no plugin (google_account.bats' Google
    Identity Services is the browser's way), and each atom then answers
-   AuthorizeFailed or ChangeFailed with Capacitor's own code for a
-   method a platform lacks, UNIMPLEMENTED.
+   AuthorizeUnavailable or ChangeUnavailable (Capacitor's own code for a
+   method a platform lacks, UNIMPLEMENTED).
+
+   Every answer is an outcome of its own (bats-lang/quire#334): a
+   refusal Play services names (a google_status, with its message), a
+   cancel only where the reader canceled, and anything this module does
+   not recognise (the plugin's UNEXPECTED, a code it does not document,
+   an answer missing what it must hold) AuthorizeUnexpected or
+   ChangeUnexpected, with the code and the message as they came, never
+   folded into a known outcome.
 
    Scopes cross as OAuth writes a list of them, separated by spaces
    (RFC 6749, 3.3; a scope has no space in it): those asked for, and
@@ -43,6 +51,24 @@ staload "./decompress.bats"
    consent screen when the reader must consent first (authorizeScopes) *)
 #pub datasort asking = Silently | MayAsk
 
+(* A refusal Play services documents: a status CommonStatusCodes names
+   (getStatusCodeString, play-services-basement 18.5.0), decoded once
+   from the plugin's code. SUCCESS and SUCCESS_CACHE are not refusals:
+   a code naming them is unexpected *)
+#pub datatype google_status =
+  | StatusServiceVersionUpdateRequired | StatusServiceDisabled | StatusSignInRequired
+  | StatusInvalidAccount | StatusResolutionRequired | StatusNetworkError | StatusInternalError
+  | StatusDeveloperError | StatusError | StatusInterrupted | StatusTimeout | StatusCanceled
+  | StatusApiNotConnected | StatusDeadClient | StatusRemoteException
+  | StatusConnectionSuspendedDuringCall | StatusReconnectionTimedOutDuringUpdate
+  | StatusReconnectionTimedOut
+
+(* A status's name, as CommonStatusCodes gives it (DEVELOPER_ERROR) *)
+#pub fn google_status_name (status: google_status): [n:pos | n < 64] string n
+
+(* A status's number in CommonStatusCodes (DEVELOPER_ERROR is 10) *)
+#pub fn google_status_number (status: google_status): [n:nat | n < 100] int n
+
 (* What asking for an authorization came to. JS's answer is decoded
    here, once. Linear: its blobs are JS's until they are freed; an
    answer no consumer takes is freed by promise's dispose. *)
@@ -54,37 +80,70 @@ staload "./decompress.bats"
       ([n:pos] dblob(n), $R.option([k:pos] dblob(k)), $R.option([a:pos] dblob(a)))
   (* The reader must consent first, and nothing was shown *)
   | NotAuthorized(Silently)
-  (* The reader backed out of the consent screen *)
+  (* The reader backed out of the consent screen (Google's result said
+     so, or the screen returned nothing) *)
   | AuthorizeCanceled(MayAsk)
-  (* The platform refused, with its code (CommonStatusCodes' name, as
-     NETWORK_ERROR; CONSENT_SHOWING while another call's consent screen
-     is showing; INVALID_OPTIONS; UNIMPLEMENTED with no plugin), or
-     none when it gave no code or its answer was not one the plugin
-     documents *)
-  | {w:asking} AuthorizeFailed(w) of $R.option([c:pos] dblob(c))
+  (* Another call's consent screen was showing (CONSENT_SHOWING) *)
+  | ConsentShowing(MayAsk)
+  (* Play services refused, with its status and its message, when it
+     gave one *)
+  | {w:asking} AuthorizeRefused(w) of (google_status, $R.option([m:pos] dblob(m)))
+  (* No plugin: a browser, or an app without it (UNIMPLEMENTED) *)
+  | {w:asking} AuthorizeUnavailable(w)
+  (* An answer this module does not recognise, with the code (none when
+     there was none) and the message as they came, and only these: the
+     plugin's UNEXPECTED; a rejection with no code, or a code neither
+     Play services nor the plugin names (SUCCESS among them, which is no
+     refusal); the plugin's INVALID_OPTIONS, which google_scopes' type
+     keeps a call from earning; CONSENT_SHOWING from
+     authorizationForScopes, which shows no consent screen; an answer
+     the plugin does not document (JS says what: no access token, or
+     granted scopes that are not a list of scopes) *)
+  | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
-(* How clearing a token or revoking a grant ended *)
+(* How clearing a token or revoking a grant ended, each as
+   google_authorization's *)
 #pub datavtype google_authorization_change =
   | Changed
-  (* The platform refused, with its code, as AuthorizeFailed's *)
-  | ChangeFailed of $R.option([c:pos] dblob(c))
+  | ChangeRefused of (google_status, $R.option([m:pos] dblob(m)))
+  | ChangeUnavailable
+  | ChangeUnexpected of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* Whether the app has the plugin: false in a browser *)
 #pub fun google_authorize_available(): bool
 
-(* The access token for scopes[0, scopes_len) (OAuth scopes, separated
-   by spaces, as https://www.googleapis.com/auth/drive.appdata) when
-   they are already granted, showing nothing: authorizationForScopes *)
+(* An OAuth scope: its text proven not empty by its type and checked to
+   hold no whitespace (the scopes of a call cross as one text, separated
+   by spaces: RFC 6749, 3.3), once, by google_scope_of, the only way to
+   make one, so no call asks for an empty or blank scope, or splits one
+   in two (quire#334). The set of scopes is open: one Google does not
+   recognise is Google's to refuse *)
+#pub abstype google_scope = ptr
+
+(* text as a scope, when it holds no whitespace *)
+#pub fn google_scope_of {n:pos | n < 256} (text: string n): $R.option(google_scope)
+
+(* A scope's text *)
+#pub fn google_scope_text (scope: google_scope): [n:pos | n < 256] string n
+
+(* The scopes of a call: k of them (at most 8 a call), at least one by
+   construction, so the scopes a call sends are never empty *)
+#pub datavtype google_scopes(int) =
+  | OneScope(1) of google_scope
+  | {k:pos} MoreScopes(k + 1) of (google_scope, google_scopes(k))
+
+(* The access token for scopes when they are already granted, showing
+   nothing: authorizationForScopes *)
 #pub fun google_authorization_for_scopes
-  {l:agz}{n:pos}
-  (scopes: !$A.borrow(byte, l, n), scopes_len: int n)
+  {k:pos | k <= 8}
+  (scopes: google_scopes(k))
   : $P.promise(google_authorization(Silently), $P.Chained)
 
-(* The access token for scopes[0, scopes_len), showing Google's consent
-   screen when the reader must consent first: authorizeScopes *)
+(* The access token for scopes, showing Google's consent screen when
+   the reader must consent first: authorizeScopes *)
 #pub fun google_authorize_scopes
-  {l:agz}{n:pos}
-  (scopes: !$A.borrow(byte, l, n), scopes_len: int n)
+  {k:pos | k <= 8}
+  (scopes: google_scopes(k))
   : $P.promise(google_authorization(MayAsk), $P.Chained)
 
 (* Takes the access token token[0, token_len) out of Play services'
@@ -94,12 +153,11 @@ staload "./decompress.bats"
   (token: !$A.borrow(byte, l, n), token_len: int n)
   : $P.promise(google_authorization_change, $P.Chained)
 
-(* Takes back account[0, account_len)'s grant of scopes[0, scopes_len)
-   (an Authorized answer's account and scopes): revokeAccess *)
+(* Takes back account[0, account_len)'s grant of scopes (an Authorized
+   answer's account, never empty by its type): revokeAccess *)
 #pub fun google_revoke_access
-  {la:agz}{na:pos}{ls:agz}{ns:pos}
-  (account: !$A.borrow(byte, la, na), account_len: int na,
-   scopes: !$A.borrow(byte, ls, ns), scopes_len: int ns)
+  {la:agz}{na:pos}{k:pos | k <= 8}
+  (account: !$A.borrow(byte, la, na), account_len: int na, scopes: google_scopes(k))
   : $P.promise(google_authorization_change, $P.Chained)
 
 (* ============================================================
@@ -149,17 +207,140 @@ fn _free_part (part: $R.option([n:pos] dblob(n))): void =
   case+ part of ~$R.some(blob) => blob_free(blob) | ~$R.none() => ()
 
 (* The parts of an answer JS kept for the request, each taken once:
-   the scopes granted, the account, the platform's code *)
-datatype answer_part = PartScopes | PartAccount | PartCode
+   the scopes granted, the account, the platform's code and message *)
+datatype answer_part = PartScopes | PartAccount | PartCode | PartMessage
 
 fn _part_number (part: answer_part): int =
   case+ part of
   | PartScopes() => 0
   | PartAccount() => 1
   | PartCode() => 2
+  | PartMessage() => 3
 
 fn _part (resolver_id: int, part: answer_part): $R.option([n:pos] dblob(n)) =
   _nonempty(_bats_js_google_authorize_part(resolver_id, _part_number(part)))
+
+implement google_status_name (status) =
+  case+ status of
+  | StatusServiceVersionUpdateRequired() => "SERVICE_VERSION_UPDATE_REQUIRED"
+  | StatusServiceDisabled() => "SERVICE_DISABLED"
+  | StatusSignInRequired() => "SIGN_IN_REQUIRED"
+  | StatusInvalidAccount() => "INVALID_ACCOUNT"
+  | StatusResolutionRequired() => "RESOLUTION_REQUIRED"
+  | StatusNetworkError() => "NETWORK_ERROR"
+  | StatusInternalError() => "INTERNAL_ERROR"
+  | StatusDeveloperError() => "DEVELOPER_ERROR"
+  | StatusError() => "ERROR"
+  | StatusInterrupted() => "INTERRUPTED"
+  | StatusTimeout() => "TIMEOUT"
+  | StatusCanceled() => "CANCELED"
+  | StatusApiNotConnected() => "API_NOT_CONNECTED"
+  | StatusDeadClient() => "DEAD_CLIENT"
+  | StatusRemoteException() => "REMOTE_EXCEPTION"
+  | StatusConnectionSuspendedDuringCall() => "CONNECTION_SUSPENDED_DURING_CALL"
+  | StatusReconnectionTimedOutDuringUpdate() => "RECONNECTION_TIMED_OUT_DURING_UPDATE"
+  | StatusReconnectionTimedOut() => "RECONNECTION_TIMED_OUT"
+
+implement google_status_number (status) =
+  case+ status of
+  | StatusServiceVersionUpdateRequired() => 2
+  | StatusServiceDisabled() => 3
+  | StatusSignInRequired() => 4
+  | StatusInvalidAccount() => 5
+  | StatusResolutionRequired() => 6
+  | StatusNetworkError() => 7
+  | StatusInternalError() => 8
+  | StatusDeveloperError() => 10
+  | StatusError() => 13
+  | StatusInterrupted() => 14
+  | StatusTimeout() => 15
+  | StatusCanceled() => 16
+  | StatusApiNotConnected() => 17
+  | StatusDeadClient() => 18
+  | StatusRemoteException() => 19
+  | StatusConnectionSuspendedDuringCall() => 20
+  | StatusReconnectionTimedOutDuringUpdate() => 21
+  | StatusReconnectionTimedOut() => 22
+
+(* The status after status, in the order the decoder tries them *)
+fn _status_after (status: google_status): $R.option(google_status) =
+  case+ status of
+  | StatusServiceVersionUpdateRequired() => $R.some(StatusServiceDisabled())
+  | StatusServiceDisabled() => $R.some(StatusSignInRequired())
+  | StatusSignInRequired() => $R.some(StatusInvalidAccount())
+  | StatusInvalidAccount() => $R.some(StatusResolutionRequired())
+  | StatusResolutionRequired() => $R.some(StatusNetworkError())
+  | StatusNetworkError() => $R.some(StatusInternalError())
+  | StatusInternalError() => $R.some(StatusDeveloperError())
+  | StatusDeveloperError() => $R.some(StatusError())
+  | StatusError() => $R.some(StatusInterrupted())
+  | StatusInterrupted() => $R.some(StatusTimeout())
+  | StatusTimeout() => $R.some(StatusCanceled())
+  | StatusCanceled() => $R.some(StatusApiNotConnected())
+  | StatusApiNotConnected() => $R.some(StatusDeadClient())
+  | StatusDeadClient() => $R.some(StatusRemoteException())
+  | StatusRemoteException() => $R.some(StatusConnectionSuspendedDuringCall())
+  | StatusConnectionSuspendedDuringCall() => $R.some(StatusReconnectionTimedOutDuringUpdate())
+  | StatusReconnectionTimedOutDuringUpdate() => $R.some(StatusReconnectionTimedOut())
+  | StatusReconnectionTimedOut() => $R.none()
+
+(* Whether blob's bytes, from at on, are name's, from at on *)
+fun _same {k:pos}{at:nat | at <= k} .<k - at>.
+  (blob: !dblob(k), name: string k, n: int k, at: int at): bool =
+  if at >= n then true
+  else let
+    val byte = $A.alloc<byte>(1)
+    val () = blob_read(blob, at, byte, 1)
+    val read = byte2int0($A.get<byte>(byte, 0))
+    val () = $A.free<byte>(byte)
+  in
+    if read <> char2int0(string_get_at(name, at)) then false
+    else _same(blob, name, n, at + 1)
+  end
+
+(* Whether code's bytes are exactly status's name *)
+fn _named {k:pos} (code: !dblob(k), status: google_status): bool = let
+  val name = google_status_name(status)
+  val n = g1u2i(string1_length(name))
+in if blob_len(code) <> n then false else _same(code, name, n, 0) end
+
+(* The status code names: the first of status and those after it (fuel
+   of them at most), or none *)
+fun _status_from {k:pos}{fuel:nat} .<fuel>.
+  (code: !dblob(k), status: google_status, fuel: int fuel): $R.option(google_status) =
+  if _named(code, status) then $R.some(status)
+  else if fuel <= 0 then $R.none()
+  else case+ _status_after(status) of
+    | ~$R.some(next) => _status_from(code, next, fuel - 1)
+    | ~$R.none() => $R.none()
+
+(* Whether code's bytes are exactly text *)
+fn _is {k:pos}{n:pos} (code: !dblob(k), text: string n): bool = let
+  val n = g1u2i(string1_length(text))
+in if blob_len(code) <> n then false else _same(code, text, n, 0) end
+
+(* A failure's code, decoded once: one of Play services' statuses, the
+   plugin's own CANCELED and CONSENT_SHOWING, Capacitor's UNIMPLEMENTED
+   (no plugin), or anything else (UNEXPECTED, a code nothing documents,
+   none) *)
+datavtype failure =
+  | FailedStatus of (google_status, $R.option([m:pos] dblob(m)))
+  | {c:pos} FailedConsentShowing of (dblob(c), $R.option([m:pos] dblob(m)))
+  | FailedUnavailable
+  | FailedOther of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
+
+fn _failure (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m))): failure =
+  case+ code of
+  | ~$R.none() => FailedOther($R.none(), message)
+  | ~$R.some(blob) =>
+    if _is(blob, "CONSENT_SHOWING") then FailedConsentShowing(blob, message)
+    else if _is(blob, "UNIMPLEMENTED") then let
+      val () = blob_free(blob)
+      val () = _free_part(message)
+    in FailedUnavailable() end
+    else (case+ _status_from(blob, StatusServiceVersionUpdateRequired(), 18) of
+      | ~$R.some(status) => let val () = blob_free(blob) in FailedStatus(status, message) end
+      | ~$R.none() => FailedOther($R.some(blob), message))
 
 (* JS's answer, before it is one of an atom's: the codes are the
    token's blob (positive), 0 not authorized, -1 canceled, anything
@@ -170,57 +351,92 @@ datavtype answer =
       ([n:pos] dblob(n), $R.option([k:pos] dblob(k)), $R.option([a:pos] dblob(a)))
   | AnswerNone
   | AnswerCanceled
-  | AnswerFailed of $R.option([c:pos] dblob(c))
+  | AnswerFailed of failure
 
 fn _answer (resolver_id: int, code: Int): answer = let
   val scopes = _part(resolver_id, PartScopes())
   val account = _part(resolver_id, PartAccount())
   val failure = _part(resolver_id, PartCode())
+  val message = _part(resolver_id, PartMessage())
 in
   if code > 0 then
     (case+ _nonempty(code) of
      | ~$R.some(token) => let
          val () = _free_part(failure)
+         val () = _free_part(message)
        in AnswerToken(token, scopes, account) end
      | ~$R.none() => let
          val () = _free_part(scopes)
          val () = _free_part(account)
-       in AnswerFailed(failure) end)
+       in AnswerFailed(_failure(failure, message)) end)
   else let
     val () = _free_part(scopes)
     val () = _free_part(account)
   in
-    if code = 0 then let val () = _free_part(failure) in AnswerNone() end
-    else if code = ~1 then let val () = _free_part(failure) in AnswerCanceled() end
-    else AnswerFailed(failure)
+    if code = 0 then let
+      val () = _free_part(failure)
+      val () = _free_part(message)
+    in AnswerNone() end
+    else if code = ~1 then let
+      val () = _free_part(failure)
+      val () = _free_part(message)
+    in AnswerCanceled() end
+    else AnswerFailed(_failure(failure, message))
   end
 end
 
-(* authorizationForScopes' answer: it is never canceled, so a cancel is
-   an answer it does not document, with no code *)
+(* A failure of authorizationForScopes: it shows no consent screen, so
+   CONSENT_SHOWING is a code it does not document *)
+fn _found_failure (failure: failure): google_authorization(Silently) =
+  case+ failure of
+  | ~FailedStatus(status, message) => AuthorizeRefused(status, message)
+  | ~FailedConsentShowing(code, message) => AuthorizeUnexpected($R.some(code), message)
+  | ~FailedUnavailable() => AuthorizeUnavailable()
+  | ~FailedOther(code, message) => AuthorizeUnexpected(code, message)
+
+(* authorizationForScopes' answer: it is never canceled (JS answers -1
+   only for authorizeScopes), so a cancel is unexpected *)
 fn _found (answer: answer): google_authorization(Silently) =
   case+ answer of
   | ~AnswerToken(token, scopes, account) => Authorized(token, scopes, account)
   | ~AnswerNone() => NotAuthorized()
-  | ~AnswerCanceled() => AuthorizeFailed($R.none())
-  | ~AnswerFailed(failure) => AuthorizeFailed(failure)
+  | ~AnswerCanceled() => AuthorizeUnexpected($R.none(), $R.none())
+  | ~AnswerFailed(failure) => _found_failure(failure)
 
 (* authorizeScopes' answer: it always gives an authorization when it
-   resolves, so none is an answer it does not document, with no code *)
+   resolves, so none is unexpected; its cancel is JS's -1, and Play
+   services' CANCELED (the reader backed out) the same *)
 fn _asked (answer: answer): google_authorization(MayAsk) =
   case+ answer of
   | ~AnswerToken(token, scopes, account) => Authorized(token, scopes, account)
-  | ~AnswerNone() => AuthorizeFailed($R.none())
+  | ~AnswerNone() => AuthorizeUnexpected($R.none(), $R.none())
   | ~AnswerCanceled() => AuthorizeCanceled()
-  | ~AnswerFailed(failure) => AuthorizeFailed(failure)
+  | ~AnswerFailed(failure) => (case+ failure of
+    | ~FailedStatus(status, message) => (case+ status of
+      | StatusCanceled() => let val () = _free_part(message) in AuthorizeCanceled() end
+      | _ =>> AuthorizeRefused(status, message))
+    | ~FailedConsentShowing(code, message) => let
+        val () = blob_free(code)
+        val () = _free_part(message)
+      in ConsentShowing() end
+    | ~FailedUnavailable() => AuthorizeUnavailable()
+    | ~FailedOther(code, message) => AuthorizeUnexpected(code, message))
 
 (* clearAuthorizationToken's and revokeAccess': 0 done, anything else
-   failed *)
+   failed; neither shows a consent screen *)
 fn _change (resolver_id: int, code: Int): google_authorization_change = let
   val failure = _part(resolver_id, PartCode())
+  val message = _part(resolver_id, PartMessage())
 in
-  if code = 0 then let val () = _free_part(failure) in Changed() end
-  else ChangeFailed(failure)
+  if code = 0 then let
+    val () = _free_part(failure)
+    val () = _free_part(message)
+  in Changed() end
+  else (case+ _failure(failure, message) of
+    | ~FailedStatus(status, message) => ChangeRefused(status, message)
+    | ~FailedConsentShowing(code, message) => ChangeUnexpected($R.some(code), message)
+    | ~FailedUnavailable() => ChangeUnavailable()
+    | ~FailedOther(code, message) => ChangeUnexpected(code, message))
 end
 
 fn {} _free_authorization {w:asking} (answer: google_authorization(w)): void =
@@ -231,7 +447,12 @@ fn {} _free_authorization {w:asking} (answer: google_authorization(w)): void =
     in _free_part(account) end
   | ~NotAuthorized() => ()
   | ~AuthorizeCanceled() => ()
-  | ~AuthorizeFailed(failure) => _free_part(failure)
+  | ~ConsentShowing() => ()
+  | ~AuthorizeRefused(_, message) => _free_part(message)
+  | ~AuthorizeUnavailable() => ()
+  | ~AuthorizeUnexpected(code, message) => let
+      val () = _free_part(code)
+    in _free_part(message) end
 
 (* Answers nobody took: their blobs are freed. Before their first use *)
 implement $P.dispose<google_authorization(Silently)>(answer) = _free_authorization(answer)
@@ -239,28 +460,80 @@ implement $P.dispose<google_authorization(MayAsk)>(answer) = _free_authorization
 implement $P.dispose<google_authorization_change>(change) =
   case+ change of
   | ~Changed() => ()
-  | ~ChangeFailed(failure) => _free_part(failure)
+  | ~ChangeRefused(_, message) => _free_part(message)
+  | ~ChangeUnavailable() => ()
+  | ~ChangeUnexpected(code, message) => let
+      val () = _free_part(code)
+    in _free_part(message) end
 
 implement google_authorize_available() = _bats_js_google_authorize_available() > 0
 
+$UNSAFE begin
+assume google_scope = [n:pos | n < 256] string n
+end
+
+(* Whether text[at, n) holds no whitespace (space, tab, line feed,
+   carriage return, form feed: what splits scopes) *)
+fun _no_space {n:pos}{at:nat | at <= n} .<n - at>. (text: string n, n: int n, at: int at): bool =
+  if at >= n then true
+  else let
+    val c = char2int0(string_get_at(text, at))
+  in
+    if c = 32 then false else if c = 9 then false else if c = 10 then false
+    else if c = 13 then false else if c = 12 then false
+    else _no_space(text, n, at + 1)
+  end
+
+implement google_scope_of (text) = let
+  val n = g1u2i(string1_length(text))
+in if _no_space(text, n, 0) then $R.some(text) else $R.none() end
+
+implement google_scope_text (scope) = scope
+
+(* The bytes scopes are written into: 8 of them at most, each under
+   256 bytes and a space *)
+#define SCOPES_BYTES 2048
+
+(* scopes' texts, separated by spaces (RFC 6749, 3.3), at out[at];
+   where they end. The scopes are consumed *)
+fun _scopes_put {l:agz}{k:pos}{at:nat | at + k * 256 <= SCOPES_BYTES} .<k>.
+  (scopes: google_scopes(k), out: !$A.arr(byte, l, SCOPES_BYTES), at: int at)
+  : [stop:nat | at < stop; stop <= at + k * 256] int stop =
+  case+ scopes of
+  | ~OneScope(scope) => let
+      val text = google_scope_text(scope)
+      val n = g1u2i(string1_length(text))
+      val () = $A.write_text(out, at, $A.text_lit(text), n)
+    in at + n end
+  | ~MoreScopes(scope, rest) => let
+      val text = google_scope_text(scope)
+      val n = g1u2i(string1_length(text))
+      val () = $A.write_text(out, at, $A.text_lit(text), n)
+      val () = $A.write_byte(out, at + n, 32)
+    in _scopes_put(rest, out, at + n + 1) end
+
 (* Asks JS, may_ask 0 for authorizationForScopes and 1 for
    authorizeScopes; resolves with the resolver's id and JS's code *)
-fn _ask {l:agz}{n:pos}
-  (scopes: !$A.borrow(byte, l, n), scopes_len: int n, may_ask: int)
+fn _ask {k:pos | k <= 8} (scopes: google_scopes(k), may_ask: int)
   : @(int, $P.promise(Int, $P.Pending)) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
+  val out = $A.alloc<byte>(SCOPES_BYTES)
+  val stop = _scopes_put(scopes, out, 0)
+  val @(frozen, borrowed) = $A.freeze<byte>(out)
   val () = _bats_js_google_authorize(
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(scopes) end, scopes_len, may_ask, id)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(borrowed) end, stop, may_ask, id)
+  val () = $A.drop<byte>(frozen, borrowed)
+  val () = $A.free<byte>($A.thaw<byte>(frozen))
 in @(id, p) end
 
-implement google_authorization_for_scopes{l}{n}(scopes, scopes_len) = let
-  val @(id, p) = _ask(scopes, scopes_len, 0)
+implement google_authorization_for_scopes{k}(scopes) = let
+  val @(id, p) = _ask(scopes, 0)
 in $P.and_then<Int><google_authorization(Silently)>(p, llam (code) =>
   $P.ret<google_authorization(Silently)>(_found(_answer(id, code)))) end
 
-implement google_authorize_scopes{l}{n}(scopes, scopes_len) = let
-  val @(id, p) = _ask(scopes, scopes_len, 1)
+implement google_authorize_scopes{k}(scopes) = let
+  val @(id, p) = _ask(scopes, 1)
 in $P.and_then<Int><google_authorization(MayAsk)>(p, llam (code) =>
   $P.ret<google_authorization(MayAsk)>(_asked(_answer(id, code)))) end
 
@@ -272,12 +545,17 @@ implement google_clear_token{l}{n}(token, token_len) = let
 in $P.and_then<Int><google_authorization_change>(p, llam (code) =>
   $P.ret<google_authorization_change>(_change(id, code))) end
 
-implement google_revoke_access{la}{na}{ls}{ns}(account, account_len, scopes, scopes_len) = let
+implement google_revoke_access{la}{na}{k}(account, account_len, scopes) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
+  val out = $A.alloc<byte>(SCOPES_BYTES)
+  val stop = _scopes_put(scopes, out, 0)
+  val @(frozen, borrowed) = $A.freeze<byte>(out)
   val () = _bats_js_google_revoke_access(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(account) end, account_len,
-    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(scopes) end, scopes_len, id)
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(borrowed) end, stop, id)
+  val () = $A.drop<byte>(frozen, borrowed)
+  val () = $A.free<byte>($A.thaw<byte>(frozen))
 in $P.and_then<Int><google_authorization_change>(p, llam (code) =>
   $P.ret<google_authorization_change>(_change(id, code))) end
 

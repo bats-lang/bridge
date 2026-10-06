@@ -38,6 +38,34 @@ addressed by element id like the others (CLONE_NODE copies an element
 and nothing more: what the copy keeps is set by the app's own
 operations on its id).
 
+## Every outcome is distinct, and the unexpected is said as such
+
+(bats-lang/quire#334: a Google error that ended the consent screen
+reached the app as the reader backing out, and the app said nothing
+useful.)
+
+* An atom answers each outcome its platform documents with a
+  constructor of its own, decoded once from what JS gives: a refusal
+  the platform names (google_authorize's `AuthorizeRefused` with a
+  `google_status`), a cancel only where the reader canceled, a missing
+  plugin (`AuthorizeUnavailable`). One outcome is never folded into
+  another.
+* Anything the atom does not recognise (a plugin's `UNEXPECTED`, a code
+  nothing documents, an answer missing what it must hold) is an explicit
+  `...Unexpected` constructor carrying the code and the message as they
+  came (or none), never a known constructor.
+* What a call cannot take is unrepresentable in the atom's type, not
+  refused at run time: google_authorize's scopes are a `google_scopes(k)`
+  of at least one `google_scope`, whose text `google_scope_of` proves
+  not empty and checks holds no whitespace, once, as it is made; the
+  plugin's own check of its options (`INVALID_OPTIONS`) then cannot be
+  reached from Bats. Static reject fixtures hold it
+  (`tests/static/reject/google-scope-*`).
+* The atom's dynamic test drives every constructor, `...Unexpected`
+  included, through a stand-in for the platform. The app matches every
+  answer with `case+` and handles each constructor visibly (quire's
+  CLAUDE.md).
+
 ## Adversarial review before merge
 
 No pull request merges before an adversarial review: a comment on the

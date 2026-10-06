@@ -1,0 +1,8 @@
+[package]
+name = "google-scopes-empty"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"wasm.bats-packages.dev/bridge" = ""

@@ -1,28 +1,150 @@
 == app
-authorizationForScopes: {"scopes":["scope-a","scope-b"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata","https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-1"}
-revokeAccess: {"account":"reader@example.com","scopes":["scope-a","scope-b"]}
-authorizationForScopes: {"scopes":["scope-a"]}
-authorizationForScopes: {"scopes":["scope-a"]}
-authorizationForScopes: {"scopes":["scope-a"]}
-authorizeScopes: {"scopes":["scope-a","scope-c"]}
+revokeAccess: {"account":"reader@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-2"}
-authorizeScopes: {"scopes":["scope-a"]}
-authorizeScopes: {"scopes":["scope-a"]}
-authorizeScopes: {"scopes":["scope-a"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"refused-token"}
+clearAuthorizationToken: {"accessToken":"odd-token"}
+clearAuthorizationToken: {"accessToken":"showing-token"}
 hash: #available
+hash: #not a scope
 hash: #authorization for scopes
 hash: #authorized
+hash: #scope-a scope-b
 hash: #changed
 hash: #revoke
 hash: #changed
 hash: #authorization for scopes
 hash: #not authorized
 hash: #authorization for scopes
+hash: #refused
 hash: #NETWORK_ERROR
+hash: #07
+hash: #7: offline
 hash: #authorization for scopes
+hash: #unexpected
 hash: #no code
+hash: #failed
+hash: #authorization for scopes
+hash: #unexpected
+hash: #UNEXPECTED
+hash: #IllegalStateException: odd
+hash: #authorization for scopes
+hash: #unexpected
+hash: #SOMETHING_NEW
+hash: #new in Play services
+hash: #authorization for scopes
+hash: #unexpected
+hash: #CONSENT_SHOWING
+hash: #Another call's consent screen is showing
+hash: #authorization for scopes
+hash: #refused
+hash: #CANCELED
+hash: #16
+hash: #16: canceled
+hash: #authorization for scopes
+hash: #refused
+hash: #SERVICE_VERSION_UPDATE_REQUIRED
+hash: #02
+hash: #SERVICE_VERSION_UPDATE_REQUIRED from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #SERVICE_DISABLED
+hash: #03
+hash: #SERVICE_DISABLED from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #SIGN_IN_REQUIRED
+hash: #04
+hash: #SIGN_IN_REQUIRED from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #INVALID_ACCOUNT
+hash: #05
+hash: #INVALID_ACCOUNT from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #RESOLUTION_REQUIRED
+hash: #06
+hash: #RESOLUTION_REQUIRED from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #ERROR
+hash: #13
+hash: #ERROR from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #INTERRUPTED
+hash: #14
+hash: #INTERRUPTED from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #TIMEOUT
+hash: #15
+hash: #TIMEOUT from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #API_NOT_CONNECTED
+hash: #17
+hash: #API_NOT_CONNECTED from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #DEAD_CLIENT
+hash: #18
+hash: #DEAD_CLIENT from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #REMOTE_EXCEPTION
+hash: #19
+hash: #REMOTE_EXCEPTION from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #CONNECTION_SUSPENDED_DURING_CALL
+hash: #20
+hash: #CONNECTION_SUSPENDED_DURING_CALL from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #RECONNECTION_TIMED_OUT_DURING_UPDATE
+hash: #21
+hash: #RECONNECTION_TIMED_OUT_DURING_UPDATE from Play services
+hash: #authorization for scopes
+hash: #refused
+hash: #RECONNECTION_TIMED_OUT
+hash: #22
+hash: #RECONNECTION_TIMED_OUT from Play services
+hash: #authorization for scopes
+hash: #unexpected
+hash: #SUCCESS
+hash: #0: 
 hash: #authorize scopes
 hash: #authorized
 hash: #no account
@@ -30,28 +152,101 @@ hash: #changed
 hash: #authorize scopes
 hash: #canceled
 hash: #authorize scopes
-hash: #CONSENT_SHOWING
+hash: #consent showing
 hash: #authorize scopes
+hash: #unexpected
 hash: #no code
+hash: #The answer has no access token
+hash: #authorize scopes
+hash: #refused
+hash: #DEVELOPER_ERROR
+hash: #10
+hash: #10: 
+hash: #authorize scopes
+hash: #canceled
+hash: #authorize scopes
+hash: #unexpected
+hash: #no code
+hash: #The scopes granted are not a list of scopes
 hash: #clear
+hash: #refused
 hash: #INTERNAL_ERROR
+hash: #08
+hash: #8: failed
+hash: #clear
+hash: #unexpected
+hash: #UNEXPECTED
+hash: #NullPointerException: null
+hash: #clear
+hash: #unexpected
+hash: #CONSENT_SHOWING
+hash: #not documented here
 == browser page
 hash: #unavailable
+hash: #not a scope
 hash: #authorization for scopes
-hash: #UNIMPLEMENTED
+hash: #unavailable
 hash: #authorization for scopes
-hash: #UNIMPLEMENTED
+hash: #unavailable
 hash: #authorization for scopes
-hash: #UNIMPLEMENTED
+hash: #unavailable
 hash: #authorization for scopes
-hash: #UNIMPLEMENTED
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorize scopes
-hash: #UNIMPLEMENTED
+hash: #unavailable
 hash: #authorize scopes
-hash: #UNIMPLEMENTED
+hash: #unavailable
 hash: #authorize scopes
-hash: #UNIMPLEMENTED
+hash: #unavailable
 hash: #authorize scopes
-hash: #UNIMPLEMENTED
+hash: #unavailable
+hash: #authorize scopes
+hash: #unavailable
+hash: #authorize scopes
+hash: #unavailable
+hash: #authorize scopes
+hash: #unavailable
 hash: #clear
-hash: #UNIMPLEMENTED
+hash: #unavailable
+hash: #clear
+hash: #unavailable
+hash: #clear
+hash: #unavailable

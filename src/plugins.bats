@@ -147,9 +147,9 @@ implement plugin_source (p) =
   | PluginFilesystem() => Registry("^8.1.3")
   | PluginBrowser() => Registry("^8.0.5")
   | PluginApp() => Registry("^8.1.2")
-  (* capacitor-plugins' main after its #3 *)
+  (* capacitor-plugins' main after its #6 (quire#334) *)
   | PluginGoogleAuthorize() => Git("bats-lang/capacitor-plugins",
-      "1b4aca1133a228d9f00bedab3ee1a186130457d2", "/packages/google-authorize")
+      "0c5fa45f7a38a8bbce1645c912e5a81a2e495735", "/packages/google-authorize")
 
 (* The Kotlin standard library the app needs: the newest any plugin's
    Android code is compiled with (Filesystem 8.1.3's, 2.2.20; the others
