@@ -37,6 +37,8 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-2"}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -54,6 +56,8 @@ clearAuthorizationToken: {"accessToken":"showing-token"}
 revokeAccess: {"account":"refused@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 revokeAccess: {"account":"odd@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 revokeAccess: {"account":"showing@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+clearAuthorizationToken: {"accessToken":"quiet-token"}
+revokeAccess: {"account":"silent@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 hash: #available
 hash: #nnnnnnnnny
 hash: #authorization for scopes
@@ -216,6 +220,15 @@ hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
 hash: #The account is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #authorization for scopes
+hash: #refused
+hash: #NETWORK_ERROR
+hash: #07
+hash: #no message
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #no message
 hash: #authorize scopes
 hash: #authorized
 hash: #scope-a scope-c
@@ -280,6 +293,15 @@ hash: #revoke
 hash: #unexpected
 hash: #CONSENT_SHOWING
 hash: #not documented here
+hash: #clear
+hash: #refused
+hash: #INTERNAL_ERROR
+hash: #08
+hash: #no message
+hash: #revoke
+hash: #unexpected
+hash: #no code
+hash: #no message
 == browser page
 hash: #unavailable
 hash: #nnnnnnnnny
@@ -355,6 +377,10 @@ hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorize scopes
 hash: #unavailable
 hash: #authorize scopes
@@ -386,6 +412,10 @@ hash: #not a token
 hash: #revoke
 hash: #unavailable
 hash: #revoke
+hash: #unavailable
+hash: #revoke
+hash: #unavailable
+hash: #clear
 hash: #unavailable
 hash: #revoke
 hash: #unavailable

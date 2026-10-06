@@ -35,7 +35,7 @@ async function run(label, native) {
   // authorizationForScopes: granted with an account; consent needed; the
   // platform's status; a rejection with no code; the plugin's
   // UNEXPECTED; a code nothing documents; CONSENT_SHOWING, which it never
-  // answers
+  // answers; Play services' CANCELED (a refusal here)
   const silent = [
     () => Promise.resolve(authorization('token-1', ['scope-a', 'scope-b'], 'reader@example.com')),
     () => Promise.resolve({ authorization: null }),
@@ -62,10 +62,17 @@ async function run(label, native) {
     () => Promise.resolve({ authorization: { accessToken: 'token-4', grantedScopes: ['scope-a'] } }),
     () => Promise.resolve(authorization('t'.repeat(5000), ['scope-a'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a'], 'a'.repeat(5000))),
+    // a status with an empty message, and a rejection with no value: no
+    // message kept
+    () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' })),
+    () => Promise.reject(),
   ];
-  // authorizeScopes: granted with no account; canceled; another consent
-  // screen showing; no authorization, which the plugin never answers;
-  // Play services' DEVELOPER_ERROR; Play services' own CANCELED status
+  // authorizeScopes: granted with no account; the plugin's CANCELED;
+  // another consent screen showing; no authorization, which the plugin
+  // never answers; Play services' DEVELOPER_ERROR; Play services' own
+  // CANCELED status (16); a grant whose scopes are not a list; the
+  // plugin's UNEXPECTED, a rejection with no code, a code nothing
+  // documents
   const prompting = [
     () => Promise.resolve(authorization('token-2', ['scope-a', 'scope-c'], null)),
     () => Promise.reject(failure('CANCELED', 'The reader backed out of the consent screen')),
@@ -91,6 +98,8 @@ async function run(label, native) {
           if (o.accessToken === 'refused-token') return Promise.reject(failure('INTERNAL_ERROR', '8: failed'));
           if (o.accessToken === 'odd-token') return Promise.reject(failure('UNEXPECTED', 'NullPointerException: null'));
           if (o.accessToken === 'showing-token') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
+          // a status with an empty message: no message kept
+          if (o.accessToken === 'quiet-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR' }));
           return Promise.resolve();
         },
         revokeAccess: o => {
@@ -98,6 +107,8 @@ async function run(label, native) {
           if (o.account === 'refused@example.com') return Promise.reject(failure('NETWORK_ERROR', '7: offline'));
           if (o.account === 'odd@example.com') return Promise.reject(failure('UNEXPECTED', 'IllegalStateException: odd'));
           if (o.account === 'showing@example.com') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
+          // a rejection with no value: no code and no message kept
+          if (o.account === 'silent@example.com') return Promise.reject();
           return Promise.resolve();
         },
       },
