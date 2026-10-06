@@ -44,7 +44,8 @@
      Custom Tab on Android), as an OAuth sign-in is (browser_tab.bats) *)
   | PluginBrowser(0)
   (* The addresses the app is opened at, its own scheme's: an OAuth
-     sign-in coming back (app_link.bats) *)
+     sign-in coming back (app_link.bats); Android's Back, and the app
+     moved to the background (back_button.bats) *)
   | PluginApp(0)
   (* Google authorization with no sign-in, Play services'
      AuthorizationClient (google_authorize.bats): bats-lang's own,

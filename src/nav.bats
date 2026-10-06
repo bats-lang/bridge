@@ -35,6 +35,13 @@ staload "./decompress.bats"
 
 #pub fun reload(): void
 
+(* Goes one entry back in the session's history (history.back()): as
+   the browser's Back button does, so the page gets a popstate when the
+   entry it goes to is its own; at the first entry nothing happens. An
+   app that pushed an entry (push_state) and no longer needs it takes it
+   back with this *)
+#pub fun history_back(): void
+
 (* Leaves the page for the https address url[0, url_len) (a sign-in
    page, say an OAuth authorization, which comes back to the page's own
    address): whether it is left. An address that is not https:// is
@@ -82,6 +89,7 @@ extern void bats_js_set_url_hash(void*, int);
 extern void bats_js_replace_state(void*, int);
 extern void bats_js_push_state(void*, int);
 extern void bats_js_reload(void);
+extern void bats_js_history_back(void);
 extern int bats_js_navigate_away(void*, int);
 %}
 extern fun _bats_js_get_url
@@ -96,6 +104,8 @@ extern fun _bats_js_push_state
   (url: ptr, url_len: int): void = "mac#bats_js_push_state"
 extern fun _bats_js_reload
   (): void = "mac#bats_js_reload"
+extern fun _bats_js_history_back
+  (): void = "mac#bats_js_history_back"
 extern fun _bats_js_navigate_away
   (url: ptr, url_len: int): int = "mac#bats_js_navigate_away"
 end
@@ -139,6 +149,8 @@ implement push_state{lb}{n}(url, url_len) =
     url_len)
 
 implement reload() = _bats_js_reload()
+
+implement history_back() = _bats_js_history_back()
 
 implement navigate_away{lb}{n}(url, url_len) =
   if ~is_https(url, url_len) then false

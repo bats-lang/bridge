@@ -1,0 +1,10 @@
+[package]
+name = "back-button"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""
