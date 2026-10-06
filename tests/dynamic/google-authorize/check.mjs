@@ -59,6 +59,8 @@ async function run(label, native) {
     () => Promise.resolve(authorization('\u00e9\u00e9', ['scope-a'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a'], '\u00fc\u00fc')),
     () => Promise.resolve({ authorization: { accessToken: 'token-4', grantedScopes: ['scope-a'] } }),
+    () => Promise.resolve(authorization('t'.repeat(5000), ['scope-a'], null)),
+    () => Promise.resolve(authorization('token-4', ['scope-a'], 'a'.repeat(5000))),
   ];
   // authorizeScopes: granted with no account; canceled; another consent
   // screen showing; no authorization, which the plugin never answers;
