@@ -51,13 +51,16 @@ useful.)
   outcome is never folded into another.
 * Anything the atom does not recognise is an explicit `...Unexpected`
   constructor carrying the code and the message it came with, or, when
-  JS cannot pass the answer on, no code and a message saying why.
+  JS cannot pass the answer on, no code and a message saying why (an
+  answer code JS never gives carries neither).
 * What a call cannot take is unrepresentable in the atom's type:
   google_authorize takes `google_scopes(k)`, one to eight
   `google_scope`s, each made only by `google_scope_of` (a non-empty
-  text of printable ASCII), and a token or an account as a
-  `google_text`, made only by `google_text_of` (the same). Static
-  reject fixtures in `tests/static/reject/google-*` hold these types.
+  text under 256 bytes of printable ASCII), and a token or an account
+  as a `google_text`, made only by `google_text_of` (a non-empty text of
+  at most 1048576 bytes of printable ASCII). Static fixtures in
+  `tests/static/reject/google-*` and `tests/static/accept/google-bounds`
+  hold these types.
 * The atom's dynamic test passes through every constructor,
   `...Unexpected` included, with a stand-in for the platform. The app
   matches every answer with `case+` and handles each constructor

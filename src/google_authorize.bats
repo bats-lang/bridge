@@ -95,7 +95,8 @@ staload "./decompress.bats"
      printable ASCII, or scopes that are not a non-empty list of them)
      or a rejection that is not an object whose code and message are
      each text or absent carries no code and a message JS gives saying
-     which it was *)
+     which it was. An answer code JS never gives (0 from authorizeScopes,
+     a token that is empty or comes without scopes) carries neither *)
   | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* How clearing a token or revoking a grant ended *)
@@ -149,8 +150,9 @@ staload "./decompress.bats"
   (scopes: google_scopes(k))
   : $P.promise(google_authorization(MayAsk), $P.Chained)
 
-(* A token or an account to hand Google: a non-empty text of printable
-   ASCII (0x21 to 0x7E), made only by google_text_of, which copies it *)
+(* A token or an account to hand Google: a non-empty text of at most
+   1048576 bytes of printable ASCII (0x21 to 0x7E), made only by
+   google_text_of, which copies it *)
 #pub absvtype google_text = ptr
 
 (* bytes[0, n) as a google_text, when they are printable ASCII *)
@@ -333,7 +335,8 @@ in if blob_len(code) <> n then false else _same(code, text, n, 0) end
    (CANCELED among them, which is also the plugin's own code for a
    cancel: _asked tells the calls apart), the plugin's CONSENT_SHOWING,
    Capacitor's UNIMPLEMENTED (no plugin), or anything else (UNEXPECTED,
-   INVALID_OPTIONS, SUCCESS, a code nothing documents, none) *)
+   INVALID_OPTIONS, SUCCESS, SUCCESS_CACHE, a code nothing documents,
+   none) *)
 datavtype failure =
   | FailedStatus of (google_status, $R.option([m:pos] dblob(m)))
   | {c:pos} FailedConsentShowing of (dblob(c), $R.option([m:pos] dblob(m)))
@@ -354,8 +357,8 @@ fn _failure (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob
       | ~$R.none() => FailedOther($R.some(blob), message))
 
 (* JS's answer, before it is one of an atom's: the codes are the
-   token's blob (positive), 0 not authorized, anything else failed. Every part is taken, whatever the code, so JS keeps
-   none *)
+   token's blob (positive), 0 not authorized, anything else failed.
+   Every part is taken, whatever the code, so JS keeps none *)
 datavtype answer =
   | AnswerToken of
       ([n:pos] dblob(n), [k:pos] dblob(k), $R.option([a:pos] dblob(a)))

@@ -117,9 +117,9 @@ async function run(label, native) {
           if (o.accessToken === 'showing-token') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
           // a status with an empty message: no message kept
           if (o.accessToken === 'quiet-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR' }));
-          // a rejection that is not an error: said to be so
+          // a rejection that is not an error: unexpected, no code, JS's message
           if (o.accessToken === 'string-token') return Promise.reject('refused as a string');
-          // an error whose message is a number: said to be so
+          // an error whose message is a number: unexpected, no code, JS's message
           if (o.accessToken === 'number-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR', message: 8 }));
           return Promise.resolve();
         },
@@ -128,9 +128,9 @@ async function run(label, native) {
           if (o.account === 'refused@example.com') return Promise.reject(failure('NETWORK_ERROR', '7: offline'));
           if (o.account === 'odd@example.com') return Promise.reject(failure('UNEXPECTED', 'IllegalStateException: odd'));
           if (o.account === 'showing@example.com') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
-          // a rejection with no value: said to be no error
+          // a rejection with no value: unexpected, no code, JS's message
           if (o.account === 'silent@example.com') return Promise.reject();
-          // null: said to be no error
+          // null: unexpected, no code, JS's message
           if (o.account === 'null@example.com') return Promise.reject(null);
           return Promise.resolve();
         },

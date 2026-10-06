@@ -360,12 +360,12 @@ implement main0 () = let
   val s20 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s19, llam(change) => let
     val () = ended(change) in revoke_text("showing@example.com") end)
   (* a clear refused with an empty message (no message kept), and a
-     revoke rejected with no value (said to be no error) *)
+     revoke rejected with no value (unexpected, no code, JS's message) *)
   val s21 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s20, llam(change) => let
     val () = ended(change) in clear_text("quiet-token") end)
   val s22 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s21, llam(change) => let
     val () = ended(change) in revoke_text("silent@example.com") end)
-  (* a clear rejected with a string, not an error: unexpected, said so *)
+  (* a clear rejected with a string: unexpected, no code, JS's message *)
   val s23 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s22, llam(change) => let
     val () = ended(change) in clear_text("string-token") end)
   (* a token holding a byte that is not printable ASCII (0xFF) is none:
@@ -373,7 +373,7 @@ implement main0 () = let
   val s24 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s23, llam(change) => let
     val () = ended(change) in clear_text("a\377b") end)
   (* a clear rejected with an error whose message is a number, and a
-     revoke rejected with null: each said to be no error *)
+     revoke rejected with null: each unexpected, no code, JS's message *)
   val s25 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s24, llam(change) => let
     val () = ended(change) in clear_text("number-token") end)
   val s26 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s25, llam(change) => let
