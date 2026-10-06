@@ -234,8 +234,8 @@ fn scope_case {l:agz}{at:nat | at < 10}{n:pos | n < 256} (out: !$A.arr(byte, l, 
   | ~$R.none() => $A.set<byte>(out, at, int2byte0(110))
 
 (* Only a scope-token is a scope: no whitespace of any kind, no quote or
-   backslash, nothing non-ASCII. One hash, "scopes " and a y or n for
-   each of: a space, a tab, a line feed, a carriage return, a form feed,
+   backslash, nothing non-ASCII. One hash, ten letters alone, a y or n
+   for each of: a space, a tab, a line feed, a carriage return, a form feed,
    a vertical tab, an ideographic space, a quote, a backslash, then
    drive.appdata's scope *)
 fn split_scope (): void = let
@@ -299,7 +299,9 @@ implement main0 () = let
      cancel: a refusal *)
   val s7b = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7, llam(change) => let
     val () = ended(change) in found() end)
-  (* every other status Play services names, then SUCCESS, which is no
+  (* the 14 statuses CommonStatusCodes names but NETWORK_ERROR and
+     CANCELED (asked above), INTERNAL_ERROR (driven through a clear) and
+     DEVELOPER_ERROR (through authorizeScopes), then SUCCESS, which is no
      refusal: 15 asks *)
   val s7c = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7b, llam(change) => let
     val () = ended(change) in found_times(15) end)

@@ -16,7 +16,9 @@ if (boot < 0) throw new Error('bridge.js: boot code not found');
 
 const failure = (code, message) => Object.assign(new Error(message || code || 'failed'), code ? { code } : {});
 // The statuses CommonStatusCodes names (play-services-basement 18.5.0) that
-// a refusal can carry, but those the steps above answer
+// a refusal can carry, but NETWORK_ERROR and CANCELED (silent answers
+// above), INTERNAL_ERROR (the clear stub) and DEVELOPER_ERROR (the
+// prompting answers): 14
 const STATUSES = ['SERVICE_VERSION_UPDATE_REQUIRED', 'SERVICE_DISABLED', 'SIGN_IN_REQUIRED', 'INVALID_ACCOUNT',
   'RESOLUTION_REQUIRED', 'ERROR', 'INTERRUPTED', 'TIMEOUT', 'API_NOT_CONNECTED', 'DEAD_CLIENT', 'REMOTE_EXCEPTION',
   'CONNECTION_SUSPENDED_DURING_CALL', 'RECONNECTION_TIMED_OUT_DURING_UPDATE', 'RECONNECTION_TIMED_OUT'];
@@ -43,8 +45,7 @@ async function run(label, native) {
     () => Promise.reject(failure('SOMETHING_NEW', 'new in Play services')),
     () => Promise.reject(failure('CONSENT_SHOWING', "Another call's consent screen is showing")),
     () => Promise.reject(failure('CANCELED', '16: canceled')),
-    // every other status CommonStatusCodes names, then SUCCESS, which is no
-    // refusal
+    // the 14 STATUSES, then SUCCESS, which is no refusal
     ...STATUSES.map(code => () => Promise.reject(failure(code, `${code} from Play services`))),
     () => Promise.reject(failure('SUCCESS', '0: ')),
     // answers the plugin does not document
