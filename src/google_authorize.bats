@@ -123,7 +123,8 @@ staload "./decompress.bats"
      non-empty list, or one that is not a string, is empty or is blank;
      an account missing from the answer, not a string, empty or blank;
      a rejection that is not an object whose code and message are each
-     well-formed text or absent: one with no value, null, a string, an
+     well-formed text or absent (null or
+     missing): one with no value, null, a string, an
      error whose code or message is a number or holds a lone
      surrogate); or a grant the plugin passes on that bridge does
      not take: a granted scope, not blank, that is not RFC 6749's
@@ -157,8 +158,8 @@ staload "./decompress.bats"
      types keep a call from earning; CONSENT_SHOWING, which neither call
      documents; and, JS saying what it was, a rejection that is not an
      object whose code and message are each well-formed text or absent
-     (one with no value, null, a string, an error whose code or message
-     is a number or holds a lone surrogate) *)
+     (null or missing): one with no value, null, a string, an error whose code or message
+     is a number or holds a lone surrogate *)
   | ChangeUnexpected of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* Whether the app has the plugin: false in a browser *)
@@ -676,8 +677,8 @@ fun _utf8 {l:agz}{n:pos}{at:nat | at <= n} .<n - at>. (bytes: !$A.borrow(byte, l
    JS's TextDecoder drops *)
 fn _byte_order_mark {l:agz}{n:pos} (bytes: !$A.borrow(byte, l, n), n: int n): bool =
   if n < 3 then false
-  else if _in(bytes, 0, 0xEF, 0xEF) then
-    (if _in(bytes, 1, 0xBB, 0xBB) then _in(bytes, 2, 0xBF, 0xBF) else false)
+  else if byte2int0($A.read<byte>(bytes, 0)) = 0xEF then
+    (if byte2int0($A.read<byte>(bytes, 1)) = 0xBB then byte2int0($A.read<byte>(bytes, 2)) = 0xBF else false)
   else false
 
 implement google_text_of {l}{n} (bytes, n) =

@@ -83,12 +83,16 @@ async function run(label, native) {
     () => Promise.reject('refused as a string'),
     () => Promise.reject(Object.assign(new Error('7: offline'), { code: 7 })),
     // and an error whose message is a number, null, an error whose
-    // message holds a lone surrogate, and an error with no code and no
-    // message (kept as none and none)
+    // message holds a lone surrogate, and an object with no code and no
+    // message (kept as none and none); then an error whose code is null
+    // (absent: unexpected, no code, its message) and one whose message
+    // is null (absent: refused, no message)
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR', message: 7 })),
     () => Promise.reject(null),
     () => Promise.reject(Object.assign(new Error('m\ud800'), { code: 'NETWORK_ERROR' })),
     () => Promise.reject({}),
+    () => Promise.reject(Object.assign(new Error('m'), { code: null })),
+    () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR', message: null })),
     // an authorization that is not an object; a token and an account
     // starting with a byte order mark; a token and an account of exactly
     // 4096 bytes, taken (then cleared, and the account's grant revoked),

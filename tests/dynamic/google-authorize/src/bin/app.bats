@@ -269,7 +269,7 @@ fn split_scope (): void = let
 in hash_bytes(out, 17) end
 
 (* Whether bytes are a google_text: y or n at out[at] *)
-fn text_case {l:agz}{at:nat | at < 47}{n:pos | n < 256} (out: !$A.arr(byte, l, 47), at: int at, text: string n): void =
+fn text_case {l:agz}{at:nat | at < 51}{n:pos | n < 256} (out: !$A.arr(byte, l, 51), at: int at, text: string n): void =
   case+ text_of(bytes(text), g1u2i(string1_length(text))) of
   | ~$R.some(made) => let
       val () = $GZ.google_text_free(made)
@@ -277,7 +277,7 @@ fn text_case {l:agz}{at:nat | at < 47}{n:pos | n < 256} (out: !$A.arr(byte, l, 4
   | ~$R.none() => $A.set<byte>(out, at, int2byte0(110))
 
 (* Only well-formed UTF-8 with no leading byte order mark, holding a
-   visible ASCII character, is a google_text. One hash, forty-seven
+   visible ASCII character, is a google_text. One hash, fifty-one
    letters alone, a y or n for each of: an a then a lone continuation
    byte (0x80), the overlong forms C0 AF, E0 9F BF and F0 8F BF BF, a
    surrogate (ED A0 80), a code point over U+10FFFF (F4 90 80 80), F5
@@ -295,15 +295,17 @@ fn text_case {l:agz}{at:nat | at < 47}{n:pos | n < 256} (out: !$A.arr(byte, l, 4
    C0, F0 9F C0 80, F0 9F 98 C0 and F1 C0 80 80, and then a second
    byte below 80 after E4, F1 and F4, E4 7F 80, F1 7F 80 80 and F4 7F
    80 80 (each n); an a then F1 80 80 80, DF BF, DEL, E1 80 80, EF BF
-   BD and F0 BF BF BF (each y). Each value bound of _visible, _utf8
-   and _byte_order_mark, moved by one either way, and each of their
-   checks, left out, changes a letter. The length guards (at + 1, + 2
-   and + 3 below n, and n below 3) are held by the types, which refuse
-   an index not below n; _byte_order_mark's n below 3 moved up to 4
-   cannot be seen, as the only text it would let through, EF BB BF
-   alone, holds no visible ASCII character *)
+   BD and F0 BF BF BF (each y); EE BB BF then a, F0 BB BF 80 then a,
+   EF BA BF then a, and EF BB BE then a (each y). Each value bound of
+   _visible and _utf8 and each byte _byte_order_mark compares with,
+   moved by one either way, and each of their checks, left out,
+   changes a letter. The length guards (at + 1, + 2 and + 3 below n,
+   and n below 3) are held by the types, which refuse an index not
+   below n; _byte_order_mark's n below 3 moved up to 4 cannot be seen,
+   as the only text it would let through, EF BB BF alone, holds no
+   visible ASCII character *)
 fn text_row (): void = let
-  val out = $A.alloc<byte>(47)
+  val out = $A.alloc<byte>(51)
   val () = text_case(out, 0, "a\200")
   val () = text_case(out, 1, "a\300\257")
   val () = text_case(out, 2, "a\340\237\277")
@@ -351,7 +353,11 @@ fn text_row (): void = let
   val () = text_case(out, 44, "a\341\200\200")
   val () = text_case(out, 45, "a\357\277\275")
   val () = text_case(out, 46, "a\360\277\277\277")
-in hash_bytes(out, 47) end
+  val () = text_case(out, 47, "\356\273\277a")
+  val () = text_case(out, 48, "\360\273\277\200a")
+  val () = text_case(out, 49, "\357\272\277a")
+  val () = text_case(out, 50, "\357\273\276a")
+in hash_bytes(out, 51) end
 
 (* A step's end, read: nothing to do with it but let it go *)
 fn ended (change: $GZ.google_authorization_change): void =
@@ -425,8 +431,10 @@ implement main0 () = let
      rejection with no value, a string, an error whose code is a number,
      one whose message is a number, null, and one whose message holds a
      lone surrogate, each said to be no error whose code and message
-     are text (D), and an error with no code and
-     no message (none and none); then an authorization that is not an
+     are text (D), an object with no code and no message (none and
+     none), an error whose code is null (unexpected, no code, its
+     message) and one whose message is null (refused, no message);
+     then an authorization that is not an
      object (D), a token and an account starting with a byte order mark
      (G), a token of exactly 4096 bytes (taken and cleared), one of 4097
      bytes in 2049 UTF-16 units (G), an account of exactly 4096 bytes
@@ -440,9 +448,9 @@ implement main0 () = let
      token holding a surrogate pair and a byte order mark that does not
      lead (taken and cleared), a token of only DEL and one of a space
      and a letter outside ASCII (G: no visible ASCII character), and
-     granted scopes with a hole (D): 64 asks *)
+     granted scopes with a hole (D): 66 asks *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
-    val () = ended(change) in found_times(64) end)
+    val () = ended(change) in found_times(66) end)
   (* granted with no account, asked with a consent screen allowed *)
   val s8 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7d, llam(change) => let
     val () = ended(change) in asked() end)

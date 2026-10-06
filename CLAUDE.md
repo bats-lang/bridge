@@ -52,11 +52,13 @@ useful.)
   bats-lang/capacitor-plugins#8), a missing
   plugin (`AuthorizeUnavailable`). One outcome is never folded into
   another.
-* Anything the atom does not recognise (a plugin's `UNEXPECTED`, a code
-  nothing documents, an answer missing what it must hold, a grant the
-  atom's types cannot carry) is an explicit
-  `...Unexpected` constructor carrying the code and the message as they
-  came (or none), never a known constructor.
+* Anything the atom does not recognise is an explicit `...Unexpected`
+  constructor, never a known one: a plugin's `UNEXPECTED` or a code
+  nothing documents carries the code and the message as they came (or
+  none); an answer missing what it must hold, a grant the atom's types
+  cannot carry, or a rejection that is no error with a text code and
+  message carries no code and a message of the atom's own saying which
+  condition it was.
 * What a call cannot take is unrepresentable in the atom's type, not
   refused at run time: google_authorize's scopes are a `google_scopes(k)`
   of at least one `google_scope`, whose text `google_scope_of` proves

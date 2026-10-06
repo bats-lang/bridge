@@ -61,6 +61,8 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"4096 characters"}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -122,7 +124,7 @@ revokeAccess: {"account":"null@example.com","scopes":["https://www.googleapis.co
 clearAuthorizationToken: {"accessToken":"surrogate-token"}
 hash: #available
 hash: #nnnnnnnnnnnyyyyyy
-hash: #nnnnnnnnyyyyyynnnnnnnnnnnyyyyyyynnnnnnnnnyyyyyy
+hash: #nnnnnnnnyyyyyynnnnnnnnnnnyyyyyyynnnnnnnnnyyyyyyyyyy
 hash: #authorization for scopes
 hash: #authorized
 hash: #scope-a scope-b
@@ -367,6 +369,15 @@ hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
+hash: #m
+hash: #authorization for scopes
+hash: #refused
+hash: #NETWORK_ERROR
+hash: #07
+hash: #no message
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
 hash: #The answer has no authorization
 hash: #authorization for scopes
 hash: #unexpected
@@ -593,7 +604,11 @@ hash: #The rejection is not an error whose code and message are text
 == browser page
 hash: #unavailable
 hash: #nnnnnnnnnnnyyyyyy
-hash: #nnnnnnnnyyyyyynnnnnnnnnnnyyyyyyynnnnnnnnnyyyyyy
+hash: #nnnnnnnnyyyyyynnnnnnnnnnnyyyyyyynnnnnnnnnyyyyyyyyyy
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
