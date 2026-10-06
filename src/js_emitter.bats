@@ -2023,36 +2023,41 @@ in end
    bats_js_google_authorize_part. An answer the plugin does not document
    (no authorization: an answer that is null or no object, or one
    without an authorization, but authorizationForScopes' null; an
-   access token missing, not a string or blank; no scope, or one not a
-   string, empty or blank; an account missing, not a string, empty or
-   blank), a grant the plugin passes on that the atom's types cannot
-   take (a granted scope, not blank, that is not a scope-token; an
-   access token or an account over 4096 bytes or holding no visible
+   access token missing, not a string, empty or blank; scopes that are
+   not a non-empty list, or one not a string, empty or blank; an
+   account missing, not a string, empty or blank), a grant the plugin
+   passes on that the atom's types cannot take (a granted scope, not
+   blank, that is not a scope-token; an access token or an account that
+   is not well-formed Unicode, is over 4096 bytes or holds no visible
    ASCII character), and a rejection that is not an object whose code
-   and message are each text or absent, fail with no code and say what
-   they were; a rejection with no value keeps no code and no message,
+   and message are each text or absent, fail with no code and say which
+   they were, each condition in a message of its own; a rejection with no value keeps no code and no message,
    and an empty code or message is kept as none.
-   No plugin is Capacitor's own code for a platform without the
-   method *)
+   googleBlank is blank as the plugin's Java has it (String.isBlank:
+   Character.isWhitespace's characters only). No plugin is Capacitor's
+   own code for a platform without the method *)
 fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3600] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
-  val () = $B.bput(b,"  // GoogleAuthorize (google_authorize.bats says the codes and parts)\n")
+  val () = $B.bput(b,"  // GoogleAuthorize: google_authorize.bats\n")
   val () = $B.bput(b,"  const googleParts = new Map();\n")
   val () = $B.bput(b,"  const googleScopeList = (p, l) => readString(p, l).split(' ').filter(s => s);\n")
-  val () = $B.bput(b,"  const googleText = s => typeof s === 'string' && s ? pendBlob(utf8.encode(s)) : 0;\n")
+  val () = $B.bput(b,"  const googleText = s => typeof s == 'string' && s ? pendBlob(utf8.encode(s)) : 0;\n")
   val () = $B.bput(b,"  function googleKeep(id, scopes, account, code, message) {\n")
   val () = $B.bput(b,"    googleParts.set(id, [googleText(scopes), googleText(account), googleText(code), googleText(message)]);\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  const googleTextOrNone = x => x == null || typeof x === 'string';\n")
+  val () = $B.bput(b,"  const googleTextOrNone = x => x == null || typeof x == 'string';\n")
   val () = $B.bput(b,"  function googleFailed(id, e) {\n")
-  val () = $B.bput(b,"    if (e !== undefined && !(e && typeof e === 'object' && googleTextOrNone(e.code) && googleTextOrNone(e.message)))\n")
+  val () = $B.bput(b,"    if (e !== void 0 && !(e && typeof e == 'object' && googleTextOrNone(e.code) && googleTextOrNone(e.message)))\n")
   val () = $B.bput(b,"      e = { message: 'The rejection is not an error whose code and message are text' };\n")
   val () = $B.bput(b,"    googleKeep(id, '', '', e && e.code, e && e.message);\n")
   val () = $B.bput(b,"    return -2;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  const googleOdd = (id, what) => googleFailed(id, { message: what });\n")
-  val () = $B.bput(b,"  const googleSeen = x => typeof x === 'string' && /[!-~]/.test(x) && utf8.encode(x).length <= 4096;\n")
+  val () = $B.bput(b,"  const googleBlank = /^[\\t-\\r\\x1c-\\x20\\u1680\\u2000-\\u2006\\u2008-\\u200a\\u2028\\u2029\\u205f\\u3000]*$/;\n")
+  val () = $B.bput(b,"  const googleWhy = (x, w) => typeof x != 'string' ? w + ' is missing or not a string' : googleBlank.test(x) ? w + ' is empty or blank'\n")
+  val () = $B.bput(b,"  : /\\p{Cs}/u.test(x) ? w + ' is not well-formed Unicode' : utf8.encode(x).length > 4096 ? w + ' is over 4096 bytes'\n")
+  val () = $B.bput(b,"  : /[!-~]/.test(x) ? '' : w + ' holds no visible ASCII character';\n")
   val () = $B.bput(b,"  function batsJsGoogleAuthorizeAvailable() { return ")
   val () = put_plugin_call(b, PluginGoogleAuthorize())
   val () = $B.bput(b," ? 1 : 0; }\n")
@@ -2066,11 +2071,12 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const a = r ? r.authorization : void 0;\n")
   val () = $B.bput(b,"      if (a === null && !mayAsk) { googleKeep(id); return 0; }\n")
   val () = $B.bput(b,"      if (!a) return googleOdd(id, 'The answer has no authorization');\n")
-  val () = $B.bput(b,"      if (!googleSeen(a.accessToken)) return googleOdd(id, 'The access token is missing, over 4096 bytes, or holds no visible ASCII character');\n")
-  val () = $B.bput(b,"      const s = a.grantedScopes;\n")
-  val () = $B.bput(b,"      if (!Array.isArray(s) || !s.length || !s.every(x => typeof x === 'string' && /^[\\x21\\x23-\\x5b\\x5d-\\x7e]+$/.test(x)))\n")
-  val () = $B.bput(b,"        return googleOdd(id, 'The scopes granted are not a list of scopes');\n")
-  val () = $B.bput(b,"      if (a.account !== null && !googleSeen(a.account)) return googleOdd(id, 'The account is missing, over 4096 bytes, or holds no visible ASCII character');\n")
+  val () = $B.bput(b,"      const s = a.grantedScopes, why = googleWhy(a.accessToken, 'The access token')\n")
+  val () = $B.bput(b,"      || (!Array.isArray(s) || !s.length ? 'The scopes granted are not a non-empty list'\n")
+  val () = $B.bput(b,"      : !s.every(x => typeof x == 'string' && !googleBlank.test(x)) ? 'A scope granted is not a string, or is empty or blank'\n")
+  val () = $B.bput(b,"      : !s.every(x => /^[\\x21\\x23-\\x5b\\x5d-\\x7e]+$/.test(x)) ? 'A scope granted is not a scope-token'\n")
+  val () = $B.bput(b,"      : a.account === null ? '' : googleWhy(a.account, 'The account'));\n")
+  val () = $B.bput(b,"      if (why) return googleOdd(id, why);\n")
   val () = $B.bput(b,"      googleKeep(id, a.grantedScopes.join(' '), a.account);\n")
   val () = $B.bput(b,"      return pendBlob(utf8.encode(a.accessToken));\n")
   val () = $B.bput(b,"    }, e => {\n")

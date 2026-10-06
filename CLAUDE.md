@@ -48,7 +48,8 @@ useful.)
   constructor of its own, decoded once from what JS gives: a refusal
   the platform names (google_authorize's `AuthorizeRefused` with a
   `google_status`), a cancel only where the platform says the reader
-  canceled, a missing
+  canceled (with its message: the plugin's code for it is shared,
+  bats-lang/capacitor-plugins#8), a missing
   plugin (`AuthorizeUnavailable`). One outcome is never folded into
   another.
 * Anything the atom does not recognise (a plugin's `UNEXPECTED`, a code
@@ -64,8 +65,8 @@ useful.)
   no quote or backslash, nothing non-ASCII), once, as it is made; the
   plugin's own check of its options (`INVALID_OPTIONS`) then cannot be
   reached from Bats. A token or an account is a `google_text`, made only
-  by `google_text_of` from 1 to 4096 bytes holding a visible ASCII
-  character. Static reject fixtures hold it
+  by `google_text_of` from 1 to 4096 bytes of well-formed UTF-8 holding
+  a visible ASCII character. Static reject fixtures hold it
   (`tests/static/reject/google-scope-bytes`, `google-scope-empty`, `google-scopes-empty`, `google-token-bytes`).
 * The atom's dynamic test drives every constructor, `...Unexpected`
   included, through a stand-in for the platform. The app matches every

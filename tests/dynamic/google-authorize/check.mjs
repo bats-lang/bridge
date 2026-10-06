@@ -73,6 +73,8 @@ async function run(label, native) {
     () => Promise.resolve({ authorization: { accessToken: 'token-4', grantedScopes: ['scope-a'] } }),
     () => Promise.resolve(authorization('t'.repeat(5000), ['scope-a'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a'], 'a'.repeat(5000))),
+    () => Promise.resolve(authorization('tok\ud800', ['scope-a'], null)),
+    () => Promise.resolve(authorization('token-4', ['scope-a'], 'r\udc00@x')),
     // a status with an empty message, and a rejection with no value: no
     // message kept
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' })),

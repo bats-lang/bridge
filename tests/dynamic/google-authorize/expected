@@ -51,6 +51,8 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-2"}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -192,87 +194,95 @@ hash: #The answer has no authorization
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The access token is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The access token is empty or blank
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #The scopes granted are not a non-empty list
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The account is empty or blank
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The account is missing or not a string
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The account is empty or blank
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a scope-token
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a string, or is empty or blank
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a string, or is empty or blank
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a string, or is empty or blank
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a scope-token
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a scope-token
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a scope-token
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a scope-token
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #A scope granted is not a scope-token
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The access token is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The access token is missing or not a string
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The access token is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The access token is missing or not a string
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The access token is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The access token holds no visible ASCII character
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The account holds no visible ASCII character
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The account is missing or not a string
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The access token is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The access token is over 4096 bytes
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is missing, over 4096 bytes, or holds no visible ASCII character
+hash: #The account is over 4096 bytes
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The access token is not well-formed Unicode
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The account is not well-formed Unicode
 hash: #authorization for scopes
 hash: #refused
 hash: #NETWORK_ERROR
@@ -297,6 +307,7 @@ hash: #no account
 hash: #changed
 hash: #authorize scopes
 hash: #canceled
+hash: #The reader backed out of the consent screen
 hash: #authorize scopes
 hash: #consent showing
 hash: #authorize scopes
@@ -310,10 +321,11 @@ hash: #10
 hash: #10: 
 hash: #authorize scopes
 hash: #canceled
+hash: #16: 
 hash: #authorize scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a list of scopes
+hash: #The scopes granted are not a non-empty list
 hash: #authorize scopes
 hash: #unexpected
 hash: #UNEXPECTED
@@ -367,6 +379,8 @@ hash: #clear
 hash: #unexpected
 hash: #no code
 hash: #The rejection is not an error whose code and message are text
+hash: #clear
+hash: #not a token
 == browser page
 hash: #unavailable
 hash: #nnnnnnnnnnny
@@ -470,6 +484,10 @@ hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorize scopes
 hash: #unavailable
 hash: #authorize scopes
@@ -510,3 +528,5 @@ hash: #revoke
 hash: #unavailable
 hash: #clear
 hash: #unavailable
+hash: #clear
+hash: #not a token

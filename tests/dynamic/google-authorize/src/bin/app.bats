@@ -19,7 +19,7 @@ fn {} free_authorization {w:$GZ.asking} (answer: $GZ.google_authorization(w)): v
       val () = $BD.blob_free(scopes)
     in free_part(account) end
   | ~$GZ.NotAuthorized() => ()
-  | ~$GZ.AuthorizeCanceled() => ()
+  | ~$GZ.AuthorizeCanceled(message) => free_part(message)
   | ~$GZ.ConsentShowing() => ()
   | ~$GZ.AuthorizeRefused(_, message) => free_part(message)
   | ~$GZ.AuthorizeUnavailable() => ()
@@ -115,7 +115,7 @@ fn told_change (change: $GZ.google_authorization_change): step =
   | ~$GZ.ChangeUnexpected(code, message) => let val () = hash_unexpected(code, message) in done() end
 
 (* a's bytes as a google_text, a freed; none when they hold no visible
-   character (or are too long to be one) *)
+   character, are not well-formed UTF-8, or are too long to be one *)
 fn text_of {l:agz}{n:pos} (a: $A.arr(byte, l, n), n: int n): $R.option($GZ.google_text) =
   if n > 4096 then let val () = $A.free<byte>(a) in $R.none() end
   else let
@@ -195,7 +195,10 @@ fn told_found (answer: $GZ.google_authorization($GZ.Silently)): step =
 fn told_asked (answer: $GZ.google_authorization($GZ.MayAsk)): step =
   case+ answer of
   | ~$GZ.Authorized(token, scopes, account) => told_authorized(token, scopes, account)
-  | ~$GZ.AuthorizeCanceled() => let val () = hash_text("canceled") in done() end
+  | ~$GZ.AuthorizeCanceled(message) => let
+      val () = hash_text("canceled")
+      val () = hash_message(message)
+    in done() end
   | ~$GZ.ConsentShowing() => let val () = hash_text("consent showing") in done() end
   | ~$GZ.AuthorizeRefused(status, message) => let val () = hash_refused(status, message) in done() end
   | ~$GZ.AuthorizeUnavailable() => let val () = hash_text("unavailable") in done() end
@@ -320,17 +323,19 @@ implement main0 () = let
      ASCII, a control character (0x01) or DEL (G: none a scope-token),
      no access token (D), one that is not a string (D), a token and an
      account holding no visible ASCII character (G), an answer with no
-     account key (D), and a token and an account over 4096 bytes (G);
+     account key (D), a token and an account over 4096 bytes (G), and a
+     token and an account holding a lone surrogate (G: not well-formed
+     Unicode);
      then a status with an empty message and a rejection with no value,
      neither keeping a message; then a rejection that is a string and
      one whose code is a number, each said to be no error whose code
-     and message are text (D): 27 asks *)
+     and message are text (D): 29 asks *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
-    val () = ended(change) in found_times(27) end)
+    val () = ended(change) in found_times(29) end)
   (* granted with no account, asked with a consent screen allowed *)
   val s8 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7d, llam(change) => let
     val () = ended(change) in asked() end)
-  (* the plugin's CANCELED: the reader backed out *)
+  (* the plugin's CANCELED: the reader backed out, its message kept *)
   val s9 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s8, llam(change) => let
     val () = ended(change) in asked() end)
   (* another consent screen showing *)
@@ -342,7 +347,8 @@ implement main0 () = let
   (* Play services refused the consent: DEVELOPER_ERROR *)
   val s12 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s11, llam(change) => let
     val () = ended(change) in asked() end)
-  (* Play services' own CANCELED status (16): the reader backed out *)
+  (* Play services' own CANCELED status (16): AuthorizeCanceled too, its
+     message kept (bats-lang/capacitor-plugins#8) *)
   val s13 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s12, llam(change) => let
     val () = ended(change) in asked() end)
   (* a grant whose scopes are not a list: unexpected *)
@@ -385,4 +391,8 @@ implement main0 () = let
   (* a clear rejected with a string, not an error: unexpected, said so *)
   val s23 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s22, llam(change) => let
     val () = ended(change) in clear_text("string-token") end)
-in $P.finish<$GZ.google_authorization_change>(s23, llam(change) => ended(change)) end
+  (* a token whose bytes are not well-formed UTF-8 (0xFF) is none:
+     nothing asked *)
+  val s24 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s23, llam(change) => let
+    val () = ended(change) in clear_text("a\377b") end)
+in $P.finish<$GZ.google_authorization_change>(s24, llam(change) => ended(change)) end

@@ -25,7 +25,11 @@
 
    Every answer is an outcome of its own (bats-lang/quire#334): a
    refusal Play services names (a google_status, with its message), a
-   cancel only where the reader canceled, and anything this module does
+   cancel only for authorizeScopes' CANCELED (the reader backing out,
+   or a CANCELED status Play services gives before any consent screen,
+   which the plugin cannot tell apart: bats-lang/capacitor-plugins#8;
+   its message is kept; CANCELED from any other call is a refusal), and
+   anything this module does
    not recognise (the plugin's UNEXPECTED, a code it does not document,
    an answer missing what it must hold, a grant the types here cannot
    carry) AuthorizeUnexpected or
@@ -87,8 +91,9 @@ staload "./decompress.bats"
      AuthorizeUnexpected): authorizeScopes' CANCELED. A CANCELED status
      Play services gives before any consent screen has the same code
      and reaches here too, as the plugin cannot tell it apart
-     (bats-lang/capacitor-plugins#8) *)
-  | AuthorizeCanceled(MayAsk)
+     (bats-lang/capacitor-plugins#8): the message, when there is one,
+     is the only thing that tells them apart, and is kept *)
+  | AuthorizeCanceled(MayAsk) of $R.option([m:pos] dblob(m))
   (* Another call's consent screen was showing (CONSENT_SHOWING) *)
   | ConsentShowing(MayAsk)
   (* Play services refused, with its status and its message, when it
@@ -106,21 +111,23 @@ staload "./decompress.bats"
      refusal); the plugin's INVALID_OPTIONS, which google_scopes' type
      keeps a call from earning; CONSENT_SHOWING from
      authorizationForScopes, which shows no consent screen. And, JS
-     saying what it was: an answer the plugin does not document (one
-     that is null or not an object, an empty one, or a null
-     authorization from authorizeScopes; an access token missing, not a
-     string or blank; no scope granted, or a granted scope that is not
-     a string, is empty or is blank; an account missing from the
-     answer, not a string, empty or blank; a rejection that is not an
-     object whose code and message are each text or absent); or a grant
-     the plugin passes on that bridge does not take: a granted scope,
-     not blank, that is not RFC 6749's scope-token
-     (bats-lang/capacitor-plugins#9), or an access token or an account
-     over 4096 bytes or holding no visible ASCII character (0x21 to
-     0x7E), which google_text cannot carry (google_text_of's test and
-     bound, so a token Authorized gives can always be cleared, and an
-     account it names revoked; Google's access tokens are at most 2048
-     bytes) *)
+     saying which it was, each in a message of its own (blank as the
+     plugin's Java has it, String.isBlank): an answer the plugin does
+     not document (one that is null or not an object, an empty one, or
+     a null authorization from authorizeScopes; an access token missing,
+     not a string, empty or blank; granted scopes that are not a
+     non-empty list, or one that is not a string, is empty or is blank;
+     an account missing from the answer, not a string, empty or blank;
+     a rejection that is not an object whose code and message are each
+     text or absent); or a grant the plugin passes on that bridge does
+     not take: a granted scope, not blank, that is not RFC 6749's
+     scope-token (bats-lang/capacitor-plugins#9), or an access token or
+     an account that is not well-formed Unicode (a lone surrogate), is
+     over 4096 bytes or holds no visible ASCII character (0x21 to 0x7E),
+     which google_text cannot carry (google_text_of's tests and bound,
+     so a token Authorized gives can always be cleared as it came, and
+     an account it names revoked; Google's access tokens are at most
+     2048 bytes) *)
   | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* How clearing a token or revoking a grant ended *)
@@ -187,14 +194,15 @@ staload "./decompress.bats"
   (scopes: google_scopes(k))
   : $P.promise(google_authorization(MayAsk), $P.Chained)
 
-(* A token or an account to hand Google: bytes holding at least one
-   visible ASCII character (0x21 to 0x7E), so never empty or blank
-   (what the plugin refuses as INVALID_OPTIONS), checked once by
-   google_text_of, the only way to make one, which copies them *)
+(* A token or an account to hand Google: well-formed UTF-8 (so JS reads
+   it as it is, with nothing replaced) holding at least one visible
+   ASCII character (0x21 to 0x7E), so never empty or blank (what the
+   plugin refuses as INVALID_OPTIONS), checked once by google_text_of,
+   the only way to make one, which copies them *)
 #pub absvtype google_text = ptr
 
-(* bytes[0, n) as a google_text, when they hold a visible ASCII
-   character. At most 4096 bytes: Google's access tokens are at most
+(* bytes[0, n) as a google_text, when they are well-formed UTF-8 and
+   hold a visible ASCII character. At most 4096 bytes: Google's access tokens are at most
    2048, and an account is an email address *)
 #pub fn google_text_of {l:agz}{n:pos | n <= 4096} (bytes: !$A.borrow(byte, l, n), n: int n): $R.option(google_text)
 
@@ -459,15 +467,17 @@ fn _found (answer: answer): google_authorization(Silently) =
 
 (* authorizeScopes' answer: it always gives an authorization when it
    resolves (JS answers 0 only for authorizationForScopes), so none is
-   unexpected; Play services' CANCELED, decoded here alone, is the
-   reader backing out, as the plugin documents *)
+   unexpected; CANCELED, decoded here alone, is AuthorizeCanceled with
+   its message: the plugin's code for the reader backing out, which a
+   CANCELED status Play services gives before any consent screen shares
+   (bats-lang/capacitor-plugins#8) *)
 fn _asked (answer: answer): google_authorization(MayAsk) =
   case+ answer of
   | ~AnswerToken(token, scopes, account) => Authorized(token, scopes, account)
   | ~AnswerNone() => AuthorizeUnexpected($R.none(), $R.none())
   | ~AnswerFailed(failure) => (case+ failure of
     | ~FailedStatus(status, message) => (case+ status of
-      | StatusCanceled() => let val () = _free_part(message) in AuthorizeCanceled() end
+      | StatusCanceled() => AuthorizeCanceled(message)
       | _ =>> AuthorizeRefused(status, message))
     | ~FailedConsentShowing(code, message) => let
         val () = blob_free(code)
@@ -500,7 +510,7 @@ fn {} _free_authorization {w:asking} (answer: google_authorization(w)): void =
       val () = blob_free(scopes)
     in _free_part(account) end
   | ~NotAuthorized() => ()
-  | ~AuthorizeCanceled() => ()
+  | ~AuthorizeCanceled(message) => _free_part(message)
   | ~ConsentShowing() => ()
   | ~AuthorizeRefused(_, message) => _free_part(message)
   | ~AuthorizeUnavailable() => ()
@@ -605,8 +615,53 @@ fun _visible {l:agz}{n:pos}{at:nat | at <= n} .<n - at>. (bytes: !$A.borrow(byte
     val c = byte2int0($A.read<byte>(bytes, at))
   in if c >= 0x21 && c <= 0x7E then true else _visible(bytes, n, at + 1) end
 
+(* Whether bytes[i] is from lo to hi *)
+fn _in {l:agz}{n:pos}{i:nat | i < n} (bytes: !$A.borrow(byte, l, n), i: int i, lo: int, hi: int): bool = let
+  val c = byte2int0($A.read<byte>(bytes, i))
+in c >= lo && c <= hi end
+
+(* Whether bytes[at, n) are well-formed UTF-8 (RFC 3629, 4: no overlong
+   form, no surrogate, nothing over U+10FFFF), so JS reads them as they
+   are, with nothing replaced *)
+fun _utf8 {l:agz}{n:pos}{at:nat | at <= n} .<n - at>. (bytes: !$A.borrow(byte, l, n), n: int n, at: int at): bool =
+  if at >= n then true
+  else let
+    val c = byte2int0($A.read<byte>(bytes, at))
+  in
+    if c < 0x80 then _utf8(bytes, n, at + 1)
+    else if c < 0xC2 then false
+    else if c < 0xE0 then
+      (if at + 1 < n then
+        (if _in(bytes, at + 1, 0x80, 0xBF) then _utf8(bytes, n, at + 2) else false)
+      else false)
+    else if c < 0xF0 then
+      (if at + 2 < n then let
+        val lo = (if c = 0xE0 then 0xA0 else 0x80): int
+        val hi = (if c = 0xED then 0x9F else 0xBF): int
+      in
+        if _in(bytes, at + 1, lo, hi) then
+          (if _in(bytes, at + 2, 0x80, 0xBF) then _utf8(bytes, n, at + 3) else false)
+        else false
+      end
+      else false)
+    else if c < 0xF5 then
+      (if at + 3 < n then let
+        val lo = (if c = 0xF0 then 0x90 else 0x80): int
+        val hi = (if c = 0xF4 then 0x8F else 0xBF): int
+      in
+        if _in(bytes, at + 1, lo, hi) then
+          (if _in(bytes, at + 2, 0x80, 0xBF) then
+            (if _in(bytes, at + 3, 0x80, 0xBF) then _utf8(bytes, n, at + 4) else false)
+          else false)
+        else false
+      end
+      else false)
+    else false
+  end
+
 implement google_text_of {l}{n} (bytes, n) =
   if ~_visible(bytes, n, 0) then $R.none()
+  else if ~_utf8(bytes, n, 0) then $R.none()
   else let
     val copy = $A.alloc<byte>(n)
     val () = $A.write_borrow(copy, 0, bytes, n)
