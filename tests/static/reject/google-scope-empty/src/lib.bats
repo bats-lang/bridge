@@ -5,4 +5,4 @@ staload GZ = "wasm.bats-packages.dev/bridge/src/google_authorize.sats"
 
 (* An empty scope cannot be made (quire#334): its text's length must be
    positive *)
-fn f (): $R.option($GZ.google_scope) = $GZ.google_scope_of("")
+fn f (): $R.option($GZ.google_scope(0)) = $GZ.google_scope_of("")

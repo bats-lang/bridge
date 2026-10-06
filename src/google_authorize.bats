@@ -123,35 +123,34 @@ staload "./decompress.bats"
 (* Whether the app has the plugin: false in a browser *)
 #pub fun google_authorize_available(): bool
 
-(* An OAuth scope: a text under 256 bytes of printable ASCII (0x21 to
-   0x7E, so no whitespace), made only by google_scope_of. A call's
-   scopes are written into one buffer of 2048 bytes, hence the bound,
-   and the at most 8 scopes a call takes *)
-#pub abstype google_scope = ptr
+(* An OAuth scope of n bytes: a text of printable ASCII (0x21 to 0x7E,
+   so no whitespace), made only by google_scope_of *)
+#pub abstype google_scope(int) = ptr
 
 (* text as a scope, when it is printable ASCII *)
-#pub fn google_scope_of {n:pos | n < 256} (text: string n): $R.option(google_scope)
+#pub fn google_scope_of {n:pos} (text: string n): $R.option(google_scope(n))
 
 (* A scope's text *)
-#pub fn google_scope_text (scope: google_scope): [n:pos | n < 256] string n
+#pub fn google_scope_text {n:pos} (scope: google_scope(n)): string n
 
-(* The scopes of a call, at least one (a call takes at most 8) *)
+(* The scopes of a call, at least one, t bytes as they cross (each
+   scope's text, separated by spaces) *)
 #pub datavtype google_scopes(int) =
-  | OneScope(1) of google_scope
-  | {k:pos} MoreScopes(k + 1) of (google_scope, google_scopes(k))
+  | {n:pos} OneScope(n) of google_scope(n)
+  | {n,t:pos} MoreScopes(n + 1 + t) of (google_scope(n), google_scopes(t))
 
 (* The access token for scopes when they are already granted, showing
    nothing: authorizationForScopes *)
 #pub fun google_authorization_for_scopes
-  {k:pos | k <= 8}
-  (scopes: google_scopes(k))
+  {t:pos | t <= 1048576}
+  (scopes: google_scopes(t))
   : $P.promise(google_authorization(Silently), $P.Chained)
 
 (* The access token for scopes, showing Google's consent screen when
    the reader must consent first: authorizeScopes *)
 #pub fun google_authorize_scopes
-  {k:pos | k <= 8}
-  (scopes: google_scopes(k))
+  {t:pos | t <= 1048576}
+  (scopes: google_scopes(t))
   : $P.promise(google_authorization(MayAsk), $P.Chained)
 
 (* A token or an account to hand Google: a text of printable ASCII
@@ -172,8 +171,8 @@ staload "./decompress.bats"
 (* Takes back the account's grant of scopes (an Authorized answer's
    account): revokeAccess *)
 #pub fun google_revoke_access
-  {k:pos | k <= 8}
-  (account: google_text, scopes: google_scopes(k))
+  {t:pos | t <= 1048576}
+  (account: google_text, scopes: google_scopes(t))
   : $P.promise(google_authorization_change, $P.Chained)
 
 (* ============================================================
@@ -488,7 +487,7 @@ implement $P.dispose<google_authorization_change>(change) =
 implement google_authorize_available() = _bats_js_google_authorize_available() > 0
 
 $UNSAFE begin
-assume google_scope = [n:pos | n < 256] string n
+assume google_scope(n:int) = string n
 end
 
 (* Whether text[at, n) is printable ASCII only (0x21 to 0x7E) *)
@@ -504,21 +503,28 @@ in if _printable_text(text, n, 0) then $R.some(text) else $R.none() end
 
 implement google_scope_text (scope) = scope
 
-(* The bytes scopes are written into: 8 of them at most, each under
-   256 bytes and a space *)
-#define SCOPES_BYTES 2048
+(* How many bytes scopes take as they cross *)
+fun _scopes_bytes {t:pos} .<t>. (scopes: !google_scopes(t)): int t =
+  case+ scopes of
+  | @OneScope(scope) => let
+      val n = g1u2i(string1_length(google_scope_text(scope)))
+      prval () = fold@(scopes)
+    in n end
+  | @MoreScopes(scope, rest) => let
+      val n = g1u2i(string1_length(google_scope_text(scope)))
+      val after = _scopes_bytes(rest)
+      prval () = fold@(scopes)
+    in n + 1 + after end
 
-(* scopes' texts, separated by spaces (RFC 6749, 3.3), at out[at];
-   where they end. The scopes are consumed *)
-fun _scopes_put {l:agz}{k:pos}{at:nat | at + k * 256 <= SCOPES_BYTES} .<k>.
-  (scopes: google_scopes(k), out: !$A.arr(byte, l, SCOPES_BYTES), at: int at)
-  : [stop:nat | at < stop; stop <= at + k * 256] int stop =
+(* scopes' texts, separated by spaces (RFC 6749, 3.3), at out[at]. The
+   scopes are consumed *)
+fun _scopes_put {l:agz}{size:pos}{t:pos}{at:nat | at + t <= size} .<t>.
+  (scopes: google_scopes(t), out: !$A.arr(byte, l, size), at: int at): void =
   case+ scopes of
   | ~OneScope(scope) => let
       val text = google_scope_text(scope)
       val n = g1u2i(string1_length(text))
-      val () = $A.write_text(out, at, $A.text_lit(text), n)
-    in at + n end
+    in $A.write_text(out, at, $A.text_lit(text), n) end
   | ~MoreScopes(scope, rest) => let
       val text = google_scope_text(scope)
       val n = g1u2i(string1_length(text))
@@ -528,12 +534,13 @@ fun _scopes_put {l:agz}{k:pos}{at:nat | at + k * 256 <= SCOPES_BYTES} .<k>.
 
 (* Asks JS, may_ask 0 for authorizationForScopes and 1 for
    authorizeScopes; resolves with the resolver's id and JS's code *)
-fn _ask {k:pos | k <= 8} (scopes: google_scopes(k), may_ask: int)
+fn _ask {t:pos | t <= 1048576} (scopes: google_scopes(t), may_ask: int)
   : @(int, $P.promise(Int, $P.Pending)) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
-  val out = $A.alloc<byte>(SCOPES_BYTES)
-  val stop = _scopes_put(scopes, out, 0)
+  val stop = _scopes_bytes(scopes)
+  val out = $A.alloc<byte>(stop)
+  val () = _scopes_put(scopes, out, 0)
   val @(frozen, borrowed) = $A.freeze<byte>(out)
   val () = _bats_js_google_authorize(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(borrowed) end, stop, may_ask, id)
@@ -541,12 +548,12 @@ fn _ask {k:pos | k <= 8} (scopes: google_scopes(k), may_ask: int)
   val () = $A.free<byte>($A.thaw<byte>(frozen))
 in @(id, p) end
 
-implement google_authorization_for_scopes{k}(scopes) = let
+implement google_authorization_for_scopes{t}(scopes) = let
   val @(id, p) = _ask(scopes, 0)
 in $P.and_then<Int><google_authorization(Silently)>(p, llam (code) =>
   $P.ret<google_authorization(Silently)>(_found(_answer(id, code)))) end
 
-implement google_authorize_scopes{k}(scopes) = let
+implement google_authorize_scopes{t}(scopes) = let
   val @(id, p) = _ask(scopes, 1)
 in $P.and_then<Int><google_authorization(MayAsk)>(p, llam (code) =>
   $P.ret<google_authorization(MayAsk)>(_asked(_answer(id, code)))) end
@@ -585,11 +592,12 @@ implement google_clear_token(token) = let
 in $P.and_then<Int><google_authorization_change>(p, llam (code) =>
   $P.ret<google_authorization_change>(_change(id, code))) end
 
-implement google_revoke_access{k}(account, scopes) = let
+implement google_revoke_access{t}(account, scopes) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
-  val out = $A.alloc<byte>(SCOPES_BYTES)
-  val stop = _scopes_put(scopes, out, 0)
+  val stop = _scopes_bytes(scopes)
+  val out = $A.alloc<byte>(stop)
+  val () = _scopes_put(scopes, out, 0)
   val @(frozen, borrowed) = $A.freeze<byte>(out)
   val ~TextRep(account_bytes, account_len) = account
   val @(account_frozen, account_borrowed) = $A.freeze<byte>(account_bytes)

@@ -1,9 +1,0 @@
-[package]
-name = "google-scopes-nine"
-kind = "lib"
-
-[dependencies]
-"array" = ""
-"result" = ""
-"promise" = ""
-"wasm.bats-packages.dev/bridge" = ""

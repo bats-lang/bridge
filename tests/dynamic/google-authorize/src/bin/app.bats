@@ -137,7 +137,7 @@ fn clear_text {n:pos | n < 256} (s: string n): step = let
 in clear_bytes(bytes(s), g1u2i(string1_length(s))) end
 
 (* The scope the app asks for: drive.appdata, checked once *)
-fn drive_appdata_scope (): $R.option($GZ.google_scope) =
+fn drive_appdata_scope (): $R.option($GZ.google_scope(45)) =
   $GZ.google_scope_of("https://www.googleapis.com/auth/drive.appdata")
 
 (* Revokes the account's grant of drive.appdata *)
