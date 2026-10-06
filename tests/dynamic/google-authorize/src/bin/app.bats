@@ -12,11 +12,6 @@ staload NAV = "wasm.bats-packages.dev/bridge/src/nav.bats"
 fn {} free_part (part: $R.option([n:pos] $BD.dblob(n))): void =
   case+ part of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ()
 
-fn free_message (message: $R.option([m:pos] $GZ.google_message(m))): void =
-  case+ message of
-  | ~$R.some(said) => $GZ.google_message_free(said)
-  | ~$R.none() => ()
-
 fn {} free_authorization {w:$GZ.asking} (answer: $GZ.google_authorization(w)): void =
   case+ answer of
   | ~$GZ.Authorized(token, scopes, account) => let
@@ -28,9 +23,7 @@ fn {} free_authorization {w:$GZ.asking} (answer: $GZ.google_authorization(w)): v
   | ~$GZ.ConsentShowing(message) => free_part(message)
   | ~$GZ.AuthorizeRefused(_, message) => free_part(message)
   | ~$GZ.AuthorizeUnavailable(message) => free_part(message)
-  | ~$GZ.AuthorizeUnexpected(code, message) => let
-      val () = free_part(code)
-    in free_message(message) end
+  | ~$GZ.AuthorizeUnexpected(unexpected) => $GZ.google_unexpected_free(unexpected)
 
 implement $P.dispose<$GZ.google_authorization($GZ.Silently)>(answer) = free_authorization(answer)
 implement $P.dispose<$GZ.google_authorization($GZ.MayAsk)>(answer) = free_authorization(answer)
@@ -39,9 +32,7 @@ implement $P.dispose<$GZ.google_authorization_change>(change) =
   | ~$GZ.Changed() => ()
   | ~$GZ.ChangeRefused(_, message) => free_part(message)
   | ~$GZ.ChangeUnavailable(message) => free_part(message)
-  | ~$GZ.ChangeUnexpected(code, message) => let
-      val () = free_part(code)
-    in free_message(message) end
+  | ~$GZ.ChangeUnexpected(unexpected) => $GZ.google_unexpected_free(unexpected)
 
 (* s's bytes in a fresh array of exactly its length *)
 fn bytes {n:pos | n < 256} (s: string n): [l:agz] $A.arr(byte, l, n) = let
@@ -104,46 +95,68 @@ fn hash_refused (status: $GZ.google_status, message: $R.option([n:pos] $BD.dblob
   val () = hash_bytes(digits, 2)
 in hash_message(message) end
 
-(* copy[at + j, at + count) := piece[j, count) *)
-fun copy_piece {l,c:agz}{m:pos}{at:nat}{count:pos | count <= 7; at + count <= m}{j:nat | j <= count} .<count - j>.
-  (piece: !$A.arr(byte, l, 7), copy: !$A.arr(byte, c, m), at: int at, count: int count, j: int j): void =
+(* copy[j, count) := out[start + j, start + count) *)
+fun copy_from {l,c:agz}{start,count:nat | start + count <= 12}{j:nat | j <= count} .<count - j>.
+  (out: !$A.arr(byte, l, 12), start: int start, copy: !$A.arr(byte, c, count), count: int count, j: int j): void =
   if j >= count then ()
   else let
-    val () = $A.set<byte>(copy, at + j, $A.get<byte>(piece, j))
-  in copy_piece(piece, copy, at, count, j + 1) end
+    val () = $A.set<byte>(copy, j, $A.get<byte>(out, start + j))
+  in copy_from(out, start, copy, count, j + 1) end
 
-(* copy[at, m) := the message's bytes [at, m), read 7 at a time into a
-   piece of its own, so a read starts and ends anywhere in it *)
-fun read_by_sevens {m:pos | m <= 4096}{l:agz}{at:nat | at <= m} .<m - at>.
-  (said: !$GZ.google_message(m), copy: !$A.arr(byte, l, m), m: int m, at: int at): void =
-  if at >= m then ()
+(* n's decimal digits, its sign aside, ending before out[at] *)
+fun digits_put {l:agz}{at:pos | at <= 12} .<at>. (out: !$A.arr(byte, l, 12), at: int at, n: int): [start:nat | start < at] int start = let
+  val rest = n - (n / 10) * 10
+  val digit = (if rest < 0 then 0 - rest else rest): int
+  val () = $A.set<byte>(out, at - 1, int2byte0(48 + digit))
+in if at <= 1 then at - 1 else if n / 10 = 0 then at - 1 else digits_put(out, at - 1, n / 10) end
+
+(* a minus sign before out[start] when negative *)
+fn sign_put {l:agz}{start:nat | start < 12} (out: !$A.arr(byte, l, 12), start: int start, negative: bool): [s:nat | s <= start] int s =
+  if ~negative then start
+  else if start <= 0 then start
   else let
-    val count = (if m - at < 7 then m - at else 7): [count:pos | count <= 7; at + count <= m] int count
-    val piece = $A.alloc<byte>(7)
-    val () = $GZ.google_message_read(said, at, piece, count)
-    val () = copy_piece(piece, copy, at, count, 0)
-    val () = $A.free<byte>(piece)
-  in read_by_sevens(said, copy, m, at + count) end
+    val () = $A.set<byte>(out, start - 1, int2byte0(45))
+  in start - 1 end
 
-(* An answer not recognised: "unexpected", its code, then its message *)
-fn hash_unexpected (code: $R.option([n:pos] $BD.dblob(n)), message: $R.option([m:pos] $GZ.google_message(m))): void = let
+(* n in decimal, in the hash *)
+fn hash_number (n: int): void = let
+  val out = $A.alloc<byte>(12)
+  val start = digits_put(out, 12, n)
+  val start = sign_put(out, start, n < 0)
+  val count = 12 - start
+  val copy = $A.alloc<byte>(count)
+  val () = copy_from(out, start, copy, count, 0)
+  val () = $A.free<byte>(out)
+in hash_bytes(copy, count) end
+
+(* An answer not recognised: "unexpected", its case, then what it kept *)
+fn hash_unexpected (unexpected: $GZ.google_unexpected): void = let
   val () = hash_text("unexpected")
-  val () = hash_code(code)
 in
-  case+ message of
-  | ~$R.some(said) => let
-      val m = $GZ.google_message_length(said)
-    in
-      if m > 4096 then let
-        val () = $GZ.google_message_free(said)
-      in hash_text("too long") end
-      else let
-        val copy = $A.alloc<byte>(m)
-        val () = read_by_sevens(said, copy, m, 0)
-        val () = $GZ.google_message_free(said)
-      in hash_bytes(copy, m) end
-    end
-  | ~$R.none() => hash_text("no message")
+  case+ unexpected of
+  | ~$GZ.RejectedOther(code, message) => let
+      val () = hash_text("rejected other")
+      val () = hash_code(code)
+    in hash_message(message) end
+  | ~$GZ.RejectionNotObject() => hash_text("rejection not object")
+  | ~$GZ.CodeNotText(message) => let
+      val () = hash_text("code not text")
+    in hash_message(message) end
+  | ~$GZ.MessageNotText(code) => let
+      val () = hash_text("message not text")
+    in hash_code(code) end
+  | ~$GZ.CodeAndMessageNotText() => hash_text("code and message not text")
+  | ~$GZ.NoAuthorizationObject() => hash_text("no authorization object")
+  | ~$GZ.TokenNotPrintable() => hash_text("token not printable")
+  | ~$GZ.ScopesNotPrintable() => hash_text("scopes not printable")
+  | ~$GZ.AccountNotPrintable() => hash_text("account not printable")
+  | ~$GZ.OddAnswerCode(number, code, message) => let
+      val () = hash_text("odd answer code")
+      val () = hash_number(number)
+      val () = hash_code(code)
+    in hash_message(message) end
+  | ~$GZ.TokenWithoutScopes() => hash_text("token without scopes")
+  | ~$GZ.NoToken() => hash_text("no token")
 end
 
 vtypedef step = $P.promise($GZ.google_authorization_change, $P.Chained)
@@ -160,7 +173,7 @@ fn told_change (change: $GZ.google_authorization_change): step =
       val () = hash_text("unavailable")
       val () = hash_message(message)
     in done() end
-  | ~$GZ.ChangeUnexpected(code, message) => let val () = hash_unexpected(code, message) in done() end
+  | ~$GZ.ChangeUnexpected(unexpected) => let val () = hash_unexpected(unexpected) in done() end
 
 (* a's bytes as a google_text, a freed; none when they are not
    printable ASCII, or are too long to be one *)
@@ -241,7 +254,7 @@ fn told_found (answer: $GZ.google_authorization($GZ.Silently)): step =
       val () = hash_text("unavailable")
       val () = hash_message(message)
     in done() end
-  | ~$GZ.AuthorizeUnexpected(code, message) => let val () = hash_unexpected(code, message) in done() end
+  | ~$GZ.AuthorizeUnexpected(unexpected) => let val () = hash_unexpected(unexpected) in done() end
 
 fn told_asked (answer: $GZ.google_authorization($GZ.MayAsk)): step =
   case+ answer of
@@ -259,7 +272,7 @@ fn told_asked (answer: $GZ.google_authorization($GZ.MayAsk)): step =
       val () = hash_text("unavailable")
       val () = hash_message(message)
     in done() end
-  | ~$GZ.AuthorizeUnexpected(code, message) => let val () = hash_unexpected(code, message) in done() end
+  | ~$GZ.AuthorizeUnexpected(unexpected) => let val () = hash_unexpected(unexpected) in done() end
 
 (* Asks for drive.appdata with no UI *)
 fn found (): step =
@@ -312,9 +325,7 @@ fn ended (change: $GZ.google_authorization_change): void =
   | ~$GZ.Changed() => ()
   | ~$GZ.ChangeRefused(_, message) => free_part(message)
   | ~$GZ.ChangeUnavailable(message) => free_part(message)
-  | ~$GZ.ChangeUnexpected(code, message) => let
-      val () = free_part(code)
-    in free_message(message) end
+  | ~$GZ.ChangeUnexpected(unexpected) => $GZ.google_unexpected_free(unexpected)
 
 (* Asks for drive.appdata with no UI left times, one after another *)
 fun found_times {left:pos} .<left>. (left: int left): step =
@@ -447,7 +458,14 @@ implement main0 () = let
     val () = ended(change) in clear_text("unimplemented-token") end)
   val s30 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s29, llam(change) => let
     val () = ended(change) in revoke_text("unimplemented@example.com") end)
-  (* answer codes bridge's JS never gives (check.mjs puts them in) *)
+  (* answers bridge's JS never gives (check.mjs puts them in), then a
+     rejection whose code and message are each not text *)
   val s31 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s30, llam(change) => let
-    val () = ended(change) in found_times(3) end)
-in $P.finish<$GZ.google_authorization_change>(s31, llam(change) => ended(change)) end
+    val () = ended(change) in found_times(6) end)
+  (* 0 from authorizeScopes, and an authorization's code from a clear:
+     answer codes JS never gives them (check.mjs puts them in) *)
+  val s32 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s31, llam(change) => let
+    val () = ended(change) in asked() end)
+  val s33 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s32, llam(change) => let
+    val () = ended(change) in clear_text("odd-code-token") end)
+in $P.finish<$GZ.google_authorization_change>(s33, llam(change) => ended(change)) end

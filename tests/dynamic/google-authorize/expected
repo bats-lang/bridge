@@ -77,6 +77,11 @@ revokeAccess: {"account":"unimplemented@example.com","scopes":["https://www.goog
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+clearAuthorizationToken: {"accessToken":"odd-code-token"}
 hash: #available
 hash: #nnny
 hash: #authorization for scopes
@@ -94,18 +99,22 @@ hash: #07
 hash: #7: offline
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #no code
 hash: #failed
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #UNEXPECTED
 hash: #IllegalStateException: odd
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #SOMETHING_NEW
 hash: #new in Play services
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #CONSENT_SHOWING
 hash: #Another call's consent screen is showing
 hash: #authorization for scopes
@@ -185,68 +194,56 @@ hash: #22
 hash: #RECONNECTION_TIMED_OUT from Play services
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #SUCCESS
 hash: #0: 
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #SUCCESS_CACHE
 hash: #-1: 
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The answer has no authorization object
+hash: #no authorization object
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The answer has no authorization object
+hash: #no authorization object
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The answer has no authorization object
+hash: #no authorization object
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The access token is not printable ASCII
+hash: #token not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The access token is not printable ASCII
+hash: #token not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The access token is not printable ASCII
+hash: #token not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The scopes granted are not a non-empty list of printable ASCII
+hash: #scopes not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The scopes granted are not a non-empty list of printable ASCII
+hash: #scopes not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The scopes granted are not a non-empty list of printable ASCII
+hash: #scopes not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The scopes granted are not a non-empty list of printable ASCII
+hash: #scopes not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The scopes granted are not a non-empty list of printable ASCII
+hash: #scopes not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The account is neither null nor printable ASCII
+hash: #account not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The account is neither null nor printable ASCII
+hash: #account not printable
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The account is neither null nor printable ASCII
+hash: #account not printable
 hash: #authorization for scopes
 hash: #refused
 hash: #NETWORK_ERROR
@@ -254,30 +251,31 @@ hash: #07
 hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The rejection is neither an object nor text
+hash: #rejection not object
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #no code
 hash: #refused as a string
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The rejection is neither an object nor text
+hash: #rejection not object
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The code of the rejection is not text; its message: 7: offline
+hash: #code not text
+hash: #7: offline
 hash: #authorization for scopes
 hash: #unexpected
+hash: #message not text
 hash: #NETWORK_ERROR
-hash: #The message of the rejection is not text
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #no code
-hash: #the answer failed with no code and no message
+hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
+hash: #rejected other
 hash: #no code
 hash: #m
 hash: #authorization for scopes
@@ -298,8 +296,7 @@ hash: #consent showing
 hash: #CONSENT_SHOWING
 hash: #authorize scopes
 hash: #unexpected
-hash: #no code
-hash: #The answer has no authorization object
+hash: #no authorization object
 hash: #authorize scopes
 hash: #refused
 hash: #DEVELOPER_ERROR
@@ -310,18 +307,20 @@ hash: #canceled
 hash: #16: 
 hash: #authorize scopes
 hash: #unexpected
-hash: #no code
-hash: #The scopes granted are not a non-empty list of printable ASCII
+hash: #scopes not printable
 hash: #authorize scopes
 hash: #unexpected
+hash: #rejected other
 hash: #UNEXPECTED
 hash: #The consent screen completed but returned nothing
 hash: #authorize scopes
 hash: #unexpected
+hash: #rejected other
 hash: #no code
 hash: #no code given
 hash: #authorize scopes
 hash: #unexpected
+hash: #rejected other
 hash: #SOMETHING_NEW
 hash: #new in Play services
 hash: #clear
@@ -331,10 +330,12 @@ hash: #08
 hash: #8: failed
 hash: #clear
 hash: #unexpected
+hash: #rejected other
 hash: #UNEXPECTED
 hash: #NullPointerException: null
 hash: #clear
 hash: #unexpected
+hash: #rejected other
 hash: #CONSENT_SHOWING
 hash: #not documented here
 hash: #clear
@@ -346,10 +347,12 @@ hash: #07
 hash: #7: offline
 hash: #revoke
 hash: #unexpected
+hash: #rejected other
 hash: #UNEXPECTED
 hash: #IllegalStateException: odd
 hash: #revoke
 hash: #unexpected
+hash: #rejected other
 hash: #CONSENT_SHOWING
 hash: #not documented here
 hash: #clear
@@ -359,22 +362,21 @@ hash: #08
 hash: #no message
 hash: #revoke
 hash: #unexpected
-hash: #no code
-hash: #The rejection is neither an object nor text
+hash: #rejection not object
 hash: #clear
 hash: #unexpected
+hash: #rejected other
 hash: #no code
 hash: #refused as a string
 hash: #clear
 hash: #not a token
 hash: #clear
 hash: #unexpected
+hash: #message not text
 hash: #INTERNAL_ERROR
-hash: #The message of the rejection is not text
 hash: #revoke
 hash: #unexpected
-hash: #no code
-hash: #The rejection is neither an object nor text
+hash: #rejection not object
 hash: #authorization for scopes
 hash: #unavailable
 hash: #Not implemented on this platform
@@ -389,16 +391,43 @@ hash: #unavailable
 hash: #Not implemented on this platform
 hash: #authorization for scopes
 hash: #unexpected
+hash: #odd answer code
+hash: #-99
 hash: #NETWORK_ERROR
-hash: #the answer code was -9, which this call never gives; its message: 7: offline
+hash: #7: offline
 hash: #authorization for scopes
 hash: #unexpected
+hash: #odd answer code
+hash: #-99
 hash: #NETWORK_ERROR
-hash: #the answer code was -9, which this call never gives
+hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
+hash: #odd answer code
+hash: #-2147483648
 hash: #NETWORK_ERROR
-hash: #the answer code was -2147483648, which this call never gives
+hash: #no message
+hash: #authorization for scopes
+hash: #unexpected
+hash: #token without scopes
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no token
+hash: #authorization for scopes
+hash: #unexpected
+hash: #code and message not text
+hash: #authorize scopes
+hash: #unexpected
+hash: #odd answer code
+hash: #0
+hash: #NETWORK_ERROR
+hash: #7: offline
+hash: #clear
+hash: #unexpected
+hash: #odd answer code
+hash: #-7
+hash: #INTERNAL_ERROR
+hash: #8: failed
 == browser page
 hash: #unavailable
 hash: #nnny
@@ -629,5 +658,20 @@ hash: #authorization for scopes
 hash: #unavailable
 hash: #no message
 hash: #authorization for scopes
+hash: #unavailable
+hash: #no message
+hash: #authorization for scopes
+hash: #unavailable
+hash: #no message
+hash: #authorization for scopes
+hash: #unavailable
+hash: #no message
+hash: #authorization for scopes
+hash: #unavailable
+hash: #no message
+hash: #authorize scopes
+hash: #unavailable
+hash: #no message
+hash: #clear
 hash: #unavailable
 hash: #no message

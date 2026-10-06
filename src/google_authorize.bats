@@ -63,18 +63,45 @@ staload "./decompress.bats"
 (* A status's number in CommonStatusCodes (DEVELOPER_ERROR is 10) *)
 #pub fn google_status_number (status: google_status): [n:nat | n < 100] int n
 
-(* The message an Unexpected carries, m bytes: the one the answer came
-   with, or one this module gives naming a case it finds itself *)
-#pub absvtype google_message(m:int) = ptr
+(* What an answer this module does not recognise was, each case once.
+   A code or message is the rejection's own, none when null, missing or
+   empty *)
+#pub datavtype google_unexpected =
+  (* A rejection whose code names no outcome of the call (the plugin's
+     UNEXPECTED; INVALID_OPTIONS, which this module's types rule out;
+     SUCCESS, SUCCESS_CACHE; CONSENT_SHOWING from a call that shows no
+     consent screen; a code nothing documents), or that has no code,
+     with its code and message. A rejection that is text is its
+     message *)
+  | RejectedOther of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
+  (* A rejection that is neither an object nor text *)
+  | RejectionNotObject
+  (* A rejection whose code is not text, with its message *)
+  | CodeNotText of $R.option([m:pos] dblob(m))
+  (* A rejection whose message is not text, with its code *)
+  | MessageNotText of $R.option([c:pos] dblob(c))
+  (* A rejection whose code and message are each not text *)
+  | CodeAndMessageNotText
+  (* An authorization answer that has no authorization object *)
+  | NoAuthorizationObject
+  (* An authorization whose access token is not printable ASCII *)
+  | TokenNotPrintable
+  (* An authorization whose scopes are not a non-empty list of printable
+     ASCII *)
+  | ScopesNotPrintable
+  (* An authorization whose account is neither null nor printable ASCII
+     (a missing one among them) *)
+  | AccountNotPrintable
+  (* An answer code JS never gives for the call (0 from authorizeScopes
+     among them), with the code and message JS kept *)
+  | OddAnswerCode of (int, $R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
+  (* A token JS gave without scopes, an answer it never gives *)
+  | TokenWithoutScopes
+  (* A positive answer code that holds no token (no blob, or an empty
+     one), an answer JS never gives *)
+  | NoToken
 
-#pub fn google_message_length {m:pos} (message: !google_message(m)): int m
-
-(* out[0, count) := the message's bytes [at, at + count) *)
-#pub fn google_message_read
-  {m:pos}{at,count:nat | at + count <= m}{l:agz}{owner:addr}{size:pos | count <= size}
-  (message: !google_message(m), at: int at, out: !$A.arrx(byte, l, size, owner), count: int count): void
-
-#pub fn google_message_free {m:pos} (message: google_message(m)): void
+#pub fn google_unexpected_free (unexpected: google_unexpected): void
 
 (* What asking for an authorization came to. JS's answer is decoded
    here, once. Linear: its blobs are JS's until they are freed; an
@@ -100,25 +127,8 @@ staload "./decompress.bats"
   (* No plugin: a browser, or an app without it (UNIMPLEMENTED), with
      the message, when the platform gave one *)
   | {w:asking} AuthorizeUnavailable(w) of $R.option([m:pos] dblob(m))
-  (* An answer this module does not recognise. A rejection whose code
-     names no outcome above (the plugin's UNEXPECTED; INVALID_OPTIONS,
-     which this module's types rule out; SUCCESS, SUCCESS_CACHE,
-     CONSENT_SHOWING from
-     authorizationForScopes, a code nothing documents, or none) carries
-     its code and message, each none when null, missing or empty. An
-     answer JS cannot pass on as Authorized (no authorization object;
-     an access token that is not a string of printable ASCII; scopes
-     that are not a non-empty list of them; an account that is neither
-     null nor a string of printable ASCII, a missing one among them)
-     carries no code and a message JS gives saying which it was. A
-     rejection that is text is its message; one that is neither an
-     object nor text carries no code and a message JS gives saying so; one whose code or message is not text
-     carries JS's message saying which, the rest kept. A case this
-     module finds itself (a rejection with no code and no message, an
-     answer JS never gives) carries the code JS kept, if any, and a
-     message naming the case, then the message JS kept, if any. So
-     every Unexpected has a reason *)
-  | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] google_message(m)))
+  (* An answer this module does not recognise, and what it was *)
+  | {w:asking} AuthorizeUnexpected(w) of google_unexpected
 
 (* How clearing a token or revoking a grant ended *)
 #pub datavtype google_authorization_change =
@@ -130,20 +140,8 @@ staload "./decompress.bats"
   (* No plugin: a browser, or an app without it (UNIMPLEMENTED), with
      the message, when the platform gave one *)
   | ChangeUnavailable of $R.option([m:pos] dblob(m))
-  (* An answer this module does not recognise. A rejection whose code
-     names no outcome above (the plugin's UNEXPECTED; INVALID_OPTIONS,
-     which this module's types rule out; SUCCESS, SUCCESS_CACHE,
-     CONSENT_SHOWING, a code nothing documents,
-     or none) carries its code and message, each none when null,
-     missing or empty. A rejection that is text is its message; one
-     that is neither an object nor text carries no code and a message
-     JS gives saying so; one whose code
-     or message is not text carries JS's message saying which, the rest
-     kept. A case this module finds itself (a rejection with no code
-     and no message, an answer JS never gives) carries the code JS
-     kept, if any, and a message naming the case, then the message JS
-     kept, if any. So every Unexpected has a reason *)
-  | ChangeUnexpected of ($R.option([c:pos] dblob(c)), $R.option([m:pos] google_message(m)))
+  (* An answer this module does not recognise, and what it was *)
+  | ChangeUnexpected of google_unexpected
 
 (* Whether the app has the plugin: false in a browser *)
 #pub fun google_authorize_available(): bool
@@ -368,179 +366,30 @@ datavtype failure =
   | FailedStatus of (google_status, $R.option([m:pos] dblob(m)))
   | {c:pos} FailedConsentShowing of (dblob(c), $R.option([m:pos] dblob(m)))
   | FailedUnavailable of $R.option([m:pos] dblob(m))
-  | FailedOther of ($R.option([c:pos] dblob(c)), $R.option([m:pos] google_message(m)))
+  | FailedOther of google_unexpected
 
-datavtype message_rep(int) =
-  | {m:pos} Answered(m) of dblob(m)
-  | {l:agz}{m:pos} Naming(m) of ($A.arr(byte, l, m), int m)
-  (* a message naming a case, then the one the answer came with *)
-  | {l:agz}{k,m:pos} Joined(k + m) of ($A.arr(byte, l, k), int k, dblob(m))
-$UNSAFE begin
-assume google_message(m) = message_rep(m)
-end
-
-implement google_message_length {m} (message) =
-  case+ message of
-  | @Answered(blob) => let
-      val length = blob_len(blob)
-      prval () = fold@(message)
-    in length end
-  | @Naming(_, length) => let
-      val n = length
-      prval () = fold@(message)
-    in n end
-  | @Joined(_, length, blob) => let
-      val n = length + blob_len(blob)
-      prval () = fold@(message)
-    in n end
-
-(* out[to + j, to + count) := from[at + j, at + count) *)
-fun _copy_range {l,c:agz}{owner:addr}{m,size:pos}{at,to,count:nat | at + count <= m; to + count <= size}{j:nat | j <= count} .<count - j>.
-  (from: !$A.arr(byte, l, m), at: int at, out: !$A.arrx(byte, c, size, owner), to: int to, count: int count, j: int j): void =
-  if j >= count then ()
-  else let
-    val () = $A.set<byte>(out, to + j, $A.get<byte>(from, at + j))
-  in _copy_range(from, at, out, to, count, j + 1) end
-
-(* out[to, to + count) := the blob's bytes [at, at + count), 4096 at a time *)
-fun _blob_into {m:pos}{c:agz}{owner:addr}{size:pos}{at,to,count:nat | at + count <= m; to + count <= size} .<count>.
-  (blob: !dblob(m), at: int at, out: !$A.arrx(byte, c, size, owner), to: int to, count: int count): void =
-  if count <= 0 then ()
-  else let
-    val step = (if count < 4096 then count else 4096): [step:pos | step <= count; step <= 4096] int step
-    val chunk = $A.alloc<byte>(step)
-    val () = blob_read(blob, at, chunk, step)
-    val () = _copy_range(chunk, 0, out, to, step, 0)
-    val () = $A.free<byte>(chunk)
-  in _blob_into(blob, at + step, out, to + step, count - step) end
-
-implement google_message_read {m}{at,count}{l}{owner}{size} (message, at, out, count) =
-  case+ message of
-  | @Answered(blob) => let
-      val () = blob_read(blob, at, out, count)
-      prval () = fold@(message)
-    in () end
-  | @Naming(bytes, _) => let
-      val () = _copy_range(bytes, at, out, 0, count, 0)
-      prval () = fold@(message)
-    in () end
-  | @Joined(bytes, length, blob) => let
-      val k = length
-      val () =
-        if at + count <= k then _copy_range(bytes, at, out, 0, count, 0)
-        else if at >= k then _blob_into(blob, at - k, out, 0, count)
-        else let
-          val () = _copy_range(bytes, at, out, 0, k - at, 0)
-        in _blob_into(blob, 0, out, k - at, count - (k - at)) end
-      prval () = fold@(message)
-    in () end
-
-implement google_message_free {m} (message) =
-  case+ message of
-  | ~Answered(blob) => blob_free(blob)
-  | ~Naming(bytes, _) => $A.free<byte>(bytes)
-  | ~Joined(bytes, _, blob) => let
-      val () = $A.free<byte>(bytes)
-    in blob_free(blob) end
-
-fn _free_message (message: $R.option([m:pos] google_message(m))): void =
-  case+ message of
-  | ~$R.some(said) => google_message_free(said)
-  | ~$R.none() => ()
-
-(* The message an answer came with, kept as JS holds it *)
-fn _message_of (message: $R.option([m:pos] dblob(m))): $R.option([m:pos] google_message(m)) =
-  case+ message of
-  | ~$R.none() => $R.none()
-  | ~$R.some(blob) => $R.some(Answered(blob))
-
-(* A message naming a case this module finds itself *)
-fn _naming {n:pos | n < 256} (text: string n): $R.option([m:pos] google_message(m)) = let
-  val len = g1u2i(string1_length(text))
-  val out = $A.alloc<byte>(len)
-  val () = $A.write_text(out, 0, $A.text_lit(text), len)
-in $R.some(Naming(out, len)) end
-
-(* bytes, a message naming a case, then the message the answer came
-   with, if any *)
-fn _with_message {l:agz}{k:pos | k <= 1048000}
-  (bytes: $A.arr(byte, l, k), k: int k, message: $R.option([m:pos] dblob(m))): $R.option([m:pos] google_message(m)) =
-  case+ message of
-  | ~$R.none() => $R.some(Naming(bytes, k))
-  | ~$R.some(blob) => let
-      val head = $A.alloc<byte>(k + 15)
-      val () = _copy_range(bytes, 0, head, 0, k, 0)
-      val () = $A.free<byte>(bytes)
-      val () = $A.write_text(head, k, $A.text_lit("; its message: "), 15)
-    in $R.some(Joined(head, k + 15, blob)) end
-
-(* How many decimal digits v has, its sign aside *)
-fun _digit_count {d:pos | d <= 10} .<10 - d>. (v: int, d: int d): [r:pos | r <= 10] int r =
-  if d >= 10 then 10
-  else if v < 10 && v > ~10 then d
-  else _digit_count(v / 10, d + 1)
-
-(* out[low, i] := the last i - low + 1 decimal digits of v, its sign aside
-   (v is not negated, so the least int has its digits too) *)
-fun _put_digits {c:agz}{low:nat}{i:int | i >= low - 1; i < 96} .<i - low + 1>.
-  (out: !$A.arr(byte, c, 96), low: int low, i: int i, v: int): void =
-  if i < low then ()
-  else let
-    val rest = v - (v / 10) * 10
-    val digit = (if rest < 0 then 0 - rest else rest): int
-    val () = $A.set<byte>(out, i, int2byte0(48 + digit))
-  in _put_digits(out, low, i - 1, v / 10) end
-
-(* out[20] := '-' when the code is negative *)
-fn _put_sign {c:agz} (out: !$A.arr(byte, c, 96), negative: bool): void =
-  if negative then $A.write_byte(out, 20, 45)
-
-(* "the answer code was CODE, which this call never gives", then the
-   message the answer came with, if any *)
-fn _odd_code_message (code: int, message: $R.option([m:pos] dblob(m))): $R.option([m:pos] google_message(m)) = let
-  val out = $A.alloc<byte>(96)
-  val () = $A.write_text(out, 0, $A.text_lit("the answer code was "), 20)
-  val negative = code < 0
-  val () = _put_sign(out, negative)
-  val at = (if negative then 21 else 20): [at:nat | at <= 21; at >= 20] int at
-  val digits = _digit_count(code, 1)
-  val () = _put_digits(out, at, at + digits - 1, code)
-  val stop = at + digits
-  val () = $A.write_text(out, stop, $A.text_lit(", which this call never gives"), 29)
-  val kept = $A.alloc<byte>(stop + 29)
-  val () = _copy_range(out, 0, kept, 0, stop + 29, 0)
-  val () = $A.free<byte>(out)
-in _with_message(kept, stop + 29, message) end
-
-(* What failed, when the answer came with no code and no message *)
-fn _no_reason (): failure =
-  FailedOther($R.none(), _naming("the answer failed with no code and no message"))
-
-(* A case this module finds itself: the code JS kept, if any, and a
-   message naming the case, then the message JS kept, if any *)
-fn _found_itself {n:pos | n < 256} (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m)), text: string n): failure = let
-  val len = g1u2i(string1_length(text))
-  val bytes = $A.alloc<byte>(len)
-  val () = $A.write_text(bytes, 0, $A.text_lit(text), len)
-in FailedOther(code, _with_message(bytes, len, message)) end
-
-(* An answer code this call never gives, named with its number *)
-fn _odd_code (number: int, code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m))): failure =
-  FailedOther(code, _odd_code_message(number, message))
-
-(* A rejection JS took apart: a code or a message that was not text
-   is replaced by JS's message saying so, and the rest kept, so it is
-   recognised as no outcome (answer code -3) *)
-fn _malformed (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m))): failure =
-  case+ message of
-  | ~$R.some(kept) => FailedOther(code, _message_of($R.some(kept)))
-  | ~$R.none() => _found_itself(code, $R.none(), "a rejection JS took apart came with no message")
+implement google_unexpected_free (unexpected) =
+  case+ unexpected of
+  | ~RejectedOther(code, message) => let
+      val () = _free_part(code)
+    in _free_part(message) end
+  | ~RejectionNotObject() => ()
+  | ~CodeNotText(message) => _free_part(message)
+  | ~MessageNotText(code) => _free_part(code)
+  | ~CodeAndMessageNotText() => ()
+  | ~NoAuthorizationObject() => ()
+  | ~TokenNotPrintable() => ()
+  | ~ScopesNotPrintable() => ()
+  | ~AccountNotPrintable() => ()
+  | ~OddAnswerCode(_, code, message) => let
+      val () = _free_part(code)
+    in _free_part(message) end
+  | ~TokenWithoutScopes() => ()
+  | ~NoToken() => ()
 
 fn _failure (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m))): failure =
   case+ code of
-  | ~$R.none() => (case+ message of
-    | ~$R.none() => _no_reason()
-    | ~$R.some(text) => FailedOther($R.none(), _message_of($R.some(text))))
+  | ~$R.none() => FailedOther(RejectedOther($R.none(), message))
   | ~$R.some(blob) =>
     if _is(blob, "CONSENT_SHOWING") then FailedConsentShowing(blob, message)
     else if _is(blob, "UNIMPLEMENTED") then let
@@ -548,7 +397,38 @@ fn _failure (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob
     in FailedUnavailable(message) end
     else (case+ _status_from(blob, StatusServiceVersionUpdateRequired(), 18) of
       | ~$R.some(status) => let val () = blob_free(blob) in FailedStatus(status, message) end
-      | ~$R.none() => FailedOther($R.some(blob), _message_of(message)))
+      | ~$R.none() => FailedOther(RejectedOther($R.some(blob), message)))
+
+(* JS's answer codes but a token, 0 and -2 (failed): -3 a rejection
+   that is neither an object nor text; -4 its code not text, -5 its
+   message, -6 both; and, for an authorization only, -7 no
+   authorization object, -8 a token, -9 scopes, -10 an account not
+   printable ASCII. Any other is a code JS never gives *)
+fn _unexpected (number: int, authorizing: bool, code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob(m))): google_unexpected =
+  if number = ~3 then let
+    val () = _free_part(code)
+    val () = _free_part(message)
+  in RejectionNotObject() end
+  else if number = ~4 then let
+    val () = _free_part(code)
+  in CodeNotText(message) end
+  else if number = ~5 then let
+    val () = _free_part(message)
+  in MessageNotText(code) end
+  else if number = ~6 then let
+    val () = _free_part(code)
+    val () = _free_part(message)
+  in CodeAndMessageNotText() end
+  else if authorizing && number <= ~7 && number >= ~10 then let
+    val () = _free_part(code)
+    val () = _free_part(message)
+  in
+    if number = ~7 then NoAuthorizationObject()
+    else if number = ~8 then TokenNotPrintable()
+    else if number = ~9 then ScopesNotPrintable()
+    else AccountNotPrintable()
+  end
+  else OddAnswerCode(number, code, message)
 
 (* JS's answer, before it is one of an atom's: the codes are the
    token's blob (positive), 0 not authorized, anything else failed.
@@ -556,7 +436,7 @@ fn _failure (code: $R.option([c:pos] dblob(c)), message: $R.option([m:pos] dblob
 datavtype answer =
   | AnswerToken of
       ([n:pos] dblob(n), [k:pos] dblob(k), $R.option([a:pos] dblob(a)))
-  | AnswerNone
+  | AnswerNone of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
   | AnswerFailed of failure
 
 fn _answer (resolver_id: int, code: Int): answer = let
@@ -565,34 +445,30 @@ fn _answer (resolver_id: int, code: Int): answer = let
   val failure = _part(resolver_id, PartCode())
   val message = _part(resolver_id, PartMessage())
 in
-  if code > 0 then
+  if code > 0 then let
+    (* JS keeps no code or message with a token *)
+    val () = _free_part(failure)
+    val () = _free_part(message)
+  in
     (case+ _nonempty(code) of
      | ~$R.some(token) => (case+ scopes of
-       | ~$R.some(granted) => let
-           val () = _free_part(failure)
-           val () = _free_part(message)
-         in AnswerToken(token, granted, account) end
-       (* JS answers a grant of no scope as failed, so a token comes with
-          scopes; one without is an answer this module does not document *)
+       | ~$R.some(granted) => AnswerToken(token, granted, account)
        | ~$R.none() => let
            val () = blob_free(token)
            val () = _free_part(account)
-         in AnswerFailed(_found_itself(failure, message, "a token came without scopes")) end)
+         in AnswerFailed(FailedOther(TokenWithoutScopes())) end)
      | ~$R.none() => let
          val () = _free_part(scopes)
          val () = _free_part(account)
-       in AnswerFailed(_found_itself(failure, message, "the answer's token was empty")) end)
+       in AnswerFailed(FailedOther(NoToken())) end)
+  end
   else let
     val () = _free_part(scopes)
     val () = _free_part(account)
   in
-    if code = 0 then let
-      val () = _free_part(failure)
-      val () = _free_part(message)
-    in AnswerNone() end
+    if code = 0 then AnswerNone(failure, message)
     else if code = ~2 then AnswerFailed(_failure(failure, message))
-    else if code = ~3 then AnswerFailed(_malformed(failure, message))
-    else AnswerFailed(_odd_code(code, failure, message))
+    else AnswerFailed(FailedOther(_unexpected(code, true, failure, message)))
   end
 end
 
@@ -601,28 +477,32 @@ end
 fn _found_failure (failure: failure): google_authorization(Silently) =
   case+ failure of
   | ~FailedStatus(status, message) => AuthorizeRefused(status, message)
-  | ~FailedConsentShowing(code, message) => AuthorizeUnexpected($R.some(code), _message_of(message))
+  | ~FailedConsentShowing(code, message) => AuthorizeUnexpected(RejectedOther($R.some(code), message))
   | ~FailedUnavailable(message) => AuthorizeUnavailable(message)
-  | ~FailedOther(code, message) => AuthorizeUnexpected(code, message)
+  | ~FailedOther(unexpected) => AuthorizeUnexpected(unexpected)
 
 (* authorizationForScopes' answer: Play services' CANCELED from it
    (it shows nothing to cancel) is a refusal like any other status *)
 fn _found (answer: answer): google_authorization(Silently) =
   case+ answer of
   | ~AnswerToken(token, scopes, account) => Authorized(token, scopes, account)
-  | ~AnswerNone() => NotAuthorized()
+  | ~AnswerNone(code, message) => let
+      (* JS keeps no code or message with 0 *)
+      val () = _free_part(code)
+      val () = _free_part(message)
+    in NotAuthorized() end
   | ~AnswerFailed(failure) => _found_failure(failure)
 
 (* authorizeScopes' answer: it always gives an authorization when it
-   resolves (JS answers 0 only for authorizationForScopes), so none is
-   unexpected; CANCELED, decoded here alone, is AuthorizeCanceled with
-   its message: the plugin's code for the reader backing out, which a
-   CANCELED status Play services gives before any consent screen shares
-   (bats-lang/capacitor-plugins#8) *)
+   resolves (JS answers 0 only for authorizationForScopes), so 0 is
+   an answer code JS never gives; CANCELED, decoded here alone, is
+   AuthorizeCanceled with its message: the plugin's code for the reader
+   backing out, which a CANCELED status Play services gives before any
+   consent screen shares (bats-lang/capacitor-plugins#8) *)
 fn _asked (answer: answer): google_authorization(MayAsk) =
   case+ answer of
   | ~AnswerToken(token, scopes, account) => Authorized(token, scopes, account)
-  | ~AnswerNone() => AuthorizeUnexpected($R.none(), _naming("authorizeScopes answered with no authorization"))
+  | ~AnswerNone(code, message) => AuthorizeUnexpected(OddAnswerCode(0, code, message))
   | ~AnswerFailed(failure) => (case+ failure of
     | ~FailedStatus(status, message) => (case+ status of
       | StatusCanceled() => AuthorizeCanceled(message)
@@ -631,7 +511,7 @@ fn _asked (answer: answer): google_authorization(MayAsk) =
         val () = blob_free(code)
       in ConsentShowing(message) end
     | ~FailedUnavailable(message) => AuthorizeUnavailable(message)
-    | ~FailedOther(code, message) => AuthorizeUnexpected(code, message))
+    | ~FailedOther(unexpected) => AuthorizeUnexpected(unexpected))
 
 (* clearAuthorizationToken's and revokeAccess': 0 done, anything else
    failed; neither shows a consent screen *)
@@ -640,16 +520,16 @@ fn _change (resolver_id: int, code: Int): google_authorization_change = let
   val message = _part(resolver_id, PartMessage())
 in
   if code = 0 then let
+    (* JS keeps no code or message with 0 *)
     val () = _free_part(failure)
     val () = _free_part(message)
   in Changed() end
   else (case+ (if code = ~2 then _failure(failure, message)
-      else if code = ~3 then _malformed(failure, message)
-      else _odd_code(code, failure, message)): failure of
+      else FailedOther(_unexpected(code, false, failure, message))): failure of
     | ~FailedStatus(status, message) => ChangeRefused(status, message)
-    | ~FailedConsentShowing(code, message) => ChangeUnexpected($R.some(code), _message_of(message))
+    | ~FailedConsentShowing(code, message) => ChangeUnexpected(RejectedOther($R.some(code), message))
     | ~FailedUnavailable(message) => ChangeUnavailable(message)
-    | ~FailedOther(code, message) => ChangeUnexpected(code, message))
+    | ~FailedOther(unexpected) => ChangeUnexpected(unexpected))
 end
 
 fn {} _free_authorization {w:asking} (answer: google_authorization(w)): void =
@@ -663,9 +543,7 @@ fn {} _free_authorization {w:asking} (answer: google_authorization(w)): void =
   | ~ConsentShowing(message) => _free_part(message)
   | ~AuthorizeRefused(_, message) => _free_part(message)
   | ~AuthorizeUnavailable(message) => _free_part(message)
-  | ~AuthorizeUnexpected(code, message) => let
-      val () = _free_part(code)
-    in _free_message(message) end
+  | ~AuthorizeUnexpected(unexpected) => google_unexpected_free(unexpected)
 
 (* Answers nobody took: their blobs are freed. Before their first use *)
 implement $P.dispose<google_authorization(Silently)>(answer) = _free_authorization(answer)
@@ -675,9 +553,7 @@ implement $P.dispose<google_authorization_change>(change) =
   | ~Changed() => ()
   | ~ChangeRefused(_, message) => _free_part(message)
   | ~ChangeUnavailable(message) => _free_part(message)
-  | ~ChangeUnexpected(code, message) => let
-      val () = _free_part(code)
-    in _free_message(message) end
+  | ~ChangeUnexpected(unexpected) => google_unexpected_free(unexpected)
 
 implement google_authorize_available() = _bats_js_google_authorize_available() > 0
 

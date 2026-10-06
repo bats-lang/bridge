@@ -21,22 +21,30 @@ const failure = (code, message) => Object.assign(new Error(message || code || 'f
 const STATUSES = ['SERVICE_VERSION_UPDATE_REQUIRED', 'SERVICE_DISABLED', 'SIGN_IN_REQUIRED', 'INVALID_ACCOUNT',
   'RESOLUTION_REQUIRED', 'ERROR', 'INTERRUPTED', 'TIMEOUT', 'API_NOT_CONNECTED', 'DEAD_CLIENT', 'REMOTE_EXCEPTION',
   'CONNECTION_SUSPENDED_DURING_CALL', 'RECONNECTION_TIMED_OUT_DURING_UPDATE', 'RECONNECTION_TIMED_OUT'];
-// An answer code bridge's JS never gives, put in place of the next
-// failure's (-2) as it reaches the app, its code and message kept: what
-// the app does with a code it does not know
-let oddAnswer = 0;
+// Answers bridge's JS never gives, put in as they reach the app: an
+// answer code in place of the next failure's (-2), its code and message
+// kept; and the next authorization's scopes withheld
+let oddAnswer = null;
+let scopesWithheld = false;
 const instantiate = WebAssembly.instantiate;
 WebAssembly.instantiate = async (bytes, imports) => {
+  const part = imports.env.bats_js_google_authorize_part;
+  imports.env.bats_js_google_authorize_part = (id, which) => {
+    const h = part(id, which);
+    if (scopesWithheld && which === 0) { scopesWithheld = false; return 0; }
+    return h;
+  };
   const result = await instantiate(bytes, imports);
   const exports = { ...result.instance.exports };
   const answer = exports.bats_on_permission_result;
   exports.bats_on_permission_result = (id, v) => {
-    if (oddAnswer && v === -2) { v = oddAnswer; oddAnswer = 0; }
+    if (oddAnswer !== null && v === -2) { v = oddAnswer; oddAnswer = null; }
     return answer(id, v);
   };
   return { module: result.module, instance: { exports } };
 };
 const oddly = (code, f) => () => { oddAnswer = code; return f(); };
+const withheld = f => () => { scopesWithheld = true; return f(); };
 const authorization = (accessToken, grantedScopes, account) => ({ authorization: { accessToken, grantedScopes, account } });
 
 async function run(label, native) {
@@ -105,9 +113,14 @@ async function run(label, native) {
     () => Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform')),
     // answer codes bridge's JS never gives: with a code and a message
     // kept, with a code alone, and the least int
-    oddly(-9, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
-    oddly(-9, () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' }))),
+    oddly(-99, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
+    oddly(-99, () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' }))),
     oddly(-2147483648, () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' }))),
+    // a token without scopes, and a positive code that is no token
+    withheld(() => Promise.resolve(authorization('token-5', ['scope-a'], null))),
+    oddly(999999, () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' }))),
+    // a rejection whose code and message are each not text
+    () => Promise.reject({ code: 7, message: 8 }),
   ];
   // authorizeScopes: granted with no account; the plugin's CANCELED;
   // another consent screen showing; no authorization, which the plugin
@@ -130,6 +143,8 @@ async function run(label, native) {
     () => Promise.reject(failure('SOMETHING_NEW', 'new in Play services')),
     // the platform's UNIMPLEMENTED, with its message
     () => Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform')),
+    // 0, which JS gives authorizeScopes never, with a code and message kept
+    oddly(0, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
   ];
   if (native) globalThis.Capacitor = {
     isNativePlatform: () => true,
@@ -148,6 +163,8 @@ async function run(label, native) {
           if (o.accessToken === 'string-token') return Promise.reject('refused as a string');
           // an error whose message is a number: unexpected, its code, JS's message
           if (o.accessToken === 'number-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR', message: 8 }));
+          // -7, an authorization's code, which JS gives a clear never
+          if (o.accessToken === 'odd-code-token') return oddly(-7, () => Promise.reject(failure('INTERNAL_ERROR', '8: failed')))();
           if (o.accessToken === 'unimplemented-token') return Promise.reject(failure('UNIMPLEMENTED', 'Not implemented on this platform'));
           return Promise.resolve();
         },

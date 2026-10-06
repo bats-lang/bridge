@@ -50,14 +50,14 @@ useful.)
   `AuthorizeCanceled`, `ConsentShowing`, `AuthorizeUnavailable`). One
   outcome is never folded into another.
 * Anything the atom does not recognise is an explicit `...Unexpected`
-  constructor carrying the code and the message it came with. What is
-  not text in it is replaced by a message naming it, the rest kept;
-  an answer JS cannot pass on carries a message naming it; a case the
-  atom finds itself carries the code JS kept and a message naming the
-  case, followed by the message JS kept. Every `...Unexpected` has a
-  reason, and nothing it came with as text is dropped. So is an answer
-  the atom's types rule out (for google_authorize, the plugin's
-  `INVALID_OPTIONS`).
+  constructor, carrying which case it was as a datatype (for
+  google_authorize, `google_unexpected`): a rejection whose code names
+  no outcome, with its code and message; a part that is not text; an
+  answer JS cannot pass on; an answer JS never gives, with the code
+  and message JS kept. Each case is a constructor, nothing is folded
+  into another, and what came as text is kept as it came. So is an
+  answer the atom's types rule out (for google_authorize, the
+  plugin's `INVALID_OPTIONS`).
 * An outcome that came with a message keeps it.
 * What a call cannot take is unrepresentable in the atom's type:
   google_authorize takes `google_scopes(t)` of at least one
