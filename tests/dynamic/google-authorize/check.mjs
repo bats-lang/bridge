@@ -45,9 +45,10 @@ async function run(label, native) {
     () => Promise.reject(failure('SOMETHING_NEW', 'new in Play services')),
     () => Promise.reject(failure('CONSENT_SHOWING', "Another call's consent screen is showing")),
     () => Promise.reject(failure('CANCELED', '16: canceled')),
-    // the 14 STATUSES, then SUCCESS, which is no refusal
+    // the 14 STATUSES, then SUCCESS and SUCCESS_CACHE, which are no refusal
     ...STATUSES.map(code => () => Promise.reject(failure(code, `${code} from Play services`))),
     () => Promise.reject(failure('SUCCESS', '0: ')),
+    () => Promise.reject(failure('SUCCESS_CACHE', '-1: ')),
     // answers the plugin does not document, and grants it passes on
     // that bridge does not take (app.bats, above s7d, says which is which)
     () => Promise.resolve({}),
@@ -77,19 +78,20 @@ async function run(label, native) {
     () => Promise.resolve(authorization('token-4', ['scope-a'], 'r\udc00@x')),
     // a status with an empty message: no message kept
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' })),
-    // a rejection that is not an error whose code and message are text:
-    // one with no value, a string, and an error whose code is a number
+    // a rejection that is not an object whose code and message are each
+    // well-formed text or absent: one with no value, a string, an error
+    // whose code is a number, one whose message is a number, null, and
+    // an error whose message holds a lone surrogate
     () => Promise.reject(),
     () => Promise.reject('refused as a string'),
     () => Promise.reject(Object.assign(new Error('7: offline'), { code: 7 })),
-    // and an error whose message is a number, null, an error whose
-    // message holds a lone surrogate, and an object with no code and no
-    // message (kept as none and none); then an error whose code is null
-    // (absent: unexpected, no code, its message) and one whose message
-    // is null (absent: refused, no message)
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR', message: 7 })),
     () => Promise.reject(null),
     () => Promise.reject(Object.assign(new Error('m\ud800'), { code: 'NETWORK_ERROR' })),
+    // Then rejections that are taken: an object with no code and no
+    // message (kept as none and none), an error whose code is null
+    // (absent: unexpected, no code, its message) and one whose message
+    // is null (absent: refused, no message)
     () => Promise.reject({}),
     () => Promise.reject(Object.assign(new Error('m'), { code: null })),
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR', message: null })),

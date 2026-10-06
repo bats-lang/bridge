@@ -1,0 +1,9 @@
+[package]
+name = "google-text-empty"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"promise" = ""
+"wasm.bats-packages.dev/bridge" = ""

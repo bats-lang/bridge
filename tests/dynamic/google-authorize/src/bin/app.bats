@@ -405,10 +405,10 @@ implement main0 () = let
   (* the 14 statuses a refusal can carry (CommonStatusCodes' names but
      SUCCESS and SUCCESS_CACHE), but NETWORK_ERROR and CANCELED (asked
      above), INTERNAL_ERROR (driven through a clear) and
-     DEVELOPER_ERROR (through authorizeScopes), then SUCCESS, which is no
-     refusal: 15 asks *)
+     DEVELOPER_ERROR (through authorizeScopes), then SUCCESS and
+     SUCCESS_CACHE, which are no refusal: 16 asks *)
   val s7c = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7b, llam(change) => let
-    val () = ended(change) in found_times(15) end)
+    val () = ended(change) in found_times(16) end)
   (* in check.mjs's order, answers authorizationForScopes does not
      document (D) and grants the plugin passes on that bridge does not
      take (G): no authorization (D), a null answer (D), a blank token

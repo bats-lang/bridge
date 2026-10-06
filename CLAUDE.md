@@ -75,11 +75,12 @@ useful.)
   leading byte order mark, holding a visible ASCII character. Static
   reject fixtures hold each bound and the abstraction
   (`tests/static/reject/`): `google-scope-empty` (a scope of no bytes),
-  `google-scope-long` (one of 256), `google-scopes-empty` (no scope),
-  `google-scopes-nine` (nine), `google-scope-abstract` (a string as a
+  `google-scope-long` (one of 256), `google-scopes-empty` (no scope)
+  and `google-scopes-nine` (nine), both through
+  `google_authorize_scopes`, `google-scope-abstract` (a string as a
   scope), `google-scope-bytes` (a caller's bytes as scopes),
-  `google-token-bytes` (a caller's bytes as a token) and
-  `google-text-long` (a text of 4097 bytes).
+  `google-token-bytes` (a caller's bytes as a token), `google-text-empty`
+  (a text of no bytes) and `google-text-long` (one of 4097).
 * The atom's dynamic test drives every constructor, `...Unexpected`
   included, through a stand-in for the platform. The app matches every
   answer with `case+` and handles each constructor visibly (quire's

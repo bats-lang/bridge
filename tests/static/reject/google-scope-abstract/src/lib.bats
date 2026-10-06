@@ -3,6 +3,6 @@
 #use wasm.bats-packages.dev/bridge as B
 staload GZ = "wasm.bats-packages.dev/bridge/src/google_authorize.sats"
 
-(* A scope is made only by google_scope_of: a string is none *)
+(* A scope is made only by google_scope_of: a string is not one *)
 fn f (): $P.promise($GZ.google_authorization($GZ.MayAsk), $P.Chained) =
   $GZ.google_authorize_scopes($GZ.OneScope("scope-a"))

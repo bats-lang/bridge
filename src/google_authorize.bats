@@ -30,12 +30,16 @@
    which the plugin cannot tell apart: bats-lang/capacitor-plugins#8;
    its message is kept; CANCELED from any other call is a refusal), and
    anything this module does not recognise AuthorizeUnexpected or
-   ChangeUnexpected, never folded into a known outcome: the plugin's
-   UNEXPECTED, a code it does not document and a rejection with no code
-   with the code and the message as they came; an answer missing what
-   it must hold, a grant the types here cannot carry and a rejection
-   that is not an object whose code and message are text with no code
-   and a message JS gives saying which it was.
+   ChangeUnexpected, never folded into a known outcome. The plugin's
+   UNEXPECTED, INVALID_OPTIONS, a code that names no outcome the call
+   documents (SUCCESS, SUCCESS_CACHE, CONSENT_SHOWING outside
+   authorizeScopes), a code nothing documents, and a rejection with no
+   code carry the code and the message as they came, each none when
+   null, missing or empty. An answer missing what it must hold, a grant
+   the types here cannot carry, or a rejection that is not an object
+   whose code and message are each well-formed text or absent (null or
+   missing) carries no code and a message JS gives saying which
+   condition it was.
 
    Scopes cross as OAuth writes a list of them, separated by spaces
    (RFC 6749, 3.3; a scope has no space in it): those asked for, and
@@ -101,7 +105,8 @@ staload "./decompress.bats"
   (* Another call's consent screen was showing (CONSENT_SHOWING) *)
   | ConsentShowing(MayAsk)
   (* Play services refused, with its status and its message, when it
-     gave one: any status CommonStatusCodes names, but CANCELED from
+     gave one: any google_status (CommonStatusCodes' names but SUCCESS
+     and SUCCESS_CACHE), but CANCELED from
      authorizeScopes (AuthorizeCanceled); CANCELED from
      authorizationForScopes, which shows nothing to cancel, is one *)
   | {w:asking} AuthorizeRefused(w) of (google_status, $R.option([m:pos] dblob(m)))
@@ -143,8 +148,9 @@ staload "./decompress.bats"
 #pub datavtype google_authorization_change =
   (* Cleared, or taken back *)
   | Changed
-  (* Play services refused, with its status (any CommonStatusCodes
-     names, CANCELED among them: neither call shows anything for the
+  (* Play services refused, with its status (any google_status, which
+     is CommonStatusCodes' names but SUCCESS and SUCCESS_CACHE, CANCELED
+     among them: neither call shows anything for the
      reader to cancel) and its message, when it gave one *)
   | ChangeRefused of (google_status, $R.option([m:pos] dblob(m)))
   (* No plugin: a browser, or an app without it (UNIMPLEMENTED) *)

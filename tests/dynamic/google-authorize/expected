@@ -63,6 +63,7 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"4096 characters"}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -235,12 +236,16 @@ hash: #SUCCESS
 hash: #0: 
 hash: #authorization for scopes
 hash: #unexpected
-hash: #no code
-hash: #The answer has no authorization
+hash: #SUCCESS_CACHE
+hash: #-1: 
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The answer has no authorization
+hash: #The answer has no authorization object
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The answer has no authorization object
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
@@ -341,27 +346,27 @@ hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
@@ -378,7 +383,7 @@ hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The answer has no authorization
+hash: #The answer has no authorization object
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
@@ -521,7 +526,7 @@ hash: #consent showing
 hash: #authorize scopes
 hash: #unexpected
 hash: #no code
-hash: #The answer has no authorization
+hash: #The answer has no authorization object
 hash: #authorize scopes
 hash: #refused
 hash: #DEVELOPER_ERROR
@@ -582,29 +587,31 @@ hash: #no message
 hash: #revoke
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #clear
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #clear
 hash: #not a token
 hash: #clear
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #revoke
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 hash: #clear
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The rejection is not an object whose code and message are each well-formed text or absent
 == browser page
 hash: #unavailable
 hash: #nnnnnnnnnnnyyyyyy
 hash: #nnnnnnnnyyyyyynnnnnnnnnnnyyyyyyynnnnnnnnnyyyyyyyyyy
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
