@@ -48,58 +48,6 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-clearAuthorizationToken: {"accessToken":"4096 characters"}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-clearAuthorizationToken: {"accessToken":"token-7"}
-revokeAccess: {"account":"4096 characters","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-clearAuthorizationToken: {"accessToken":"token-8"}
-revokeAccess: {"account":"rü@x","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-clearAuthorizationToken: {"accessToken":"token-9"}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-clearAuthorizationToken: {"accessToken":"!"}
-revokeAccess: {"account":"~","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-clearAuthorizationToken: {"accessToken":"tok😀﻿"}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-2"}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -122,10 +70,8 @@ revokeAccess: {"account":"silent@example.com","scopes":["https://www.googleapis.
 clearAuthorizationToken: {"accessToken":"string-token"}
 clearAuthorizationToken: {"accessToken":"number-token"}
 revokeAccess: {"account":"null@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
-clearAuthorizationToken: {"accessToken":"surrogate-token"}
 hash: #available
-hash: #nnnnnnnnnnnyyyyyy
-hash: #nnnnnnnnyyyyyynnnnnnnnnnnyyyyyyynnnnnnnnnyyyyyyyyyy
+hash: #nnny
 hash: #authorization for scopes
 hash: #authorized
 hash: #scope-a scope-b
@@ -249,95 +195,51 @@ hash: #The answer has no authorization object
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The access token is empty or blank
+hash: #The answer has no authorization object
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a non-empty list
+hash: #The access token is not printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is empty or blank
+hash: #The access token is not printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is missing or not a string
+hash: #The access token is not printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is empty or blank
+hash: #The scopes granted are not a non-empty list of printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #A scope granted is not a scope-token
+hash: #The scopes granted are not a non-empty list of printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #A scope granted is not a string, or is empty or blank
+hash: #The scopes granted are not a non-empty list of printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #A scope granted is not a string, or is empty or blank
+hash: #The scopes granted are not a non-empty list of printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #A scope granted is not a string, or is empty or blank
+hash: #The scopes granted are not a non-empty list of printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #A scope granted is not a scope-token
+hash: #The account is not printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #A scope granted is not a scope-token
+hash: #The account is not printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #A scope granted is not a scope-token
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #A scope granted is not a scope-token
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #A scope granted is not a scope-token
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token is missing or not a string
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token is missing or not a string
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The account holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The account is missing or not a string
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token is over 4096 bytes
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The account is over 4096 bytes
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token is not well-formed Unicode
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The account is not well-formed Unicode
+hash: #The account is not printable ASCII
 hash: #authorization for scopes
 hash: #refused
 hash: #NETWORK_ERROR
@@ -346,27 +248,23 @@ hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
@@ -380,139 +278,6 @@ hash: #refused
 hash: #NETWORK_ERROR
 hash: #07
 hash: #no message
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The answer has no authorization object
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token starts with a byte order mark
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The account starts with a byte order mark
-hash: #authorization for scopes
-hash: #authorized
-hash: #scope-a
-hash: #no account
-hash: #changed
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token is over 4096 bytes
-hash: #authorization for scopes
-hash: #authorized
-hash: #scope-a
-hash: #changed
-hash: #revoke
-hash: #changed
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The account is over 4096 bytes
-hash: #authorization for scopes
-hash: #authorized
-hash: #scope-a
-hash: #changed
-hash: #revoke
-hash: #changed
-hash: #authorization for scopes
-hash: #authorized
-hash: #!#[]~
-hash: #no account
-hash: #changed
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token is empty or blank
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #authorized
-hash: #scope-a
-hash: #changed
-hash: #revoke
-hash: #changed
-hash: #authorization for scopes
-hash: #authorized
-hash: #scope-a
-hash: #no account
-hash: #changed
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #The access token holds no visible ASCII character
-hash: #authorization for scopes
-hash: #unexpected
-hash: #no code
-hash: #A scope granted is not a string, or is empty or blank
 hash: #authorize scopes
 hash: #authorized
 hash: #scope-a scope-c
@@ -538,7 +303,7 @@ hash: #16:
 hash: #authorize scopes
 hash: #unexpected
 hash: #no code
-hash: #The scopes granted are not a non-empty list
+hash: #The scopes granted are not a non-empty list of printable ASCII
 hash: #authorize scopes
 hash: #unexpected
 hash: #UNEXPECTED
@@ -587,115 +352,24 @@ hash: #no message
 hash: #revoke
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 hash: #clear
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 hash: #clear
 hash: #not a token
 hash: #clear
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 hash: #revoke
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
-hash: #clear
-hash: #unexpected
-hash: #no code
-hash: #The rejection is not an object whose code and message are each well-formed text or absent
+hash: #The rejection is not an object whose code and message are each text or absent
 == browser page
 hash: #unavailable
-hash: #nnnnnnnnnnnyyyyyy
-hash: #nnnnnnnnyyyyyynnnnnnnnnnnyyyyyyynnnnnnnnnyyyyyyyyyy
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
-hash: #authorization for scopes
-hash: #unavailable
+hash: #nnny
 hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
@@ -835,6 +509,4 @@ hash: #not a token
 hash: #clear
 hash: #unavailable
 hash: #revoke
-hash: #unavailable
-hash: #clear
 hash: #unavailable

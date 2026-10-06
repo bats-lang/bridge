@@ -45,46 +45,23 @@ reached the app as the reader backing out, and the app said nothing
 useful.)
 
 * An atom answers each outcome its platform documents with a
-  constructor of its own, decoded once from what JS gives: a refusal
-  the platform names (google_authorize's `AuthorizeRefused` with a
-  `google_status`), a cancel only where the platform says the reader
-  canceled (with its message: the plugin's code for it is shared,
-  bats-lang/capacitor-plugins#8), a missing
-  plugin (`AuthorizeUnavailable`). One outcome is never folded into
-  another.
+  constructor of its own, decoded once from what JS gives (for
+  google_authorize: `AuthorizeRefused` with a `google_status`,
+  `AuthorizeCanceled`, `ConsentShowing`, `AuthorizeUnavailable`). One
+  outcome is never folded into another.
 * Anything the atom does not recognise is an explicit `...Unexpected`
-  constructor, never a known one. A plugin's `UNEXPECTED`,
-  `INVALID_OPTIONS`, a code that names no outcome the call documents
-  (`SUCCESS`, `SUCCESS_CACHE`, `CONSENT_SHOWING` outside
-  `authorizeScopes`), a code nothing documents, and a rejection with no
-  code carry the code and the message as they came, each none when
-  null, missing or empty. An answer missing what it must hold, a grant
-  the atom's types cannot carry, or a rejection that is not an object
-  whose code and message are each well-formed text or absent (null or
-  missing) carries no code and a message of the atom's own saying which
-  condition it was.
-* What a call cannot take is unrepresentable in the atom's type, not
-  refused at run time: google_authorize's scopes are a `google_scopes(k)`
-  of at least one `google_scope`, whose text `google_scope_of` proves
-  not empty and checks is RFC 6749's scope-token (NQCHAR: 0x21, 0x23 to
-  0x5B, 0x5D to 0x7E; no whitespace or other control character, no DEL,
-  no quote or backslash, nothing non-ASCII), once, as it is made; the
-  plugin's own check of its options (`INVALID_OPTIONS`) then cannot be
-  reached from Bats. A token or an account is a `google_text`, made only
-  by `google_text_of` from 1 to 4096 bytes of well-formed UTF-8, with no
-  leading byte order mark, holding a visible ASCII character. Static
-  reject fixtures hold each bound and the abstraction
-  (`tests/static/reject/`): `google-scope-empty` (a scope of no bytes),
-  `google-scope-long` (one of 256), `google-scopes-empty` (no scope)
-  and `google-scopes-nine` (nine), both through
-  `google_authorize_scopes`, `google-scope-abstract` (a string as a
-  scope), `google-scope-bytes` (a caller's bytes as scopes),
-  `google-token-bytes` (a caller's bytes as a token), `google-text-empty`
-  (a text of no bytes) and `google-text-long` (one of 4097).
-* The atom's dynamic test drives every constructor, `...Unexpected`
-  included, through a stand-in for the platform. The app matches every
-  answer with `case+` and handles each constructor visibly (quire's
-  CLAUDE.md).
+  constructor carrying the code and the message it came with, or, when
+  JS cannot pass the answer on, no code and a message saying why.
+* What a call cannot take is unrepresentable in the atom's type:
+  google_authorize takes `google_scopes(k)`, one to eight
+  `google_scope`s, each made only by `google_scope_of` (a non-empty
+  text of printable ASCII), and a token or an account as a
+  `google_text`, made only by `google_text_of` (the same). Static
+  reject fixtures in `tests/static/reject/google-*` hold these types.
+* The atom's dynamic test passes through every constructor,
+  `...Unexpected` included, with a stand-in for the platform. The app
+  matches every answer with `case+` and handles each constructor
+  visibly (quire's CLAUDE.md).
 
 ## Adversarial review before merge
 

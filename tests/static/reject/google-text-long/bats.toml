@@ -1,9 +1,0 @@
-[package]
-name = "google-text-long"
-kind = "lib"
-
-[dependencies]
-"array" = ""
-"result" = ""
-"promise" = ""
-"wasm.bats-packages.dev/bridge" = ""
