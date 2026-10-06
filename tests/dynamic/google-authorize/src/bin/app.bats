@@ -269,7 +269,7 @@ fn split_scope (): void = let
 in hash_bytes(out, 17) end
 
 (* Whether bytes are a google_text: y or n at out[at] *)
-fn text_case {l:agz}{at:nat | at < 31}{n:pos | n < 256} (out: !$A.arr(byte, l, 31), at: int at, text: string n): void =
+fn text_case {l:agz}{at:nat | at < 44}{n:pos | n < 256} (out: !$A.arr(byte, l, 44), at: int at, text: string n): void =
   case+ text_of(bytes(text), g1u2i(string1_length(text))) of
   | ~$R.some(made) => let
       val () = $GZ.google_text_free(made)
@@ -277,29 +277,35 @@ fn text_case {l:agz}{at:nat | at < 31}{n:pos | n < 256} (out: !$A.arr(byte, l, 3
   | ~$R.none() => $A.set<byte>(out, at, int2byte0(110))
 
 (* Only well-formed UTF-8 with no leading byte order mark, holding a
-   visible ASCII character, is a google_text. One hash, thirty-one
+   visible ASCII character, is a google_text. One hash, forty-four
    letters alone, a y or n for each of: an a then a lone continuation
    byte (0x80), the overlong forms C0 AF, E0 9F BF and F0 8F BF BF, a
-   surrogate (ED A0 80), a code point over U+10FFFF (F4 90 80 80), F5,
-   and a sequence cut short (E2 82) (each n); an a then a character of
+   surrogate (ED A0 80), a code point over U+10FFFF (F4 90 80 80), F5
+   80 80 80, and a sequence cut short (E2 82) (each n); an a then a character of
    two bytes (C3 A9), three (E4 B8 AD), four (F0 9F 98 80) and the
    last code point (F4 8F BF BF), an exclamation mark (0x21) alone and
    a tilde (0x7E) alone (each y); DEL (0x7F) alone, a space alone, a
    byte order mark then abc, and a, 0xFF, b (each n); an a then C3 cut
-   short, C3 then A, E4 B8 then A, F0 9F 98 cut short, F0 9F then A
-   and 80, F0 9F 98 then A, and C1 BF (each n); an a then the lowest of
-   each form, C2 80, E0 A0 80 and F0 90 80 80, and the highest below
-   the surrogates, ED 9F BF; EF BB 80 (U+FEC0) then a; and an a then a
-   byte order mark, which does not lead (each y) *)
+   short, C3 7F, E4 B8 7F, F0 9F 98 cut short, F0 9F 7F 80, F0 9F 98
+   7F, and C1 BF (each n); an a then the lowest of each form, C2 80,
+   E0 A0 80 and F0 90 80 80, and the highest below the surrogates, ED
+   9F BF; EF BB 80 (U+FEC0) then a; and an a then a byte order mark,
+   which does not lead (each y); EF BC BF (U+FF3F) then a (y); an a
+   then a continuation above BF in each place, C3 C0, E4 C0 80, E4 B8
+   C0, F0 9F C0 80, F0 9F 98 C0 and F1 C0 80 80, and then a second
+   byte below 80 after E4, F1 and F4, E4 7F 80, F1 7F 80 80 and F4 7F
+   80 80 (each n); an a then F1 80 80 80, DF BF, and DEL (each y).
+   Each bound and check of _visible, _utf8 and _byte_order_mark, moved
+   by one or left out, changes a letter *)
 fn text_row (): void = let
-  val out = $A.alloc<byte>(31)
+  val out = $A.alloc<byte>(44)
   val () = text_case(out, 0, "a\200")
   val () = text_case(out, 1, "a\300\257")
   val () = text_case(out, 2, "a\340\237\277")
   val () = text_case(out, 3, "a\360\217\277\277")
   val () = text_case(out, 4, "a\355\240\200")
   val () = text_case(out, 5, "a\364\220\200\200")
-  val () = text_case(out, 6, "a\365")
+  val () = text_case(out, 6, "a\365\200\200\200")
   val () = text_case(out, 7, "a\342\202")
   val () = text_case(out, 8, "a\303\251")
   val () = text_case(out, 9, "a\344\270\255")
@@ -312,11 +318,11 @@ fn text_row (): void = let
   val () = text_case(out, 16, "\357\273\277abc")
   val () = text_case(out, 17, "a\377b")
   val () = text_case(out, 18, "a\303")
-  val () = text_case(out, 19, "a\303A")
-  val () = text_case(out, 20, "a\344\270A")
+  val () = text_case(out, 19, "a\303\177")
+  val () = text_case(out, 20, "a\344\270\177")
   val () = text_case(out, 21, "a\360\237\230")
-  val () = text_case(out, 22, "a\360\237A\200")
-  val () = text_case(out, 23, "a\360\237\230A")
+  val () = text_case(out, 22, "a\360\237\177\200")
+  val () = text_case(out, 23, "a\360\237\230\177")
   val () = text_case(out, 24, "a\301\277")
   val () = text_case(out, 25, "a\302\200")
   val () = text_case(out, 26, "a\340\240\200")
@@ -324,7 +330,20 @@ fn text_row (): void = let
   val () = text_case(out, 28, "a\355\237\277")
   val () = text_case(out, 29, "\357\273\200a")
   val () = text_case(out, 30, "a\357\273\277")
-in hash_bytes(out, 31) end
+  val () = text_case(out, 31, "\357\274\277a")
+  val () = text_case(out, 32, "a\303\300")
+  val () = text_case(out, 33, "a\344\300\200")
+  val () = text_case(out, 34, "a\344\270\300")
+  val () = text_case(out, 35, "a\360\237\300\200")
+  val () = text_case(out, 36, "a\360\237\230\300")
+  val () = text_case(out, 37, "a\361\300\200\200")
+  val () = text_case(out, 38, "a\344\177\200")
+  val () = text_case(out, 39, "a\361\177\200\200")
+  val () = text_case(out, 40, "a\364\177\200\200")
+  val () = text_case(out, 41, "a\361\200\200\200")
+  val () = text_case(out, 42, "a\337\277")
+  val () = text_case(out, 43, "a\177")
+in hash_bytes(out, 44) end
 
 (* A step's end, read: nothing to do with it but let it go *)
 fn ended (change: $GZ.google_authorization_change): void =
@@ -406,9 +425,16 @@ implement main0 () = let
      (taken, the token cleared and its grant revoked), one of 4097 bytes
      (G), an account holding a letter outside ASCII (taken and revoked
      as it came), and a scope holding each end of NQCHAR's ranges
-     (taken): 42 asks *)
+     (taken); then a token of each end of googleBlank's ranges (D: empty
+     or blank), one of each of sixteen characters just outside them (G:
+     no visible ASCII character), a token of only an exclamation mark
+     and an account of only a tilde (taken, cleared and revoked), a
+     token holding a surrogate pair and a byte order mark that does not
+     lead (taken and cleared), a token of only DEL and one of a space
+     and a letter outside ASCII (G: no visible ASCII character), and
+     granted scopes with a hole (D): 64 asks *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
-    val () = ended(change) in found_times(42) end)
+    val () = ended(change) in found_times(64) end)
   (* granted with no account, asked with a consent screen allowed *)
   val s8 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7d, llam(change) => let
     val () = ended(change) in asked() end)
@@ -478,4 +504,8 @@ implement main0 () = let
     val () = ended(change) in clear_text("number-token") end)
   val s26 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s25, llam(change) => let
     val () = ended(change) in revoke_text("null@example.com") end)
-in $P.finish<$GZ.google_authorization_change>(s26, llam(change) => ended(change)) end
+  (* a clear rejected with an error whose code holds a lone surrogate:
+     said to be no error whose code and message are text *)
+  val s27 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s26, llam(change) => let
+    val () = ended(change) in clear_text("surrogate-token") end)
+in $P.finish<$GZ.google_authorization_change>(s27, llam(change) => ended(change)) end

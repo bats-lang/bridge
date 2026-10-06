@@ -104,6 +104,23 @@ async function run(label, native) {
     () => Promise.resolve(authorization('token-7', ['scope-a'], 'a' + '\u00e9'.repeat(2048))),
     () => Promise.resolve(authorization('token-8', ['scope-a'], 'r\u00fc@x')),
     () => Promise.resolve(authorization('token-9', ['!#[]~'], null)),
+    // blank as Java has it: a token of each end of googleBlank's ranges,
+    // empty or blank; then a token of each character just outside them
+    // (the no-break spaces among them), not blank and holding no visible
+    // ASCII character
+    () => Promise.resolve(authorization('\t\r\x1c\x20\u1680\u2000\u2006\u2008\u200a\u2028\u2029\u205f\u3000', ['scope-a'], null)),
+    ...['\x08', '\x0e', '\x1b', '\u00a0', '\u167f', '\u1681', '\u1fff', '\u2007', '\u200b', '\u2027', '\u202a', '\u202f', '\u205e',
+      '\u2060', '\u2fff', '\u3001'].map(t => () => Promise.resolve(authorization(t, ['scope-a'], null))),
+    // a token of only an exclamation mark and an account of only a tilde,
+    // and a token holding a surrogate pair and a byte order mark that
+    // does not lead, each taken (cleared and revoked as they came); a
+    // token of only DEL and one of a space and a letter outside ASCII,
+    // holding no visible ASCII character; granted scopes with a hole
+    () => Promise.resolve(authorization('!', ['scope-a'], '~')),
+    () => Promise.resolve(authorization('tok\u{1f600}\ufeff', ['scope-a'], null)),
+    () => Promise.resolve(authorization('\x7f', ['scope-a'], null)),
+    () => Promise.resolve(authorization(' \u00e9', ['scope-a'], null)),
+    () => Promise.resolve(authorization('token-4', new Array(1), null)),
   ];
   // authorizeScopes: granted with no account; the plugin's CANCELED;
   // another consent screen showing; no authorization, which the plugin
@@ -143,6 +160,8 @@ async function run(label, native) {
           if (o.accessToken === 'quiet-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR' }));
           // a rejection that is not an error: said to be so
           if (o.accessToken === 'string-token') return Promise.reject('refused as a string');
+          // an error whose code holds a lone surrogate: said to be no text
+          if (o.accessToken === 'surrogate-token') return Promise.reject(Object.assign(new Error('8: failed'), { code: 'INTERNAL_ERROR\udc00' }));
           // an error whose message is a number: said to be so
           if (o.accessToken === 'number-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR', message: 8 }));
           return Promise.resolve();
