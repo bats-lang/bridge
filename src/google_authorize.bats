@@ -24,8 +24,8 @@
    method a platform lacks, UNIMPLEMENTED).
 
    Every answer is an outcome of its own (bats-lang/quire#334), and
-   anything this module does not recognise is AuthorizeUnexpected or
-   ChangeUnexpected, never a known outcome. JS only writes the answer
+   anything this module does not recognise is AuthorizeUnexpected,
+   ChangeUnexpected or PluginUnexpected, never a known outcome. JS only writes the answer
    down as text (CLAUDE.md, "An atom's JS only writes the answer
    down"); this module reads it with json and decides.
 

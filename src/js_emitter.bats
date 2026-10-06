@@ -2032,7 +2032,7 @@ fn emit_js_google_authorize {n:nat | n + 2600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // GoogleAuthorize: google_authorize.bats\n")
   val () = $B.bput(b,"  const googleTexts = new Map();\n")
-  val () = $B.bput(b,"  const googleScopeList = (p, l) => readString(p, l).split(' ').filter(s => s);\n")
+  val () = $B.bput(b,"  const googleScopeList = (p, l) => readString(p, l).split(' ');\n")
   val () = $B.bput(b,"  function googleSay(v) {\n")
   val () = $B.bput(b,"    if (v === undefined) return [4, null];\n")
   val () = $B.bput(b,"    try {\n")

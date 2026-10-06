@@ -132,12 +132,18 @@ let lookupThrow = null;
 // What the app's last lookups of the plugin throw, one each, once its
 // last call is made: an Error, undefined, a text over 1 MiB, a cycle
 // (written as String gives it), a value only its type can say, and an
-// Error whose text, then also its type, cannot be kept
+// Error whose text, then also its type, cannot be kept; then answer
+// codes the availability check never gives, put in as they reach the
+// app in place of its own (after a lookup that threw, so with the text
+// it kept, or after one that did not, so with none)
 let endThrows = [];
+let presenceCode = null;
+const NO_THROW = Symbol('no throw');
 const unwritable = () => ({ toJSON() { throw error('no JSON'); }, toString() { throw error('no String'); } });
 const END_THROWS = () => [
   [error('the last lookup threw'), 0], [undefined, 0], [big(), 0], [cyclic(), 0], [unwritable(), 0],
   [error('its text not kept'), 1], [error('nothing kept'), 2],
+  [big(), 0, 7], [error('a code its form does not match'), 0, 34], [NO_THROW, 0, 31], [NO_THROW, 0, 7],
 ];
 // The resolver ids the app has handed to google_authorize's JS and not
 // yet seen settled (an id is used again once its call has settled), and
@@ -157,6 +163,18 @@ WebAssembly.instantiate = async (bytes, imports) => {
       return call(...a);
     };
   }
+  const available = imports.env.bats_js_google_authorize_available;
+  imports.env.bats_js_google_authorize_available = () => {
+    const before = endThrows.length;
+    const code = available();
+    // a lookup that did not throw: its entry is taken here, since the
+    // lookup reads the plugins more than once
+    if (endThrows.length === before && before && endThrows[0][0] === NO_THROW) presenceCode = endThrows.shift()[2];
+    if (presenceCode === null) return code;
+    const odd = presenceCode;
+    presenceCode = null;
+    return odd;
+  };
   const text = imports.env.bats_js_google_authorize_text;
   imports.env.bats_js_google_authorize_text = id => {
     const h = text(id);
@@ -405,9 +423,10 @@ async function run(label, native) {
   if (native) globalThis.Capacitor = {
     isNativePlatform: () => true,
     get Plugins() {
-      if (endThrows.length) {
-        const [thrown, keepThrows] = endThrows.shift();
+      if (endThrows.length && endThrows[0][0] !== NO_THROW) {
+        const [thrown, keepThrows, code] = endThrows.shift();
         encodeThrows = keepThrows;
+        if (code !== undefined) presenceCode = code;
         throw thrown;
       }
       if (lookupThrow !== null) {
@@ -463,7 +482,7 @@ function check(label, native, lines, calls, queues) {
   if (text[0] !== (native ? 'available' : 'unavailable')) problems.push(`first line ${text[0]}`);
   const last = text.slice(end);
   if (native ? last.filter(t => t === 'presence').length !== END_THROWS().length
-      || last.some((t, i) => t === 'presence' && !(last[i + 1] === 'unexpected' && /^(thrown|nothing kept)/.test(last[i + 2])))
+      || last.some((t, i) => t === 'presence' && !(last[i + 1] === 'unexpected' && /^(thrown|nothing kept|odd answer)/.test(last[i + 2])))
     : last.some(t => t !== 'unavailable')) problems.push(`last presences ${last.join(' / ')}`);
   let asked = 0, answered = 0;
   text.forEach((t, i) => {

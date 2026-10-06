@@ -456,7 +456,7 @@ fun times {left:nat} .<left>. (first: step, call: call, left: int left): step =
 #define CLEARS 80
 #define REVOKES 80
 
-#define PRESENCES 7
+#define PRESENCES 11
 
 (* The plugin looked up left times, each said *)
 fun presences {left:nat} .<left>. (left: int left): void =

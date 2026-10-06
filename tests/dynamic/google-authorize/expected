@@ -4249,6 +4249,32 @@ hash: #03636 unexpected
 hash: #03637 nothing kept
 hash: #03638 the lookup
 hash: #03639 no text
+hash: #03640 presence
+hash: #03641 unexpected
+hash: #03642 odd answer
+hash: #03643 +00000000007
+hash: #03644 its form unknown
+hash: #03645 cut, whole length:
+hash: #03646 +00001048581
+hash: #03647 yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+hash: #03648 presence
+hash: #03649 unexpected
+hash: #03650 odd answer
+hash: #03651 +00000000034
+hash: #03652 its form unknown
+hash: #03653 {"name":"Error","stack":"Error: a code its form does not match\n    at the plugin","message":"a code its form does not match"}
+hash: #03654 presence
+hash: #03655 unexpected
+hash: #03656 odd answer
+hash: #03657 +00000000031
+hash: #03658 its form unknown
+hash: #03659 no text
+hash: #03660 presence
+hash: #03661 unexpected
+hash: #03662 odd answer
+hash: #03663 +00000000007
+hash: #03664 its form unknown
+hash: #03665 no text
 app: every call of 650 settled once, each unexpected one with its text or a case that has none
 == browser page
 hash: #00000 unavailable
@@ -6182,4 +6208,8 @@ hash: #01927 unavailable
 hash: #01928 unavailable
 hash: #01929 unavailable
 hash: #01930 unavailable
+hash: #01931 unavailable
+hash: #01932 unavailable
+hash: #01933 unavailable
+hash: #01934 unavailable
 browser page: every call of 640 settled once, each unexpected one with its text or a case that has none

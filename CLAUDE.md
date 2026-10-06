@@ -72,18 +72,18 @@ useful.)
 How google_authorize takes a platform's answer (bats-lang/quire#334),
 and the rule for an atom's answers:
 
-* JS decides nothing. In one try it looks the plugin up, reads the
-  call's arguments and calls the method, and writes what came back,
-  resolved or rejected, or what threw, as text: `JSON.stringify` with a
-  replacer that writes an Error as its own properties and its name and
-  a BigInt as its digits; when that throws or gives nothing, `String`
-  of it; when that throws too, its type; nothing for undefined. When
-  the text cannot be kept, its type is kept instead, and when that
+* JS decides nothing. It looks the plugin up, reads the call's arguments
+  and calls the method in one try; what came back, resolved or rejected,
+  or what threw, it writes as text in a try of its own: `JSON.stringify`
+  with a replacer that writes an Error as its own properties and its
+  name and a BigInt as its digits; when that throws or gives nothing,
+  `String` of it; when that throws too, its type; nothing for undefined.
+  When the text cannot be kept, its type is kept instead, and when that
   cannot be either, nothing. The answer code says where the call was
   (resolved, rejected, or which step threw) and how the text was
-  written. The check that the plugin is there answers the same way
-  when its lookup throws. Every call settles: nothing in it can throw
-  past its try.
+  written. The check that the plugin is there answers the same way when
+  its lookup throws. Every call settles: nothing in it can throw past
+  its tries.
 * Bats reads the text with the json package and decides there, with
   `case+`: each outcome the platform documents, and each case it does
   not recognise, which keeps the text (as UTF-8, as TextEncoder writes
