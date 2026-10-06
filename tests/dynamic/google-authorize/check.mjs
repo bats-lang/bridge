@@ -48,7 +48,8 @@ async function run(label, native) {
     // the 14 STATUSES, then SUCCESS, which is no refusal
     ...STATUSES.map(code => () => Promise.reject(failure(code, `${code} from Play services`))),
     () => Promise.reject(failure('SUCCESS', '0: ')),
-    // answers the plugin does not document
+    // answers the plugin does not document, and grants it passes on
+    // that bridge does not take (app.bats, above s7d, says which is which)
     () => Promise.resolve({}),
     () => Promise.resolve(null),
     () => Promise.resolve(authorization('   ', ['scope-a'], null)),

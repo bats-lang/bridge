@@ -98,17 +98,20 @@ staload "./decompress.bats"
      Play services nor the plugin names (SUCCESS among them, which is no
      refusal); the plugin's INVALID_OPTIONS, which google_scopes' type
      keeps a call from earning; CONSENT_SHOWING from
-     authorizationForScopes, which shows no consent screen; an answer
-     the plugin does not document (JS says what: no authorization at
-     all, as an answer that is null or not an object, an empty one, or
-     a null authorization from authorizeScopes; an
-     access token missing, over 4096 bytes, or holding no visible ASCII
-     character (0x21 to 0x7E; google_text_of's test and bound, so a
-     token Authorized gives can always be cleared: Google's access
-     tokens are at most 2048 bytes); granted scopes that are not a
-     non-empty list of scope-tokens; an account missing from the
-     answer, or named over 4096 bytes or holding no visible ASCII
-     character, so an account Authorized names can always be revoked) *)
+     authorizationForScopes, which shows no consent screen. And, JS
+     saying what it was: an answer the plugin does not document (one
+     that is null or not an object, an empty one, or a null
+     authorization from authorizeScopes; an access token missing, not a
+     string or blank; no scope granted, or a granted scope that is not
+     a string; an account missing from the answer, not a string, empty
+     or blank); or a grant the plugin passes on that bridge does not
+     take: a granted scope that is not RFC 6749's scope-token
+     (bats-lang/capacitor-plugins#9), or an access token or an account
+     over 4096 bytes or holding no visible ASCII character (0x21 to
+     0x7E), which google_text cannot carry (google_text_of's test and
+     bound, so a token Authorized gives can always be cleared, and an
+     account it names revoked; Google's access tokens are at most 2048
+     bytes) *)
   | {w:asking} AuthorizeUnexpected(w) of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* How clearing a token or revoking a grant ended *)

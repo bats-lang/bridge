@@ -311,15 +311,18 @@ implement main0 () = let
      refusal: 15 asks *)
   val s7c = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7b, llam(change) => let
     val () = ended(change) in found_times(15) end)
-  (* answers authorizationForScopes does not document: no authorization,
-     a null answer, a blank token, no scope granted, an account that is empty, not a
-     string, or blank, a granted scope holding a space, one that is not
-     a string, one holding a quote, a backslash, a letter outside
-     ASCII, a control character (0x01) or DEL (none a scope-token), no access token, one that is not a
-     string, a token and an account holding no visible
-     ASCII character, an answer with no account key, and a token and an
-     account over 4096 bytes; then a status with an empty message and a
-     rejection with no value, neither keeping a message: 23 asks *)
+  (* in check.mjs's order, answers authorizationForScopes does not
+     document (D) and grants the plugin passes on that bridge does not
+     take (G): no authorization (D), a null answer (D), a blank token
+     (D), no scope granted (D), an account that is empty, not a string,
+     or blank (D), a granted scope holding a space (G), one that is not
+     a string (D), one holding a quote, a backslash, a letter outside
+     ASCII, a control character (0x01) or DEL (G: none a scope-token),
+     no access token (D), one that is not a string (D), a token and an
+     account holding no visible ASCII character (G), an answer with no
+     account key (D), and a token and an account over 4096 bytes (G);
+     then a status with an empty message and a rejection with no value,
+     neither keeping a message: 23 asks *)
   val s7d = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7c, llam(change) => let
     val () = ended(change) in found_times(23) end)
   (* granted with no account, asked with a consent screen allowed *)

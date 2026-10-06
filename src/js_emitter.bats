@@ -2023,9 +2023,12 @@ in end
    bats_js_google_authorize_part. An answer the plugin does not document
    (no authorization: an answer that is null or no object, or one
    without an authorization, but authorizationForScopes' null; an
-   access token missing, over 4096 bytes or holding no visible ASCII character, granted scopes that are not a
-   non-empty list of scope-tokens, an account missing, or named over
-   4096 bytes or with no visible ASCII character) fails with no code and says what it was.
+   access token missing, not a string or blank; no scope, or one not a
+   string; an account missing, not a string, empty or blank), and a
+   grant the plugin passes on that the atom's types cannot take (a
+   granted scope that is not a scope-token; an access token or an
+   account over 4096 bytes or holding no visible ASCII character), fail
+   with no code and say what they were.
    No plugin is Capacitor's own code for a platform without the
    method *)
 fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
