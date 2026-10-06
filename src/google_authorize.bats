@@ -91,8 +91,9 @@ staload "./decompress.bats"
      authorizationForScopes, a code nothing documents, or none) carries
      its code and message, each none when null, missing or empty. An
      answer JS cannot pass on as Authorized (no authorization object;
-     an access token, scopes or an account that is not a string of
-     printable ASCII, or scopes that are not a non-empty list of them)
+     an access token that is not a string of printable ASCII; scopes
+     that are not a non-empty list of them; an account that is neither
+     null nor a string of printable ASCII, a missing one among them)
      or a rejection that is not an object whose code and message are
      each text or absent carries no code and a message JS gives saying
      which it was. An answer code JS never gives (0 from authorizeScopes,

@@ -231,15 +231,15 @@ hash: #The scopes granted are not a non-empty list of printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is not printable ASCII
+hash: #The account is neither null nor printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is not printable ASCII
+hash: #The account is neither null nor printable ASCII
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The account is not printable ASCII
+hash: #The account is neither null nor printable ASCII
 hash: #authorization for scopes
 hash: #refused
 hash: #NETWORK_ERROR

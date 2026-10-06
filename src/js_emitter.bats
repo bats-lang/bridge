@@ -2021,8 +2021,9 @@ in end
    clear or a revoke: 0 done, -2 failed. The granted scopes (part 0),
    the account (1), the platform's code (2) and message (3) are kept by
    request for bats_js_google_authorize_part. An answer with no
-   authorization object, or whose access token, scopes or account
-   (when there is one) is not printable ASCII, and a rejection that is
+   authorization object, an access token that is not printable ASCII,
+   scopes that are not a non-empty list of printable ASCII, or an
+   account that is neither null nor printable ASCII, and a rejection that is
    not an object whose code and message are each text or absent, fail
    with no code and a message saying which. No plugin is Capacitor's
    own code for a platform without the method *)
@@ -2062,7 +2063,7 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const s = a.grantedScopes;\n")
   val () = $B.bput(b,"      if (!Array.isArray(s) || !s.length || !Array.from(s).every(googlePrintable))\n")
   val () = $B.bput(b,"        return googleOdd(id, 'The scopes granted are not a non-empty list of printable ASCII');\n")
-  val () = $B.bput(b,"      if (a.account !== null && !googlePrintable(a.account)) return googleOdd(id, 'The account is not printable ASCII');\n")
+  val () = $B.bput(b,"      if (a.account !== null && !googlePrintable(a.account)) return googleOdd(id, 'The account is neither null nor printable ASCII');\n")
   val () = $B.bput(b,"      googleKeep(id, a.grantedScopes.join(' '), a.account);\n")
   val () = $B.bput(b,"      return pendBlob(utf8.encode(a.accessToken));\n")
   val () = $B.bput(b,"    }, e => {\n")

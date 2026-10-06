@@ -213,8 +213,8 @@ fn found (): step =
       val asked = $GZ.google_authorization_for_scopes($GZ.OneScope(scope))
     in $P.and_then<$GZ.google_authorization($GZ.Silently)><$GZ.google_authorization_change>(asked, llam(answer) => told_found(answer)) end
 
-(* Asks for drive.appdata twice with no UI (two scopes, so the plugin
-   prints them as a list) *)
+(* Asks once with no UI, drive.appdata listed twice, so the plugin
+   prints a list of two *)
 fn found_twice (): step =
   case+ drive_appdata_scope() of
   | ~$R.none() => let val () = hash_text("not a scope") in done() end
@@ -273,7 +273,7 @@ implement main0 () = let
   val () = (if $GZ.google_authorize_available() then hash_text("available") else hash_text("unavailable"))
   (* what is not printable ASCII is no scope *)
   val () = split_scope()
-  (* drive.appdata asked twice (two scopes); granted, with an account *)
+  (* asked once with drive.appdata listed twice; granted, with an account *)
   val s1 = found_twice()
   (* consent needed *)
   val s2 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s1, llam(change) => let
