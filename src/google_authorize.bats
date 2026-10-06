@@ -86,8 +86,9 @@ staload "./decompress.bats"
   (* No plugin: a browser, or an app without it (UNIMPLEMENTED) *)
   | {w:asking} AuthorizeUnavailable(w)
   (* An answer this module does not recognise. A rejection whose code
-     names no outcome above (the plugin's UNEXPECTED and INVALID_OPTIONS,
-     SUCCESS, SUCCESS_CACHE, CONSENT_SHOWING from
+     names no outcome above (the plugin's UNEXPECTED; INVALID_OPTIONS,
+     which this module's types rule out; SUCCESS, SUCCESS_CACHE,
+     CONSENT_SHOWING from
      authorizationForScopes, a code nothing documents, or none) carries
      its code and message, each none when null, missing or empty. An
      answer JS cannot pass on as Authorized (no authorization object;
@@ -110,8 +111,9 @@ staload "./decompress.bats"
   (* No plugin: a browser, or an app without it (UNIMPLEMENTED) *)
   | ChangeUnavailable
   (* An answer this module does not recognise. A rejection whose code
-     names no outcome above (the plugin's UNEXPECTED and INVALID_OPTIONS,
-     SUCCESS, SUCCESS_CACHE, CONSENT_SHOWING, a code nothing documents,
+     names no outcome above (the plugin's UNEXPECTED; INVALID_OPTIONS,
+     which this module's types rule out; SUCCESS, SUCCESS_CACHE,
+     CONSENT_SHOWING, a code nothing documents,
      or none) carries its code and message, each none when null,
      missing or empty; a rejection that is not an object whose code and
      message are each text or absent carries no code and a message JS
@@ -121,8 +123,10 @@ staload "./decompress.bats"
 (* Whether the app has the plugin: false in a browser *)
 #pub fun google_authorize_available(): bool
 
-(* An OAuth scope: a text of printable ASCII (0x21 to 0x7E, so no
-   whitespace), made only by google_scope_of *)
+(* An OAuth scope: a text under 256 bytes of printable ASCII (0x21 to
+   0x7E, so no whitespace), made only by google_scope_of. A call's
+   scopes are written into one buffer of 2048 bytes, hence the bound,
+   and the at most 8 scopes a call takes *)
 #pub abstype google_scope = ptr
 
 (* text as a scope, when it is printable ASCII *)
@@ -131,7 +135,7 @@ staload "./decompress.bats"
 (* A scope's text *)
 #pub fn google_scope_text (scope: google_scope): [n:pos | n < 256] string n
 
-(* The scopes of a call, at least one *)
+(* The scopes of a call, at least one (a call takes at most 8) *)
 #pub datavtype google_scopes(int) =
   | OneScope(1) of google_scope
   | {k:pos} MoreScopes(k + 1) of (google_scope, google_scopes(k))

@@ -52,10 +52,13 @@ useful.)
 * Anything the atom does not recognise is an explicit `...Unexpected`
   constructor carrying the code and the message it came with, or, when
   JS cannot pass the answer on, no code and a message saying why (an
-  answer code JS never gives carries neither).
+  answer code JS never gives carries neither). So is an answer the
+  atom's types rule out (for google_authorize, the plugin's
+  `INVALID_OPTIONS`).
 * What a call cannot take is unrepresentable in the atom's type:
-  google_authorize takes `google_scopes(k)` of `google_scope`s, each
-  made only by `google_scope_of` (printable ASCII), and a token or an
+  google_authorize takes `google_scopes(k)` of one to eight
+  `google_scope`s, each made only by `google_scope_of` (printable
+  ASCII, under 256 bytes: the scopes are written into one buffer), and a token or an
   account as a `google_text`, made only by `google_text_of` (printable
   ASCII).
 * The atom's dynamic test passes through every constructor,
