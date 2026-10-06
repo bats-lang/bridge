@@ -120,8 +120,8 @@ staload "./decompress.bats"
 (* Whether the app has the plugin: false in a browser *)
 #pub fun google_authorize_available(): bool
 
-(* An OAuth scope: a non-empty text under 256 bytes of printable ASCII
-   (0x21 to 0x7E, so no whitespace), made only by google_scope_of *)
+(* An OAuth scope: a text of printable ASCII (0x21 to 0x7E, so no
+   whitespace), made only by google_scope_of *)
 #pub abstype google_scope = ptr
 
 (* text as a scope, when it is printable ASCII *)
@@ -130,8 +130,7 @@ staload "./decompress.bats"
 (* A scope's text *)
 #pub fn google_scope_text (scope: google_scope): [n:pos | n < 256] string n
 
-(* The scopes of a call: k of them (at most 8 a call), at least one by
-   construction, so the scopes a call sends are never empty *)
+(* The scopes of a call, at least one *)
 #pub datavtype google_scopes(int) =
   | OneScope(1) of google_scope
   | {k:pos} MoreScopes(k + 1) of (google_scope, google_scopes(k))
@@ -150,9 +149,8 @@ staload "./decompress.bats"
   (scopes: google_scopes(k))
   : $P.promise(google_authorization(MayAsk), $P.Chained)
 
-(* A token or an account to hand Google: a non-empty text of at most
-   1048576 bytes of printable ASCII (0x21 to 0x7E), made only by
-   google_text_of, which copies it *)
+(* A token or an account to hand Google: a text of printable ASCII
+   (0x21 to 0x7E), made only by google_text_of, which copies it *)
 #pub absvtype google_text = ptr
 
 (* bytes[0, n) as a google_text, when they are printable ASCII *)
