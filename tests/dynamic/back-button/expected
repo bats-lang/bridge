@@ -1,0 +1,23 @@
+== app
+addListener: backButton
+popstate: #pushed
+hash: #back-heard
+popstate: #popped
+hash: #popped
+back
+popstate: #back-1
+hash: #back-1
+back
+minimizeApp
+popstate: #back-2
+hash: #back-2
+back
+minimizeApp
+== browser
+popstate: #pushed
+hash: #back-not-heard
+popstate: #popped
+hash: #popped
+back
+back
+back
