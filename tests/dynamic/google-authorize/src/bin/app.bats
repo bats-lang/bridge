@@ -160,9 +160,11 @@ end
 fn revoke_text {n:pos | n < 256} (s: string n): step =
   revoke(bytes(s), g1u2i(string1_length(s)))
 
-(* An authorization given: "authorized" in the hash, then its token
-   cleared and, when it names an account and its scopes, the account's
-   grant of them revoked, so the plugin prints what came back *)
+(* An authorization given: "authorized" and the scopes granted in the
+   hash, then its token cleared and, when it names an account, that
+   account's grant of drive.appdata revoked (else "no account" in the
+   hash), so the plugin prints the token and the account as they came
+   back *)
 fn told_authorized {k:pos}{g:pos}
   (token: $BD.dblob(k), scopes: $BD.dblob(g), account: $R.option([n:pos] $BD.dblob(n))): step = let
   val () = hash_text("authorized")
@@ -260,7 +262,7 @@ fn ended (change: $GZ.google_authorization_change): void =
   | ~$GZ.ChangeUnavailable() => ()
   | ~$GZ.ChangeUnexpected(code, message) => let val () = free_part(code) in free_part(message) end
 
-(* Asks for scope-a with no UI left times, one after another *)
+(* Asks for drive.appdata with no UI left times, one after another *)
 fun found_times {left:pos} .<left>. (left: int left): step =
   if left <= 1 then found()
   else $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(found(), llam(change) => let
@@ -268,14 +270,15 @@ fun found_times {left:pos} .<left>. (left: int left): step =
 
 (* check.mjs plays the native app with the GoogleAuthorize plugin, whose
    answers come in the order of the calls below, and a browser (no
-   Capacitor). Each call is named in the hash, then its answer; an authorization's token
-   is cleared and its account's grant of its scopes revoked, so the
-   plugin prints them as they came back *)
+   Capacitor). Each call is named in the hash, then its answer; an
+   authorization's token is cleared and, when it names an account, that
+   account's grant of drive.appdata revoked, so the plugin prints the
+   token and the account as they came back *)
 implement main0 () = let
   val () = (if $GZ.google_authorize_available() then hash_text("available") else hash_text("unavailable"))
-  (* a scope with whitespace in it is refused as it is made *)
+  (* what is not a scope-token is refused as it is made *)
   val () = split_scope()
-  (* granted, with an account *)
+  (* drive.appdata asked twice (two scopes); granted, with an account *)
   val s1 = found_twice()
   (* consent needed *)
   val s2 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s1, llam(change) => let
@@ -316,7 +319,7 @@ implement main0 () = let
   (* granted with no account, asked with a consent screen allowed *)
   val s8 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s7d, llam(change) => let
     val () = ended(change) in asked() end)
-  (* canceled *)
+  (* the plugin's CANCELED: the reader backed out *)
   val s9 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s8, llam(change) => let
     val () = ended(change) in asked() end)
   (* another consent screen showing *)
@@ -328,7 +331,7 @@ implement main0 () = let
   (* Play services refused the consent: DEVELOPER_ERROR *)
   val s12 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s11, llam(change) => let
     val () = ended(change) in asked() end)
-  (* Play services' own CANCELED: the reader backed out *)
+  (* Play services' own CANCELED status (16): the reader backed out *)
   val s13 = $P.and_then<$GZ.google_authorization_change><$GZ.google_authorization_change>(s12, llam(change) => let
     val () = ended(change) in asked() end)
   (* a grant whose scopes are not a list: unexpected *)
