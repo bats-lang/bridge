@@ -20,8 +20,9 @@
 
    Android only: a browser has no plugin (google_account.bats' Google
    Identity Services is the browser's way), and each atom then answers
-   AuthorizeUnavailable or ChangeUnavailable (Capacitor's own code for a
-   method a platform lacks, UNIMPLEMENTED).
+   AuthorizeUnavailable or ChangeUnavailable with nothing; where the
+   plugin is there but the platform lacks the method, they carry the
+   platform's UNIMPLEMENTED rejection.
 
    Every answer is an outcome of its own (bats-lang/quire#334), and
    anything this module does not recognise is AuthorizeUnexpected,

@@ -71,6 +71,8 @@ const cyclic = () => { const o = { name: 'cycle' }; o.self = o; return o; };
 // JSON.stringify throws, and String gives a text over the 1 MiB bridge
 // keeps
 const big = () => ({ toJSON() { throw error('no JSON'); }, toString() { return 'y'.repeat(CAP + 5); } });
+// JSON.stringify throws, and String gives exactly the 1 MiB bridge keeps
+const capped = () => ({ toJSON() { throw error('no JSON'); }, toString() { return 'z'.repeat(CAP); } });
 // Arrays nested depth deep: json reads 512 levels, and refuses more
 const nested = depth => { let v = []; for (let i = 1; i < depth; i++) v = [v]; return v; };
 // A valid authorization padded with a field so its JSON is length bytes
@@ -124,9 +126,9 @@ const fill = (list, count, next) => {
 };
 
 // Answers bridge's JS never gives, put in as they reach the app: an
-// answer code in place of the next one, and the next text withheld; and
-// the plugin's lookup throwing as the next call of the same method
-// begins (its queued answer is then never asked for, and skipped)
+// answer code in place of the next one, and the next text withheld.
+// And the plugin's lookup made to throw as the next call of the same
+// method begins (its queued answer then never asked for, and skipped)
 let oddAnswer = null;
 let textWithheld = false;
 let lookupThrow = null;
@@ -359,6 +361,7 @@ const answers = () => [
   () => Promise.resolve(revoked()),
   () => Promise.resolve(Object.assign(cyclic(), authorization('token-9', ['scope-a'], null))),
   () => Promise.resolve(big()),
+  () => Promise.resolve(capped()),
   () => Promise.resolve({ authorization: { accessToken: 'token-s', account: null } }),
   oddly(7, () => Promise.resolve(padded(CAP + 1))),
   () => { encodeThrows = 1; return Promise.resolve(authorization('token-e', ['scope-a'], null)); },

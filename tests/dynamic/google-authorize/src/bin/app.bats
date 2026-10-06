@@ -118,7 +118,6 @@ fn hash_form (form: $GZ.google_form): void =
   | $GZ.AsType() => hash_text("as its type")
   | $GZ.AsTypeTextUnkept() => hash_text("as its type, its text unkept")
 
-(* What the plugin answered, as JS wrote it: its form, then its text *)
 (* json's error: its name, then where *)
 fn hash_parse_error (error: $J.parse_error): void =
   case+ error of
@@ -134,6 +133,7 @@ fn hash_parse_error (error: $J.parse_error): void =
   | ~$J.TooDeep(at) => let val () = hash_text("TooDeep") in hash_number(at) end
   | ~$J.TrailingData(at) => let val () = hash_text("TrailingData") in hash_number(at) end
 
+(* What the plugin answered, as JS wrote it: its form, then its text *)
 fn hash_said (said: $GZ.google_said): void = let
   val ~$GZ.GoogleSaid(form, text) = said
   val () = hash_form(form)
