@@ -471,7 +471,8 @@ implement main0 () = let
   val s = times(s, Asked(), PROMPTING)
   val s = times(s, QueuedClear(), CLEARS)
   val s = times(s, QueuedRevoke(), REVOKES)
-(* and the plugin looked up PRESENCES more times at the end: check.mjs
-   makes each of those lookups throw in the app *)
+(* and the plugin looked up PRESENCES more times at the end: in the
+   app, check.mjs makes each of those lookups throw, or answer a code the
+   availability check never gives *)
 in $P.finish<$GZ.google_authorization_change>(s, llam(change) => let
   val () = free_change(change) in presences(PRESENCES) end) end

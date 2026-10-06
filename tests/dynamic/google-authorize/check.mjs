@@ -11,7 +11,8 @@
 // cannot be kept), answers bridge's JS never gives (put in as they reach
 // the app), and a fuzz of random values from a fixed seed; after its
 // last call the app looks the plugin up again, and each of those
-// lookups throws. Then it checks that each call handed to
+// lookups throws or answers a code the availability check never gives.
+// Then it checks that each call handed to
 // google_authorize's JS was settled exactly once, that every call the
 // app made ended in a known outcome, and that every unexpected one
 // carries its text or is a case that has none.
@@ -415,7 +416,8 @@ async function run(label, native) {
     const f = queues[method].shift();
     if (!f) throw new Error(`${method}: no answer queued`);
     // after its last call the app looks the plugin up END_THROWS more
-    // times: each of those lookups throws
+    // times: each of those lookups throws, or answers a code the
+    // availability check never gives
     if (Object.values(queues).every(q => q.length === 0)) endThrows = END_THROWS();
     return f(method);
   };
@@ -464,7 +466,7 @@ async function run(label, native) {
 // Every call settled once with a known outcome, and every unexpected
 // one carries its text, or is a case that has none; the plugin's
 // presence is said first, and again at the end (in the app, a lookup
-// that threw)
+// that threw or a code the availability check never gives)
 const CALLS = ['authorization for scopes', 'authorize scopes', 'clear', 'revoke'];
 const OUTCOMES = ['authorized', 'not authorized', 'canceled', 'consent showing', 'refused', 'unavailable', 'unexpected', 'changed'];
 const CASES = ['answer undefined', 'answer not JSON', 'answer unparsed', 'answer too large', 'answer not an object',
@@ -476,8 +478,8 @@ const FORMS = ['as JSON', 'as String', 'as its type', 'as its type, its text unk
 function check(label, native, lines, calls, queues) {
   const text = lines.map(l => l.slice(6));
   const problems = [];
-  // the app's last lookups: each a lookup that threw (in a browser, no
-  // plugin)
+  // the app's last lookups: each a lookup that threw or a code the
+  // availability check never gives (in a browser, no plugin)
   const end = native ? text.indexOf('presence') : text.length - END_THROWS().length;
   if (text[0] !== (native ? 'available' : 'unavailable')) problems.push(`first line ${text[0]}`);
   const last = text.slice(end);
