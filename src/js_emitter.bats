@@ -2023,21 +2023,22 @@ in end
    bats_js_google_authorize_part. An answer the plugin does not document
    (no authorization: an answer that is null or no object, or one
    without an authorization, but authorizationForScopes' null; an
-   access token missing, not a string, empty or blank; scopes that are
+   authorization that is not an object; an access token missing, not a
+   string, empty or blank; scopes that are
    not a non-empty list, or one not a string, empty or blank; an
    account missing, not a string, empty or blank), a grant the plugin
    passes on that the atom's types cannot take (a granted scope, not
    blank, that is not a scope-token; an access token or an account that
-   is not well-formed Unicode, is over 4096 bytes or holds no visible
-   ASCII character), and a rejection that is not an object whose code
-   and message are each text or absent, fail with no code and say which
-   they were, each condition in a message of its own; a rejection with no value keeps no code and no message,
-   and an empty code or message is kept as none.
+   starts with a byte order mark, is not well-formed Unicode, is over
+   4096 bytes or holds no visible ASCII character), and a rejection
+   that is not an object whose code and message are each text or
+   absent (no value, null, a string included), fail with no code and
+   say which they were, each condition in a message of its own; an empty code or message is kept as none.
    googleBlank is blank as the plugin's Java has it (String.isBlank:
    Character.isWhitespace's characters only). No plugin is Capacitor's
    own code for a platform without the method *)
-fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3600] $B.builder(m)): void = let
+fn emit_js_google_authorize {n:nat | n + 4400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // GoogleAuthorize: google_authorize.bats\n")
   val () = $B.bput(b,"  const googleParts = new Map();\n")
@@ -2048,14 +2049,15 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  const googleTextOrNone = x => x == null || typeof x == 'string';\n")
   val () = $B.bput(b,"  function googleFailed(id, e) {\n")
-  val () = $B.bput(b,"    if (e !== void 0 && !(e && typeof e == 'object' && googleTextOrNone(e.code) && googleTextOrNone(e.message)))\n")
+  val () = $B.bput(b,"    if (!(e && typeof e == 'object' && googleTextOrNone(e.code) && googleTextOrNone(e.message)))\n")
   val () = $B.bput(b,"      e = { message: 'The rejection is not an error whose code and message are text' };\n")
-  val () = $B.bput(b,"    googleKeep(id, '', '', e && e.code, e && e.message);\n")
+  val () = $B.bput(b,"    googleKeep(id, '', '', e.code, e.message);\n")
   val () = $B.bput(b,"    return -2;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  const googleOdd = (id, what) => googleFailed(id, { message: what });\n")
   val () = $B.bput(b,"  const googleBlank = /^[\\t-\\r\\x1c-\\x20\\u1680\\u2000-\\u2006\\u2008-\\u200a\\u2028\\u2029\\u205f\\u3000]*$/;\n")
   val () = $B.bput(b,"  const googleWhy = (x, w) => typeof x != 'string' ? w + ' is missing or not a string' : googleBlank.test(x) ? w + ' is empty or blank'\n")
+  val () = $B.bput(b,"  : x[0] == '\\ufeff' ? w + ' starts with a byte order mark'\n")
   val () = $B.bput(b,"  : /\\p{Cs}/u.test(x) ? w + ' is not well-formed Unicode' : utf8.encode(x).length > 4096 ? w + ' is over 4096 bytes'\n")
   val () = $B.bput(b,"  : /[!-~]/.test(x) ? '' : w + ' holds no visible ASCII character';\n")
   val () = $B.bput(b,"  function batsJsGoogleAuthorizeAvailable() { return ")
@@ -2070,7 +2072,7 @@ fn emit_js_google_authorize {n:nat | n + 3600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    settleBy(id, () => mayAsk ? g.authorizeScopes({ scopes }) : g.authorizationForScopes({ scopes }), r => {\n")
   val () = $B.bput(b,"      const a = r ? r.authorization : void 0;\n")
   val () = $B.bput(b,"      if (a === null && !mayAsk) { googleKeep(id); return 0; }\n")
-  val () = $B.bput(b,"      if (!a) return googleOdd(id, 'The answer has no authorization');\n")
+  val () = $B.bput(b,"      if (!a || typeof a != 'object') return googleOdd(id, 'The answer has no authorization');\n")
   val () = $B.bput(b,"      const s = a.grantedScopes, why = googleWhy(a.accessToken, 'The access token')\n")
   val () = $B.bput(b,"      || (!Array.isArray(s) || !s.length ? 'The scopes granted are not a non-empty list'\n")
   val () = $B.bput(b,"      : !s.every(x => typeof x == 'string' && !googleBlank.test(x)) ? 'A scope granted is not a string, or is empty or blank'\n")
@@ -2361,8 +2363,8 @@ fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 25340 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 25340] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 26140 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26140] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2385,8 +2387,8 @@ fn _emit_first_half {n:nat | n + 32670 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 57130 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 57130] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 57930 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 57930] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

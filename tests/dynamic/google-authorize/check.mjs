@@ -15,7 +15,7 @@ const boot = src.lastIndexOf("\nconst root = document.getElementById('bats-root'
 if (boot < 0) throw new Error('bridge.js: boot code not found');
 
 const failure = (code, message) => Object.assign(new Error(message || code || 'failed'), code ? { code } : {});
-// The statuses CommonStatusCodes names (play-services-basement 18.5.0) that
+// The statuses CommonStatusCodes names (play-services-basement 18.9.0) that
 // a refusal can carry, but NETWORK_ERROR and CANCELED (answers in silent,
 // below, before the map of these), INTERNAL_ERROR (the clear stub) and DEVELOPER_ERROR (the
 // prompting answers): 14
@@ -75,14 +75,33 @@ async function run(label, native) {
     () => Promise.resolve(authorization('token-4', ['scope-a'], 'a'.repeat(5000))),
     () => Promise.resolve(authorization('tok\ud800', ['scope-a'], null)),
     () => Promise.resolve(authorization('token-4', ['scope-a'], 'r\udc00@x')),
-    // a status with an empty message, and a rejection with no value: no
-    // message kept
+    // a status with an empty message: no message kept
     () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR' })),
-    () => Promise.reject(),
     // a rejection that is not an error whose code and message are text:
-    // a string, and an error whose code is a number
+    // one with no value, a string, and an error whose code is a number
+    () => Promise.reject(),
     () => Promise.reject('refused as a string'),
     () => Promise.reject(Object.assign(new Error('7: offline'), { code: 7 })),
+    // and an error whose message is a number, null, and an error with no
+    // code and no message (kept as none and none)
+    () => Promise.reject(Object.assign(new Error(''), { code: 'NETWORK_ERROR', message: 7 })),
+    () => Promise.reject(null),
+    () => Promise.reject({}),
+    // an authorization that is not an object; a token and an account
+    // starting with a byte order mark; a token and an account of exactly
+    // 4096 bytes, taken (then cleared, and the account's grant revoked),
+    // and of 4097 bytes in 2049 UTF-16 units; an account holding a letter
+    // outside ASCII, taken and revoked as it came; a scope holding each
+    // end of NQCHAR's ranges, taken
+    () => Promise.resolve({ authorization: true }),
+    () => Promise.resolve(authorization('\ufefftoken-6', ['scope-a'], null)),
+    () => Promise.resolve(authorization('token-6', ['scope-a'], '\ufeffr@x')),
+    () => Promise.resolve(authorization('t'.repeat(4096), ['scope-a'], null)),
+    () => Promise.resolve(authorization('a' + '\u00e9'.repeat(2048), ['scope-a'], null)),
+    () => Promise.resolve(authorization('token-7', ['scope-a'], 'a'.repeat(4096))),
+    () => Promise.resolve(authorization('token-7', ['scope-a'], 'a' + '\u00e9'.repeat(2048))),
+    () => Promise.resolve(authorization('token-8', ['scope-a'], 'r\u00fc@x')),
+    () => Promise.resolve(authorization('token-9', ['!#[]~'], null)),
   ];
   // authorizeScopes: granted with no account; the plugin's CANCELED;
   // another consent screen showing; no authorization, which the plugin
@@ -104,6 +123,9 @@ async function run(label, native) {
     () => Promise.reject(failure(null, 'no code given')),
     () => Promise.reject(failure('SOMETHING_NEW', 'new in Play services')),
   ];
+  // what a clear or a revoke is given, a text over 100 characters by its
+  // length alone
+  const given = o => JSON.stringify(o, (k, v) => typeof v === 'string' && v.length > 100 ? `${v.length} characters` : v);
   if (native) globalThis.Capacitor = {
     isNativePlatform: () => true,
     Plugins: {
@@ -111,7 +133,7 @@ async function run(label, native) {
         authorizationForScopes: o => { console.log(`authorizationForScopes: ${JSON.stringify(o)}`); return silent.shift()(); },
         authorizeScopes: o => { console.log(`authorizeScopes: ${JSON.stringify(o)}`); return prompting.shift()(); },
         clearAuthorizationToken: o => {
-          console.log(`clearAuthorizationToken: ${JSON.stringify(o)}`);
+          console.log(`clearAuthorizationToken: ${given(o)}`);
           if (o.accessToken === 'refused-token') return Promise.reject(failure('INTERNAL_ERROR', '8: failed'));
           if (o.accessToken === 'odd-token') return Promise.reject(failure('UNEXPECTED', 'NullPointerException: null'));
           if (o.accessToken === 'showing-token') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
@@ -119,15 +141,19 @@ async function run(label, native) {
           if (o.accessToken === 'quiet-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR' }));
           // a rejection that is not an error: said to be so
           if (o.accessToken === 'string-token') return Promise.reject('refused as a string');
+          // an error whose message is a number: said to be so
+          if (o.accessToken === 'number-token') return Promise.reject(Object.assign(new Error(''), { code: 'INTERNAL_ERROR', message: 8 }));
           return Promise.resolve();
         },
         revokeAccess: o => {
-          console.log(`revokeAccess: ${JSON.stringify(o)}`);
+          console.log(`revokeAccess: ${given(o)}`);
           if (o.account === 'refused@example.com') return Promise.reject(failure('NETWORK_ERROR', '7: offline'));
           if (o.account === 'odd@example.com') return Promise.reject(failure('UNEXPECTED', 'IllegalStateException: odd'));
           if (o.account === 'showing@example.com') return Promise.reject(failure('CONSENT_SHOWING', 'not documented here'));
-          // a rejection with no value: no code and no message kept
+          // a rejection with no value: said to be no error
           if (o.account === 'silent@example.com') return Promise.reject();
+          // null: said to be no error
+          if (o.account === 'null@example.com') return Promise.reject(null);
           return Promise.resolve();
         },
       },

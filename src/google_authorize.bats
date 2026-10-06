@@ -57,7 +57,8 @@ staload "./decompress.bats"
 #pub datasort asking = Silently | MayAsk
 
 (* A refusal Play services documents: a status CommonStatusCodes names
-   (getStatusCodeString, play-services-basement 18.5.0), decoded once
+   (getStatusCodeString, play-services-basement 18.9.0, which the
+   plugin's play-services-auth 21.5.0 brings), decoded once
    from the plugin's code. SUCCESS and SUCCESS_CACHE are not refusals:
    a code naming them is unexpected *)
 #pub datatype google_status =
@@ -79,8 +80,10 @@ staload "./decompress.bats"
    answer no consumer takes is freed by promise's dispose. *)
 #pub datavtype google_authorization(asking) =
   (* The access token; the scopes granted, separated by spaces (at
-     least one: a grant of none is unexpected); and the account the grant
-     is for (an email address on Android), when the answer names one *)
+     least one: a grant of none is unexpected; each a scope-token, of
+     any length, so one of 256 bytes or more fits no google_scope); and
+     the account the grant is for (an email address on Android), when
+     the answer names one *)
   | {w:asking} Authorized(w) of
       ([n:pos] dblob(n), [k:pos] dblob(k), $R.option([a:pos] dblob(a)))
   (* The reader must consent first, and nothing was shown *)
@@ -106,24 +109,27 @@ staload "./decompress.bats"
   (* An answer this module does not recognise, with the code and the
      message as they came (each none when there was none, or it was
      empty), and only these: the
-     plugin's UNEXPECTED; a rejection with no code, or a code neither
-     Play services nor the plugin names (SUCCESS among them, which is no
-     refusal); the plugin's INVALID_OPTIONS, which google_scopes' type
+     plugin's UNEXPECTED; a rejection with no code; a code Play services
+     names that is no refusal (SUCCESS, SUCCESS_CACHE), or a code
+     neither Play services nor the plugin names; the plugin's INVALID_OPTIONS, which google_scopes' type
      keeps a call from earning; CONSENT_SHOWING from
      authorizationForScopes, which shows no consent screen. And, JS
      saying which it was, each in a message of its own (blank as the
      plugin's Java has it, String.isBlank): an answer the plugin does
-     not document (one that is null or not an object, an empty one, or
-     a null authorization from authorizeScopes; an access token missing,
+     not document (one that is null or not an object, an empty one, an
+     authorization that is not an object, or a null authorization from
+     authorizeScopes; an access token missing,
      not a string, empty or blank; granted scopes that are not a
      non-empty list, or one that is not a string, is empty or is blank;
      an account missing from the answer, not a string, empty or blank;
      a rejection that is not an object whose code and message are each
-     text or absent); or a grant the plugin passes on that bridge does
+     text or absent: one with no value, null, a string, an error whose
+     code or message is a number); or a grant the plugin passes on that bridge does
      not take: a granted scope, not blank, that is not RFC 6749's
      scope-token (bats-lang/capacitor-plugins#9), or an access token or
-     an account that is not well-formed Unicode (a lone surrogate), is
-     over 4096 bytes or holds no visible ASCII character (0x21 to 0x7E),
+     an account that starts with a byte order mark (U+FEFF, which JS's
+     decoder would drop), is not well-formed Unicode (a lone surrogate),
+     is over 4096 bytes or holds no visible ASCII character (0x21 to 0x7E),
      which google_text cannot carry (google_text_of's tests and bound,
      so a token Authorized gives can always be cleared as it came, and
      an account it names revoked; Google's access tokens are at most
@@ -143,12 +149,15 @@ staload "./decompress.bats"
   (* An answer this module does not recognise, with the code and the
      message as they came (each none when there was none, or it was
      empty), and only these: the
-     plugin's UNEXPECTED; a rejection with no code, or a code neither
-     Play services nor the plugin names (SUCCESS among them); the
+     plugin's UNEXPECTED; a rejection with no code; a code Play services
+     names that is no refusal (SUCCESS, SUCCESS_CACHE), or a code
+     neither Play services nor the plugin names; the
      plugin's INVALID_OPTIONS, which google_text's and google_scopes'
      types keep a call from earning; CONSENT_SHOWING, which neither call
      documents; and, JS saying what it was, a rejection that is not an
-     object whose code and message are each text or absent *)
+     object whose code and message are each text or absent (one with
+     no value, null, a string, an error whose code or message is a
+     number) *)
   | ChangeUnexpected of ($R.option([c:pos] dblob(c)), $R.option([m:pos] dblob(m)))
 
 (* Whether the app has the plugin: false in a browser *)
@@ -160,7 +169,8 @@ staload "./decompress.bats"
    quote or backslash, nothing non-ASCII; the scopes of a call cross as one
    text, separated by spaces, RFC 6749 3.3), once, by google_scope_of,
    the only way to make one, so no call asks for an empty or blank
-   scope, or splits one in two (quire#334). The set of scopes is open:
+   scope, or splits one in two (quire#334). Under 256 bytes: a granted
+   scope (Authorized's) may be longer, and then fits none. The set of scopes is open:
    one Google does not recognise is sent on, and what Google answers
    for it is not documented (it may be any outcome above) *)
 #pub abstype google_scope = ptr
@@ -194,15 +204,17 @@ staload "./decompress.bats"
   (scopes: google_scopes(k))
   : $P.promise(google_authorization(MayAsk), $P.Chained)
 
-(* A token or an account to hand Google: well-formed UTF-8 (so JS reads
-   it as it is, with nothing replaced) holding at least one visible
+(* A token or an account to hand Google: well-formed UTF-8 that does
+   not start with a byte order mark (so JS reads it as it is, with
+   nothing replaced or dropped) holding at least one visible
    ASCII character (0x21 to 0x7E), so never empty or blank (what the
    plugin refuses as INVALID_OPTIONS), checked once by google_text_of,
    the only way to make one, which copies them *)
 #pub absvtype google_text = ptr
 
-(* bytes[0, n) as a google_text, when they are well-formed UTF-8 and
-   hold a visible ASCII character. At most 4096 bytes: Google's access tokens are at most
+(* bytes[0, n) as a google_text, when they are well-formed UTF-8, do
+   not start with a byte order mark (EF BB BF) and hold a visible ASCII
+   character. At most 4096 bytes: Google's access tokens are at most
    2048, and an account is an email address *)
 #pub fn google_text_of {l:agz}{n:pos | n <= 4096} (bytes: !$A.borrow(byte, l, n), n: int n): $R.option(google_text)
 
@@ -659,9 +671,18 @@ fun _utf8 {l:agz}{n:pos}{at:nat | at <= n} .<n - at>. (bytes: !$A.borrow(byte, l
     else false
   end
 
+(* Whether bytes[0, n) start with a byte order mark (EF BB BF), which
+   JS's TextDecoder drops *)
+fn _byte_order_mark {l:agz}{n:pos} (bytes: !$A.borrow(byte, l, n), n: int n): bool =
+  if n < 3 then false
+  else if _in(bytes, 0, 0xEF, 0xEF) then
+    (if _in(bytes, 1, 0xBB, 0xBB) then _in(bytes, 2, 0xBF, 0xBF) else false)
+  else false
+
 implement google_text_of {l}{n} (bytes, n) =
   if ~_visible(bytes, n, 0) then $R.none()
   else if ~_utf8(bytes, n, 0) then $R.none()
+  else if _byte_order_mark(bytes, n) then $R.none()
   else let
     val copy = $A.alloc<byte>(n)
     val () = $A.write_borrow(copy, 0, bytes, n)

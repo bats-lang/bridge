@@ -53,6 +53,24 @@ authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdat
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+clearAuthorizationToken: {"accessToken":"4096 characters"}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+clearAuthorizationToken: {"accessToken":"token-7"}
+revokeAccess: {"account":"4096 characters","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+clearAuthorizationToken: {"accessToken":"token-8"}
+revokeAccess: {"account":"rü@x","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+authorizationForScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
+clearAuthorizationToken: {"accessToken":"token-9"}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"token-2"}
 authorizeScopes: {"scopes":["https://www.googleapis.com/auth/drive.appdata"]}
@@ -73,8 +91,11 @@ revokeAccess: {"account":"showing@example.com","scopes":["https://www.googleapis
 clearAuthorizationToken: {"accessToken":"quiet-token"}
 revokeAccess: {"account":"silent@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 clearAuthorizationToken: {"accessToken":"string-token"}
+clearAuthorizationToken: {"accessToken":"number-token"}
+revokeAccess: {"account":"null@example.com","scopes":["https://www.googleapis.com/auth/drive.appdata"]}
 hash: #available
-hash: #nnnnnnnnnnny
+hash: #nnnnnnnnnnnyyyyyy
+hash: #nnnnnnnnyyyyyynnnn
 hash: #authorization for scopes
 hash: #authorized
 hash: #scope-a scope-b
@@ -291,15 +312,69 @@ hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
+hash: #The rejection is not an error whose code and message are text
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The rejection is not an error whose code and message are text
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The rejection is not an error whose code and message are text
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The rejection is not an error whose code and message are text
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The rejection is not an error whose code and message are text
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
 hash: #no message
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The answer has no authorization
 hash: #authorization for scopes
 hash: #unexpected
 hash: #no code
-hash: #The rejection is not an error whose code and message are text
+hash: #The access token starts with a byte order mark
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The account starts with a byte order mark
+hash: #authorization for scopes
+hash: #authorized
+hash: #scope-a
+hash: #no account
+hash: #changed
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The access token is over 4096 bytes
+hash: #authorization for scopes
+hash: #authorized
+hash: #scope-a
+hash: #changed
+hash: #revoke
+hash: #changed
+hash: #authorization for scopes
+hash: #unexpected
+hash: #no code
+hash: #The account is over 4096 bytes
+hash: #authorization for scopes
+hash: #authorized
+hash: #scope-a
+hash: #changed
+hash: #revoke
+hash: #changed
+hash: #authorization for scopes
+hash: #authorized
+hash: #!#[]~
+hash: #no account
+hash: #changed
 hash: #authorize scopes
 hash: #authorized
 hash: #scope-a scope-c
@@ -374,16 +449,49 @@ hash: #no message
 hash: #revoke
 hash: #unexpected
 hash: #no code
-hash: #no message
+hash: #The rejection is not an error whose code and message are text
 hash: #clear
 hash: #unexpected
 hash: #no code
 hash: #The rejection is not an error whose code and message are text
 hash: #clear
 hash: #not a token
+hash: #clear
+hash: #unexpected
+hash: #no code
+hash: #The rejection is not an error whose code and message are text
+hash: #revoke
+hash: #unexpected
+hash: #no code
+hash: #The rejection is not an error whose code and message are text
 == browser page
 hash: #unavailable
-hash: #nnnnnnnnnnny
+hash: #nnnnnnnnnnnyyyyyy
+hash: #nnnnnnnnyyyyyynnnn
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
+hash: #authorization for scopes
+hash: #unavailable
 hash: #authorization for scopes
 hash: #unavailable
 hash: #authorization for scopes
@@ -530,3 +638,7 @@ hash: #clear
 hash: #unavailable
 hash: #clear
 hash: #not a token
+hash: #clear
+hash: #unavailable
+hash: #revoke
+hash: #unavailable

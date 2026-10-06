@@ -65,8 +65,8 @@ useful.)
   no quote or backslash, nothing non-ASCII), once, as it is made; the
   plugin's own check of its options (`INVALID_OPTIONS`) then cannot be
   reached from Bats. A token or an account is a `google_text`, made only
-  by `google_text_of` from 1 to 4096 bytes of well-formed UTF-8 holding
-  a visible ASCII character. Static reject fixtures hold it
+  by `google_text_of` from 1 to 4096 bytes of well-formed UTF-8, with no
+  leading byte order mark, holding a visible ASCII character. Static reject fixtures hold it
   (`tests/static/reject/google-scope-bytes`, `google-scope-empty`, `google-scopes-empty`, `google-token-bytes`).
 * The atom's dynamic test drives every constructor, `...Unexpected`
   included, through a stand-in for the platform. The app matches every
