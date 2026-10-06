@@ -4,6 +4,7 @@ popstate: #pushed
 hash: #back-heard
 popstate: #popped
 hash: #popped
+scrollRestoration: manual
 back
 popstate: #back-1
 hash: #back-1
@@ -18,6 +19,7 @@ popstate: #pushed
 hash: #back-not-heard
 popstate: #popped
 hash: #popped
+scrollRestoration: manual
 back
 back
 back
