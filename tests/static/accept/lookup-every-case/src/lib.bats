@@ -17,7 +17,7 @@ fn f (): void = let
     case+ found of
     | ~$ID.Found(blob) => $DC.blob_free(blob)
     | ~$ID.Absent() => ()
-    | ~$ID.Unreadable() => ())
+    | ~$ID.Unreadable(cause) => $ID.unreadable_cause_free(cause))
   val () = $P.finish<$BF.file_lookup>($BF.file_idb_get(borrowed, 3), llam (found) =>
     case+ found of
     | ~$BF.FileFound(f) => $BF.file_close(f)
@@ -26,8 +26,8 @@ fn f (): void = let
   val value = $A.dup<byte>(frozen, borrowed)
   val () = $P.finish<$ID.stored>($ID.idb_put(borrowed, 3, value, 3), llam (outcome) =>
     case+ outcome of
-    | $ID.Stored() => ()
-    | $ID.NotStored() => ())
+    | ~$ID.Stored() => ()
+    | ~$ID.NotStored(cause) => $ID.write_failure_free(cause))
   val () = $A.drop<byte>(frozen, value)
   val () = $P.discard<$ID.lookup>($ID.idb_list_keys(borrowed, 3))
   val () = $A.drop<byte>(frozen, borrowed)
