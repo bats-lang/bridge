@@ -16,6 +16,8 @@ so a commit that passes keeps passing:
   lock (`bats lock --dev`) is pinned too.
 * `publish.yml` and `relock-pins.yml` in bats-lang/repository-prototype are
   called by commit, never `@main`.
+* Node, which runs the dynamic tests, is the exact version `check.yml`
+  names.
 
 Pins move only through a reviewed pull request that runs the same CI. The
 daily `relock.yml` (the shared `relock-pins.yml`) relocks against the
@@ -37,6 +39,70 @@ A DOM primitive is an operation of the stream `dom_flush` applies,
 addressed by element id like the others (CLONE_NODE copies an element
 and nothing more: what the copy keeps is set by the app's own
 operations on its id).
+
+## Every outcome is distinct, and the unexpected is said as such
+
+(bats-lang/quire#334: a Google error that ended the consent screen
+reached the app as the reader backing out, and the app said nothing
+useful.)
+
+* An atom answers each outcome its platform documents with a
+  constructor of its own, decoded once from what JS gives (for
+  google_authorize: `AuthorizeRefused` with a `google_status`,
+  `AuthorizeCanceled`, `ConsentShowing`, `AuthorizeUnavailable`). One
+  outcome is never folded into another.
+* Anything the atom does not recognise is an explicit `...Unexpected`
+  constructor carrying which case it was as a datatype (for
+  google_authorize, `google_unexpected`), with the answer as JS wrote
+  it. So is an answer the atom's types rule out (for google_authorize,
+  the plugin's `INVALID_OPTIONS`).
+* What a call cannot take is unrepresentable in the atom's type:
+  google_authorize takes `google_scopes(t)` of at least one
+  `google_scope`, each made only by `google_scope_of` (printable
+  ASCII), and a token or an account as a `google_text` (printable
+  ASCII), made by `google_text_of` or decoded from an answer; the
+  scopes an answer grants are a `google_granted`, which no call takes.
+* The atom's dynamic test passes through every constructor,
+  `...Unexpected` included, with a stand-in for the platform. The app
+  matches every answer with `case+` and handles each constructor
+  visibly (quire's CLAUDE.md).
+
+## An atom's JS only writes the answer down
+
+How google_authorize takes a platform's answer (bats-lang/quire#334),
+and the rule for an atom's answers:
+
+* JS decides nothing. It looks the plugin up, reads the call's arguments
+  and calls the method in one try; what came back, resolved or rejected,
+  or what threw, it writes as text in a try of its own: `JSON.stringify`
+  with a replacer that writes an Error as its own properties and its
+  name and a BigInt as its digits; when that throws or gives nothing,
+  `String` of it; when that throws too, its type; nothing for undefined.
+  When the text cannot be kept, its type is kept instead, and when that
+  cannot be either, nothing. The answer code says where the call was
+  (resolved, rejected, which step threw, or a method that returned no
+  promise) and how the text was written. The check that the plugin is
+  there answers the same way when its lookup throws.
+* Bats reads the text with the json package and decides there, with
+  `case+`: each outcome the platform documents, and each case it does
+  not recognise, which keeps the text (as UTF-8, as TextEncoder writes
+  it: a lone surrogate, which only the String form can hold, becomes
+  U+FFFD). A text over 1 MiB is kept as its whole length and its first 1
+  MiB, whatever its form: a case of its own, or, with an answer code JS
+  never gives, kept so by that case. An outcome that came with a text
+  keeps it (for google_authorize, `Authorized` and `NotAuthorized` too),
+  so a field the atom does not read is not dropped.
+* A credential in a kept text (an access token) is kept; the app hides
+  it where it shows the text.
+* The atom's dynamic test plays the documented answers, a fixed list of
+  nasty ones (values JSON has no form for, throwing getters and Proxy
+  traps, cycles, huge and odd strings, thenables, answers at and just
+  over the cap, a lookup, arguments and method that throw, a method that
+  returns no promise, a text that cannot be kept), answers JS never
+  gives, and a fuzz from a fixed seed, and checks that every call
+  settles once with a known outcome, and every unexpected one keeps its
+  text or is a case that has none. Where the output would hold the
+  engine's own wording (a revoked Proxy's message), it names it instead.
 
 ## Adversarial review before merge
 

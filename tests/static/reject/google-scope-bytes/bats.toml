@@ -1,11 +1,8 @@
 [package]
-name = "google-authorize"
-kind = "bin"
+name = "google-scope-bytes"
+kind = "lib"
 
 [dependencies]
 "array" = ""
 "promise" = ""
-"result" = ""
-"json" = ""
-"pwa" = ""
 "wasm.bats-packages.dev/bridge" = ""
