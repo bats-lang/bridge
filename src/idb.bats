@@ -18,7 +18,7 @@ staload "./decompress.bats"
   | UnknownCode      (* a negative code JS never gives *)
   | UnclaimedHandle  (* a positive code that is not a blob JS handed out *)
 
-(* The causes, and what holds them (stored, lookup, updated), are linear
+(* The causes, and what holds them (lookup, updated), are linear
    (a constructor with data allocates, and wasm has no collector): the one
    consumer matches with case+ ~, or hands a cause to its _free. *)
 
@@ -30,21 +30,23 @@ staload "./decompress.bats"
   | ReadFailed                                   (* the request or its transaction errored or aborted *)
   | UnreadableUnexpected of (idb_unexpected, int) (* an answer bridge does not recognise, and its code *)
 
-(* Why a write was not kept. JS's codes, decoded here once: -1 the
+(* Why an update's write was not kept (idb_update's NotUpdated: a caller
+   has no other way to learn it). JS's codes, decoded here once: -1 the
    database could not be opened, -2 the transaction aborted (as it does
-   when storage is full), -3 a batch that was malformed (nothing was
-   written). *)
+   when storage is full), -4 a malformed batch (nothing was written). *)
 #pub datavtype write_failure =
   | WriteNoDatabase                               (* indexedDB.open failed, or the database could not be used *)
   | WriteAborted                                  (* the transaction aborted: nothing of it was kept *)
-  | BadBatch                                      (* idb_write_all: the batch was malformed: nothing was written *)
+  | BadBatch                                      (* the batch was malformed: nothing was written *)
   | WriteUnexpected of (idb_unexpected, int)      (* an answer bridge does not recognise, and its code *)
 
 (* Whether a write (a put or a delete) was kept. JS's answer is decoded
-   here, once: 0 is Stored, anything else NotStored with its cause. *)
-#pub datavtype stored =
+   here, once: 0 is Stored, anything else NotStored (the database could
+   not be opened, the transaction aborted as it does when storage is
+   full, or a batch was malformed: they are not told apart here). *)
+#pub datatype stored =
   | Stored
-  | NotStored of (write_failure)
+  | NotStored
 
 (* What a read found. A read that failed is Unreadable, never Absent, so
    a caller cannot take it for an empty value and write a default over
@@ -104,7 +106,7 @@ staload "./decompress.bats"
      and for a put only: u32 little-endian value length, the value.
    A batch that is malformed (a length past the end, an op that is
    neither 1 nor 2, a key that is empty or not UTF-8) writes nothing and
-   is NotStored(BadBatch). An empty batch is Stored. *)
+   is NotStored (not told apart from other failures). An empty batch is Stored. *)
 #pub fun idb_write_all
   : {lb:agz}{n:nat}
   (!$A.borrow(byte, lb, n), int n) -> $P.promise(stored, $P.Chained)
@@ -257,17 +259,10 @@ extern fun _bats_js_idb_delete_database
   (): void = "mac#bats_js_idb_delete_database"
 end
 
-(* JS's codes for a write: 0 stored; -1 the database could not be used,
-   -2 the transaction aborted, -3 a malformed batch. Any other is not
-   one JS gives *)
-fn _write_failure (code: Int): write_failure =
-  if code = ~1 then WriteNoDatabase()
-  else if code = ~2 then WriteAborted()
-  else if code = ~3 then BadBatch()
-  else WriteUnexpected(UnknownCode(), code)
+(* JS's codes for a write: 0 stored, anything else not *)
 
 fn _stored (code: Int): stored =
-  if code = 0 then Stored() else NotStored(_write_failure(code))
+  if code = 0 then Stored() else NotStored()
 
 (* A write's outcome nobody took: nothing to free. ATS2 resolves a
    template's instances in file order, so each dispose comes before its
@@ -285,10 +280,7 @@ implement write_failure_free (cause) =
   | ~BadBatch() => ()
   | ~WriteUnexpected(_, _) => ()
 
-implement $P.dispose<stored>(outcome) =
-  case+ outcome of
-  | ~Stored() => ()
-  | ~NotStored(cause) => write_failure_free(cause)
+implement $P.dispose<stored>(_) = ()
 
 (* The cause of a read JS's code names: -1 the database could not be
    used, -2 the read failed; any other negative is not one JS gives *)

@@ -24,8 +24,8 @@ staload DC = "wasm.bats-packages.dev/bridge/src/decompress.bats"
    of an update reports what it was given too, as its tag + 100.
 
    Tags: lookups 0 absent, 1 found, 2 no database, 3 read failed,
-   4 unknown code, 5 unclaimed handle; writes 10 stored, 11 no database,
-   12 aborted, 13 bad batch, 14 unknown code; updates 20 updated, 21 kept
+   4 unknown code, 5 unclaimed handle; writes 10 stored,
+   11 not stored; updates 20 updated, 21 kept
    as read, 22 unreadable (no database), 23 unreadable (read failed),
    24 unreadable (unknown code), 25 unreadable (unclaimed handle),
    26 not updated (no database), 27 not updated (aborted), 28 not updated
@@ -104,12 +104,8 @@ fn report_lookup (index: int, base: int, found: $ID.lookup): void =
 
 fn report_stored (index: int, outcome: $ID.stored): void =
   case+ outcome of
-  | ~$ID.Stored() => report(index, 10, 0)
-  | ~$ID.NotStored(cause) => (case+ cause of
-    | ~$ID.WriteNoDatabase() => report(index, 11, 0)
-    | ~$ID.WriteAborted() => report(index, 12, 0)
-    | ~$ID.BadBatch() => report(index, 13, 0)
-    | ~$ID.WriteUnexpected(_, code) => report(index, 14, code))
+  | $ID.Stored() => report(index, 10, 0)
+  | $ID.NotStored() => report(index, 11, 0)
 
 fn report_updated (index: int, outcome: $ID.updated): void =
   case+ outcome of

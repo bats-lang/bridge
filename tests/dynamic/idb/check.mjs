@@ -78,8 +78,7 @@ const concat = (...parts) => {
 const tagNames = {
   0: 'absent', 1: 'found', 2: 'unreadable (no database)', 3: 'unreadable (read failed)',
   4: 'unreadable (unexpected: unknown code)', 5: 'unreadable (unexpected: unclaimed handle)',
-  10: 'stored', 11: 'not stored (no database)', 12: 'not stored (aborted)', 13: 'not stored (bad batch)',
-  14: 'not stored (unexpected: unknown code)',
+  10: 'stored', 11: 'not stored',
   20: 'updated', 21: 'kept as read', 22: 'update unreadable (no database)',
   23: 'update unreadable (read failed)', 24: 'update unreadable (unexpected: unknown code)',
   25: 'update unreadable (unexpected: unclaimed handle)', 26: 'not updated (no database)',
@@ -90,7 +89,7 @@ const show = bytes => {
   return /^[\x20-\x7e]*$/.test(text) ? JSON.stringify(text)
     : [...bytes].map(b => b.toString(16).padStart(2, '0')).join(' ');
 };
-const withCode = tag => tag % 100 === 4 || tag % 100 === 5 || tag === 14 || tag === 24 || tag === 25 || tag === 29;
+const withCode = tag => tag % 100 === 4 || tag % 100 === 5 || tag === 24 || tag === 25 || tag === 29;
 function describe(report) {
   const tag = report.tag % 100;
   const seen = report.tag >= 100 ? 'the closure was given: ' : '';

@@ -26,7 +26,7 @@ idb-2-get: found 002
 idb-3-get-absent: absent
 idb-4-get-failed: unreadable: read failed
 idb-5-keys: found 004
-idb-6-put-failed: not stored: aborted
+idb-6-put-failed: not stored
 idb-7-delete: stored
 measure-1: measured
 measure-2: no element

@@ -102,12 +102,8 @@ fn show_lookup {ni:pos | ni < 32} (name: string ni, found: $ID.lookup): void =
 
 fn show_stored {ni:pos | ni < 32} (name: string ni, outcome: $ID.stored): void =
   case+ outcome of
-  | ~$ID.Stored() => say(name, "stored")
-  | ~$ID.NotStored(cause) => (case+ cause of
-    | ~$ID.WriteNoDatabase() => say(name, "not stored: no database")
-    | ~$ID.WriteAborted() => say(name, "not stored: aborted")
-    | ~$ID.BadBatch() => say(name, "not stored: bad batch")
-    | ~$ID.WriteUnexpected(_, _) => say(name, "not stored: unexpected"))
+  | $ID.Stored() => say(name, "stored")
+  | $ID.NotStored() => say(name, "not stored")
 
 fn show_play {ni:pos | ni < 32} (name: string ni, outcome: $AU.play_outcome): void =
   case+ outcome of

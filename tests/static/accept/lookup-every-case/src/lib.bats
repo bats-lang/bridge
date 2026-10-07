@@ -26,8 +26,8 @@ fn f (): void = let
   val value = $A.dup<byte>(frozen, borrowed)
   val () = $P.finish<$ID.stored>($ID.idb_put(borrowed, 3, value, 3), llam (outcome) =>
     case+ outcome of
-    | ~$ID.Stored() => ()
-    | ~$ID.NotStored(cause) => $ID.write_failure_free(cause))
+    | $ID.Stored() => ()
+    | $ID.NotStored() => ())
   val () = $A.drop<byte>(frozen, value)
   val () = $P.discard<$ID.lookup>($ID.idb_list_keys(borrowed, 3))
   val () = $A.drop<byte>(frozen, borrowed)
