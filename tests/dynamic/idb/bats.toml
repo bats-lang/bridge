@@ -1,0 +1,11 @@
+[package]
+name = "idb"
+kind = "bin"
+unsafe = true
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""

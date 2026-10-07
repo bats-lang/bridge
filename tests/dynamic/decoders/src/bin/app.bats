@@ -95,12 +95,19 @@ fn show_lookup {ni:pos | ni < 32} (name: string ni, found: $ID.lookup): void =
       val () = count(name, "found", $DC.blob_len(blob))
     in $DC.blob_free(blob) end
   | ~$ID.Absent() => say(name, "absent")
-  | ~$ID.Unreadable() => say(name, "unreadable")
+  | ~$ID.Unreadable(cause) => (case+ cause of
+    | ~$ID.NoDatabase() => say(name, "unreadable: no database")
+    | ~$ID.ReadFailed() => say(name, "unreadable: read failed")
+    | ~$ID.UnreadableUnexpected(_, _) => say(name, "unreadable: unexpected"))
 
 fn show_stored {ni:pos | ni < 32} (name: string ni, outcome: $ID.stored): void =
   case+ outcome of
-  | $ID.Stored() => say(name, "stored")
-  | $ID.NotStored() => say(name, "not stored")
+  | ~$ID.Stored() => say(name, "stored")
+  | ~$ID.NotStored(cause) => (case+ cause of
+    | ~$ID.WriteNoDatabase() => say(name, "not stored: no database")
+    | ~$ID.WriteAborted() => say(name, "not stored: aborted")
+    | ~$ID.BadBatch() => say(name, "not stored: bad batch")
+    | ~$ID.WriteUnexpected(_, _) => say(name, "not stored: unexpected"))
 
 fn show_play {ni:pos | ni < 32} (name: string ni, outcome: $AU.play_outcome): void =
   case+ outcome of

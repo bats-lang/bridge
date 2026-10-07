@@ -1,0 +1,146 @@
+== put, get, delete and list keys unchanged
+  run 1 #0 put "k1": stored
+  run 1 #1 put "k2": stored
+  run 2 #0 get "k1": found "v1"
+  run 2 #1 get "k3": absent
+  run 2 #2 keys "k": found 02 00 6b 31 02 00 6b 32
+  run 3 #0 delete "k1": stored
+  run 4 #0 get "k1": absent
+  run 4 #1 get "k2": found "value two"
+== a failed open is forgotten
+  run 1 #0 get "a": unreadable (no database)
+  run 1 #1 put "a": not stored (no database)
+  opens so far: 1
+  run 2 #0 put "a": stored
+  opens so far: 2
+  run 3 #0 get "a": found "one"
+  opens in all: 2
+== a database that cannot be opened, for every call
+  run 1 #0 get "a": unreadable (no database)
+  run 1 #1 put "a": not stored (no database)
+  run 1 #2 delete "a": not stored (no database)
+  run 1 #3 keys "a": unreadable (no database)
+  run 1 #4 prefix "a": unreadable (no database)
+  run 1 #5 write_all "": not stored (no database)
+  run 1 #6 update-set "a": the closure was given: unreadable (no database)
+  run 1 #6 update-set "a": update unreadable (no database)
+== a request or transaction that fails
+  run 1 #0 put "good": stored
+  run 2 #0 get "bad": unreadable (read failed)
+  run 2 #1 put "bad": stored
+  run 2 #2 put "quota": not stored (aborted)
+  run 2 #3 get "good": found "g"
+== codes bridge does not recognise
+  run 1 #0 get "x": unreadable (unexpected: unknown code) -9
+  run 1 #1 get "y": unreadable (unexpected: unclaimed handle) 777
+  run 1 #2 put "z": not stored (unexpected: unknown code) -9
+  run 1 #3 delete "w": not stored (bad batch)
+  run 1 #4 update-set "u": the closure was given: unreadable (read failed)
+  run 1 #4 update-set "u": not updated (unexpected: unknown code) -9
+  run 1 #5 keys "p": unreadable (no database)
+  run 1 #6 prefix "q": unreadable (read failed)
+  run 1 #7 write_all "": not stored (aborted)
+  run 1 #8 get "m": absent
+  reports after a second fire: 10
+== get_prefix
+  run 1 #0 put "a": stored
+  run 1 #1 put "a/1": stored
+  run 1 #2 put "a/2": stored
+  run 1 #3 put "ab/1": stored
+  run 1 #4 put 61 ef bf bf 7a: stored
+  run 1 #5 put "b/1": stored
+  run 1 #6 put ef bf bf: stored
+  run 1 #7 put ef bf bf 71: stored
+  run 1 #8 put c3 a9 2f 31: stored
+  prefix "a/": 24 bytes, "a/1"="one" "a/2"="two"
+  its layout: 03 00 61 2f 31 03 00 00 00 6f 6e 65 03 00 61 2f 32 03 00 00 00 74 77 6f
+  prefix "a": 58 bytes, "a"="A" "a/1"="one" "a/2"="two" "ab/1"="X" "a￿z"="edge"
+  prefix "b": 10 bytes, "b/1"="B"
+  prefix "￿": 26 bytes, "￿"="top" "￿q"="top2"
+  prefix "é": 16 bytes, "é/1"="accent"
+  prefix "zz" #0 prefix "zz": absent
+  prefix "a/3" #0 prefix "a/3": absent
+== write_all
+  setup #0 put "old": stored
+  setup #1 put "keep": stored
+  batch #0 write_all "": stored
+  after #0 get "n1": found "one"
+  after #1 get "n2": found "two"
+  after #2 get "n3": found "three"
+  after #3 get "old": absent
+  after #4 get "keep": found "kept"
+  a value length past the end: not stored (bad batch); m1 is nothing
+  a key length past the end: not stored (bad batch); m1 is nothing
+  an op that is neither put nor delete: not stored (bad batch); m1 is nothing
+  an op that is zero: not stored (bad batch); m1 is nothing
+  a header cut short: not stored (bad batch); m1 is nothing
+  a missing value length: not stored (bad batch); m1 is nothing
+  an empty key: not stored (bad batch); m1 is nothing
+  a key that is not UTF-8: not stored (bad batch); m1 is nothing
+  a value length of 4 GiB: not stored (bad batch); m1 is nothing
+  abort part way: not stored (aborted); p1 is nothing, keep is "kept"
+  together #0 write_all "": stored
+  together #1 write_all "": stored
+  t is "third"
+== update
+  50 increments: {"updated":50}
+  counter is 50
+  mixed #0 increment "counter": updated
+  mixed #1 increment "counter": updated
+  mixed #2 delete "counter": stored
+  mixed #3 increment "counter": updated
+  counter is 1
+  absent #0 update-set "fresh": the closure was given: absent
+  absent #0 update-set "fresh": updated
+  fresh is "made"
+  keep #0 update-keep "fresh": the closure was given: found "made"
+  keep #0 update-keep "fresh": kept as read
+  keep #1 update-keep "never": the closure was given: absent
+  keep #1 update-keep "never": kept as read
+  fresh is "made", never is nothing
+  set #0 update-set "fresh": the closure was given: found "made"
+  set #0 update-set "fresh": updated
+  fresh is "remade"
+  unreadable #0 update-set "bad": the closure was given: unreadable (read failed)
+  unreadable #0 update-set "bad": update unreadable (read failed)
+  puts made: 0; bad is nothing
+  seed #0 update-set "old": the closure was given: absent
+  seed #0 update-set "old": updated
+  abort #0 update-set "quota": the closure was given: absent
+  abort #0 update-set "quota": not updated (aborted)
+  quota is nothing
+  abort again #0 update-set "quota": the closure was given: absent
+  abort again #0 update-set "quota": not updated (aborted)
+  other is "v1"
+== an abort of an update leaves the old value
+  seed #0 put "quota": stored
+  update #0 update-set "quota": the closure was given: found "old"
+  update #0 update-set "quota": not updated (aborted)
+  quota is "old"
+== an update whose database never opens
+  run 1 #0 update-set "a": the closure was given: unreadable (no database)
+  run 1 #0 update-set "a": update unreadable (no database)
+  run 1 #1 increment "a": update unreadable (no database)
+  run 2 #0 increment "a": updated
+  a is 01 00 00 00; opens: 3
+== update with a batch
+  seed #0 put "rec": stored
+  seed #1 put "other": stored
+  repair #0 update-batch "rec": the closure was given: found "damaged"
+  repair #0 update-batch "rec": updated
+  rec is "repaired", quarantine/rec is "damaged"
+  elsewhere #0 update-batch "rec": the closure was given: found "repaired"
+  elsewhere #0 update-batch "rec": updated
+  rec is "repaired", x is "y", other is nothing
+  malformed #0 update-batch "rec": the closure was given: found "repaired"
+  malformed #0 update-batch "rec": not updated (bad batch)
+  rec is "repaired", q is nothing
+  bad op #0 update-batch "rec": the closure was given: found "repaired"
+  bad op #0 update-batch "rec": not updated (bad batch)
+  rec is "repaired"
+  abort #0 update-batch "rec": the closure was given: found "repaired"
+  abort #0 update-batch "rec": not updated (aborted)
+  rec is "repaired", quota is nothing
+  unreadable #0 update-batch "bad": the closure was given: unreadable (read failed)
+  unreadable #0 update-batch "bad": update unreadable (read failed)
+  puts made: 0; quarantine/bad is nothing
