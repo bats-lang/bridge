@@ -19,11 +19,7 @@
      back.
 
    Android only: a browser has no plugin (google_account.bats' Google
-   Identity Services is the browser's way).
-
-   Scopes cross as OAuth writes a list of them, separated by spaces
-   (RFC 6749, 3.3; a scope has no space in it): those asked for, and
-   those granted. *)
+   Identity Services is the browser's way). *)
 
 #include "share/atspre_staload.hats"
 staload "./decompress.bats"

@@ -243,6 +243,7 @@ const rejections = () => [
   () => { encodeThrows = 2; return Promise.reject(failure('NETWORK_ERROR', 'nothing kept')); },
   oddly(7, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
   oddly(14, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
+  oddly(26, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
   oddly(71, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
   oddly(17, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
   oddly(0, () => Promise.reject(failure('NETWORK_ERROR', '7: offline'))),
