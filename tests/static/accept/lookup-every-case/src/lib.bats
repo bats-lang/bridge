@@ -17,7 +17,7 @@ fn f (): void = let
     case+ found of
     | ~$ID.Found(blob) => $DC.blob_free(blob)
     | ~$ID.Absent() => ()
-    | ~$ID.Unreadable() => ())
+    | ~$ID.Unreadable(cause) => $ID.unreadable_cause_free(cause))
   val () = $P.finish<$BF.file_lookup>($BF.file_idb_get(borrowed, 3), llam (found) =>
     case+ found of
     | ~$BF.FileFound(f) => $BF.file_close(f)

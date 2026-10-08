@@ -14,6 +14,6 @@ fn f (): void = let
     case+ found of
     | ~$ID.Found(_) => ()
     | ~$ID.Absent() => ()
-    | ~$ID.Unreadable() => ())
+    | ~$ID.Unreadable(cause) => $ID.unreadable_cause_free(cause))
   val () = $A.drop<byte>(frozen, borrowed)
 in $A.free<byte>($A.thaw<byte>(frozen)) end

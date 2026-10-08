@@ -95,7 +95,10 @@ fn show_lookup {ni:pos | ni < 32} (name: string ni, found: $ID.lookup): void =
       val () = count(name, "found", $DC.blob_len(blob))
     in $DC.blob_free(blob) end
   | ~$ID.Absent() => say(name, "absent")
-  | ~$ID.Unreadable() => say(name, "unreadable")
+  | ~$ID.Unreadable(cause) => (case+ cause of
+    | ~$ID.NoDatabase() => say(name, "unreadable: no database")
+    | ~$ID.ReadFailed() => say(name, "unreadable: read failed")
+    | ~$ID.UnreadableUnexpected(_, _) => say(name, "unreadable: unexpected"))
 
 fn show_stored {ni:pos | ni < 32} (name: string ni, outcome: $ID.stored): void =
   case+ outcome of
