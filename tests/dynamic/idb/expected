@@ -8,7 +8,7 @@
   run 4 #0 get "k1": absent
   run 4 #1 get "k2": found "value two"
 == a failed open is forgotten
-  run 1 #0 get "a": unreadable (no database)
+  run 1 #0 get "a": unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #1 put "a": not stored
   opens so far: 1
   run 2 #0 put "a": stored
@@ -16,29 +16,29 @@
   run 3 #0 get "a": found "one"
   opens in all: 2
 == a database that cannot be opened, for every call
-  run 1 #0 get "a": unreadable (no database)
+  run 1 #0 get "a": unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #1 put "a": not stored
   run 1 #2 delete "a": not stored
-  run 1 #3 keys "a": unreadable (no database)
-  run 1 #4 prefix "a": unreadable (no database)
+  run 1 #3 keys "a": unreadable (no database), unexpected, name "Error", message "blocked"
+  run 1 #4 prefix "a": unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #5 write_all "": not stored
-  run 1 #6 update-set "a": the closure was given: unreadable (no database)
-  run 1 #6 update-set "a": update unreadable (no database)
+  run 1 #6 update-set "a": the closure was given: unreadable (no database), unexpected, name "Error", message "blocked"
+  run 1 #6 update-set "a": update unreadable (no database), unexpected, name "Error", message "blocked"
 == a request or transaction that fails
   run 1 #0 put "good": stored
-  run 2 #0 get "bad": unreadable (read failed)
+  run 2 #0 get "bad": unreadable (read failed), no error given
   run 2 #1 put "bad": stored
   run 2 #2 put "quota": not stored
   run 2 #3 get "good": found "g"
 == codes bridge does not recognise
-  run 1 #0 get "x": unreadable (unexpected: unknown code) -9
+  run 1 #0 get "x": unreadable (unexpected: unknown code) -5
   run 1 #1 get "y": unreadable (unexpected: unclaimed handle) 777
   run 1 #2 put "z": not stored
   run 1 #3 delete "w": not stored
-  run 1 #4 update-set "u": the closure was given: unreadable (read failed)
-  run 1 #4 update-set "u": not updated (unexpected: unknown code) -9
-  run 1 #5 keys "p": unreadable (no database)
-  run 1 #6 prefix "q": unreadable (read failed)
+  run 1 #4 update-set "u": the closure was given: unreadable (read failed), no error given
+  run 1 #4 update-set "u": not updated (unexpected: unknown code) -5
+  run 1 #5 keys "p": unreadable (no database), no error given
+  run 1 #6 prefix "q": unreadable (read failed), no error given
   run 1 #7 write_all "": not stored
   run 1 #8 get "m": absent
   reports after a second fire: 10
@@ -101,8 +101,8 @@
   set #0 update-set "fresh": the closure was given: found "made"
   set #0 update-set "fresh": updated
   fresh is "remade"
-  unreadable #0 update-set "bad": the closure was given: unreadable (read failed)
-  unreadable #0 update-set "bad": update unreadable (read failed)
+  unreadable #0 update-set "bad": the closure was given: unreadable (read failed), no error given
+  unreadable #0 update-set "bad": update unreadable (read failed), no error given
   puts made: 0; bad is nothing
   seed #0 update-set "old": the closure was given: absent
   seed #0 update-set "old": updated
@@ -118,9 +118,9 @@
   update #0 update-set "quota": not updated (aborted)
   quota is "old"
 == an update whose database never opens
-  run 1 #0 update-set "a": the closure was given: unreadable (no database)
-  run 1 #0 update-set "a": update unreadable (no database)
-  run 1 #1 increment "a": update unreadable (no database)
+  run 1 #0 update-set "a": the closure was given: unreadable (no database), unexpected, name "Error", message "blocked"
+  run 1 #0 update-set "a": update unreadable (no database), unexpected, name "Error", message "blocked"
+  run 1 #1 increment "a": update unreadable (no database), unexpected, name "Error", message "blocked"
   run 2 #0 increment "a": updated
   a is 01 00 00 00; opens: 3
 == update with a batch
@@ -141,6 +141,175 @@
   abort #0 update-batch "rec": the closure was given: found "repaired"
   abort #0 update-batch "rec": not updated (aborted)
   rec is "repaired", quota is nothing
-  unreadable #0 update-batch "bad": the closure was given: unreadable (read failed)
-  unreadable #0 update-batch "bad": update unreadable (read failed)
+  unreadable #0 update-batch "bad": the closure was given: unreadable (read failed), no error given
+  unreadable #0 update-batch "bad": update unreadable (read failed), no error given
   puts made: 0; quarantine/bad is nothing
+== an open that fails, by the error the browser gave
+  UnknownError #0 get "a": unreadable (no database), transient
+  UnknownError, other calls #0 keys "a": unreadable (no database), transient
+  UnknownError, other calls #1 prefix "a": unreadable (no database), transient
+  UnknownError, other calls #2 update-set "a": the closure was given: unreadable (no database), transient
+  UnknownError, other calls #2 update-set "a": update unreadable (no database), transient
+  UnknownError, writes #0 put "a": not stored
+  UnknownError, writes #1 delete "a": not stored
+  SecurityError #0 get "a": unreadable (no database), storage blocked
+  SecurityError, other calls #0 keys "a": unreadable (no database), storage blocked
+  SecurityError, other calls #1 prefix "a": unreadable (no database), storage blocked
+  SecurityError, other calls #2 update-set "a": the closure was given: unreadable (no database), storage blocked
+  SecurityError, other calls #2 update-set "a": update unreadable (no database), storage blocked
+  SecurityError, writes #0 put "a": not stored
+  SecurityError, writes #1 delete "a": not stored
+  VersionError #0 get "a": unreadable (no database), newer version
+  VersionError, other calls #0 keys "a": unreadable (no database), newer version
+  VersionError, other calls #1 prefix "a": unreadable (no database), newer version
+  VersionError, other calls #2 update-set "a": the closure was given: unreadable (no database), newer version
+  VersionError, other calls #2 update-set "a": update unreadable (no database), newer version
+  VersionError, writes #0 put "a": not stored
+  VersionError, writes #1 delete "a": not stored
+  AbortError #0 get "a": unreadable (no database), aborted
+  AbortError, other calls #0 keys "a": unreadable (no database), aborted
+  AbortError, other calls #1 prefix "a": unreadable (no database), aborted
+  AbortError, other calls #2 update-set "a": the closure was given: unreadable (no database), aborted
+  AbortError, other calls #2 update-set "a": update unreadable (no database), aborted
+  AbortError, writes #0 put "a": not stored
+  AbortError, writes #1 delete "a": not stored
+  a made-up name #0 get "a": unreadable (no database), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, other calls #0 keys "a": unreadable (no database), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, other calls #1 prefix "a": unreadable (no database), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, other calls #2 update-set "a": the closure was given: unreadable (no database), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, other calls #2 update-set "a": update unreadable (no database), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, writes #0 put "a": not stored
+  a made-up name, writes #1 delete "a": not stored
+== an open that throws, and an open that gives no error
+  open throws SecurityError #0 get "a": unreadable (no database), storage blocked
+  request error is null #0 get "a": unreadable (no database), no error given
+  request error is undefined #0 keys "a": unreadable (no database), no error given
+== a failed open with an error is forgotten
+  run 1 #0 get "a": unreadable (no database), transient
+  run 1 #1 put "a": not stored
+  opens so far: 1
+  run 2 #0 put "a": stored
+  run 3 #0 get "a": found "one"
+  opens in all: 2
+== a read request that fails, by the error the browser gave
+  seed #0 put "a": stored
+  UnknownError #0 get "a": unreadable (read failed), transient
+  UnknownError #1 keys "a": unreadable (read failed), transient
+  UnknownError #2 prefix "a": unreadable (read failed), transient
+  UnknownError, update #0 update-set "a": the closure was given: unreadable (read failed), transient
+  UnknownError, update #0 update-set "a": update unreadable (read failed), transient
+  puts made: 0; a is "one"
+  SecurityError #0 get "a": unreadable (read failed), storage blocked
+  SecurityError #1 keys "a": unreadable (read failed), storage blocked
+  SecurityError #2 prefix "a": unreadable (read failed), storage blocked
+  SecurityError, update #0 update-set "a": the closure was given: unreadable (read failed), storage blocked
+  SecurityError, update #0 update-set "a": update unreadable (read failed), storage blocked
+  puts made: 0; a is "one"
+  VersionError #0 get "a": unreadable (read failed), newer version
+  VersionError #1 keys "a": unreadable (read failed), newer version
+  VersionError #2 prefix "a": unreadable (read failed), newer version
+  VersionError, update #0 update-set "a": the closure was given: unreadable (read failed), newer version
+  VersionError, update #0 update-set "a": update unreadable (read failed), newer version
+  puts made: 0; a is "one"
+  AbortError #0 get "a": unreadable (read failed), aborted
+  AbortError #1 keys "a": unreadable (read failed), aborted
+  AbortError #2 prefix "a": unreadable (read failed), aborted
+  AbortError, update #0 update-set "a": the closure was given: unreadable (read failed), aborted
+  AbortError, update #0 update-set "a": update unreadable (read failed), aborted
+  puts made: 0; a is "one"
+  a made-up name #0 get "a": unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name #1 keys "a": unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name #2 prefix "a": unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, update #0 update-set "a": the closure was given: unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, update #0 update-set "a": update unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  puts made: 0; a is "one"
+  after #0 get "a": found "one"
+== a transaction that aborts with an error, by the error the browser gave
+  seed #0 put "a": stored
+  UnknownError #0 get "a": unreadable (read failed), transient
+  UnknownError #1 keys "a": unreadable (read failed), transient
+  UnknownError #2 prefix "a": unreadable (read failed), transient
+  UnknownError, update #0 update-set "a": the closure was given: unreadable (read failed), transient
+  UnknownError, update #0 update-set "a": update unreadable (read failed), transient
+  a is "one"
+  SecurityError #0 get "a": unreadable (read failed), storage blocked
+  SecurityError #1 keys "a": unreadable (read failed), storage blocked
+  SecurityError #2 prefix "a": unreadable (read failed), storage blocked
+  SecurityError, update #0 update-set "a": the closure was given: unreadable (read failed), storage blocked
+  SecurityError, update #0 update-set "a": update unreadable (read failed), storage blocked
+  a is "one"
+  VersionError #0 get "a": unreadable (read failed), newer version
+  VersionError #1 keys "a": unreadable (read failed), newer version
+  VersionError #2 prefix "a": unreadable (read failed), newer version
+  VersionError, update #0 update-set "a": the closure was given: unreadable (read failed), newer version
+  VersionError, update #0 update-set "a": update unreadable (read failed), newer version
+  a is "one"
+  AbortError #0 get "a": unreadable (read failed), aborted
+  AbortError #1 keys "a": unreadable (read failed), aborted
+  AbortError #2 prefix "a": unreadable (read failed), aborted
+  AbortError, update #0 update-set "a": the closure was given: unreadable (read failed), aborted
+  AbortError, update #0 update-set "a": update unreadable (read failed), aborted
+  a is "one"
+  a made-up name #0 get "a": unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name #1 keys "a": unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name #2 prefix "a": unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, update #0 update-set "a": the closure was given: unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a made-up name, update #0 update-set "a": update unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
+  a is "one"
+== an update whose transaction aborts before its read
+  seed #0 put "a": stored
+  abort first #0 increment "a": update unreadable (read failed), aborted
+  abort first #1 update-keep "a": the closure was given: unreadable (read failed), aborted
+  abort first #1 update-keep "a": update unreadable (read failed), aborted
+  a is "one"
+== names that are none of the four
+  a known name with more after it: unreadable (no database), unexpected, name "UnknownErrorX", message "UnknownErrorX was raised"
+  a known name in lower case: unreadable (no database), unexpected, name "unknownerror", message "unknownerror was raised"
+  a long name: unreadable (no database), unexpected, name "AVeryLongMadeUpErrorNameIndeed", message "m"
+  a long name that begins with a known one: unreadable (no database), unexpected, name "SecurityErrorSecurityError", message "m"
+  a name of 15 bytes: unreadable (no database), unexpected, name "FifteenBytesErr", message "m"
+  a name of 16 bytes: unreadable (no database), unexpected, name "SixteenBytesErrr", message "m"
+  a name of 17 bytes: unreadable (no database), unexpected, name "SeventeenBytesErr", message "m"
+  a known name, no message: unreadable (no database), aborted
+  an empty name: unreadable (no database), unexpected, name "", message "only a message"
+  a plain object: unreadable (no database), unexpected, name "undefined", message "undefined"
+  a string: unreadable (no database), unexpected, name "undefined", message "undefined"
+  a number: unreadable (no database), unexpected, name "undefined", message "undefined"
+  a name with a line feed: unreadable (no database), unexpected, name "Two", message "Lines\nafter"
+  a name that throws, a string form that does not: unreadable (no database), unexpected, text "its string form"
+  nothing can be written: unreadable (no database), no error given
+  a huge message: unreadable (no database), unexpected, name "HugeError", message "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... (300066 characters)
+== the database cannot make a transaction, for every call
+  open #0 get "a": absent
+  run 1 #0 get "a": unreadable (no database), unexpected, name "InvalidStateError", message "the database connection is closing"
+  run 1 #1 put "a": not stored
+  run 1 #2 delete "a": not stored
+  run 1 #3 keys "a": unreadable (no database), unexpected, name "InvalidStateError", message "the database connection is closing"
+  run 1 #4 prefix "a": unreadable (no database), unexpected, name "InvalidStateError", message "the database connection is closing"
+  run 1 #5 write_all "": not stored
+  run 1 #6 update-set "a": the closure was given: unreadable (no database), unexpected, name "InvalidStateError", message "the database connection is closing"
+  run 1 #6 update-set "a": update unreadable (no database), unexpected, name "InvalidStateError", message "the database connection is closing"
+  run 1 #7 increment "a": update unreadable (no database), unexpected, name "InvalidStateError", message "the database connection is closing"
+  run 2 #0 put "a": stored
+  run 3 #0 get "a": found "one"
+== every kind of code, with and without an error written down
+  run 1 #0 get "a": unreadable (no database), no error given
+  run 1 #1 get "b": unreadable (read failed), no error given
+  run 1 #2 get "c": unreadable (unexpected: unclaimed handle) -9
+  run 1 #3 get "d": unreadable (unexpected: unclaimed handle) -10
+  run 1 #4 get "e": unreadable (unexpected: unknown code) -11
+  run 1 #5 get "f": unreadable (unexpected: unknown code) -6
+  run 1 #6 keys "g": unreadable (unexpected: unknown code) -4
+  run 1 #7 prefix "h": unreadable (unexpected: unknown code) -8
+  run 1 #8 update-set "i": the closure was given: unreadable (no database), no error given
+  run 1 #8 update-set "i": update unreadable (no database), no error given
+  run 1 #9 update-set "j": the closure was given: unreadable (read failed), no error given
+  run 1 #9 update-set "j": update unreadable (read failed), no error given
+  run 1 #10 update-set "k": the closure was given: unreadable (read failed), no error given
+  run 1 #10 update-set "k": not updated (aborted)
+  run 1 #11 update-set "l": the closure was given: unreadable (read failed), no error given
+  run 1 #11 update-set "l": not updated (bad batch)
+  run 1 #12 update-set "m": the closure was given: unreadable (no database), no error given
+  run 1 #12 update-set "m": update unreadable (unexpected: unclaimed handle) -17
+  run 1 #13 update-set "n": the closure was given: unreadable (read failed), no error given
+  run 1 #13 update-set "n": not updated (unexpected: unknown code) -10

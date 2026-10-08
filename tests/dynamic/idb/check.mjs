@@ -89,6 +89,15 @@ const show = bytes => {
   return /^[\x20-\x7e]*$/.test(text) ? JSON.stringify(text)
     : [...bytes].map(b => b.toString(16).padStart(2, '0')).join(' ');
 };
+// what the browser gave, as the app reports it in the number of an unreadable lookup
+const reasonNames = { 0: 'no error given', 1: 'transient', 2: 'storage blocked', 3: 'newer version', 4: 'aborted' };
+const reasonOf = report => {
+  if (report.number !== 5) return reasonNames[report.number] ?? `UNKNOWN REASON ${report.number}`;
+  const text = new TextDecoder().decode(report.data);
+  const at = text.indexOf('\n');
+  return at < 0 ? `unexpected, text ${JSON.stringify(text)}`
+    : `unexpected, name ${JSON.stringify(text.slice(0, at))}, message ${JSON.stringify(text.slice(at + 1))}`;
+};
 const withCode = tag => tag % 100 === 4 || tag % 100 === 5 || tag === 24 || tag === 25 || tag === 29;
 function describe(report) {
   const tag = report.tag % 100;
@@ -97,6 +106,7 @@ function describe(report) {
   if (name === undefined) return `${seen}UNKNOWN TAG ${report.tag}`;
   if (tag === 1) return `${seen}found ${show(report.data)}`;
   if (withCode(report.tag >= 100 ? tag : report.tag)) return `${seen}${name} ${report.number}`;
+  if (tag === 2 || tag === 3 || tag === 22 || tag === 23) return `${seen}${name}, ${reasonOf(report)}`;
   return `${seen}${name}`;
 }
 
@@ -155,8 +165,15 @@ async function session(name, body) {
 const originals = {
   get: IDBObjectStore.prototype.get,
   put: IDBObjectStore.prototype.put,
+  getAllKeys: IDBObjectStore.prototype.getAllKeys,
+  getAll: IDBObjectStore.prototype.getAll,
+  transaction: IDBDatabase.prototype.transaction,
 };
 let putCalls = 0;
+// the error the next reads fail with (null: none), and how: 'request' (the
+// request errors, and its transaction aborts), 'abort' (the transaction
+// aborts with its error)
+let readFailure = null;
 function patched() {
   IDBObjectStore.prototype.put = function (value, key) {
     putCalls++;
@@ -165,16 +182,46 @@ function patched() {
   };
   // a read that fails: the request errors and its transaction aborts
   IDBObjectStore.prototype.get = function (key) {
+    if (readFailure !== null) return failingRead(originals.get.call(this, key), this.transaction);
     if (key !== 'bad') return originals.get.call(this, key);
     const request = {};
     const tx = this.transaction;
     setTimeout(() => { request.onerror && request.onerror(); try { tx.abort(); } catch (e) {} });
     return request;
   };
+  IDBObjectStore.prototype.getAllKeys = function (...args) {
+    const real = originals.getAllKeys.apply(this, args);
+    return readFailure !== null ? failingRead(real, this.transaction) : real;
+  };
+  IDBObjectStore.prototype.getAll = function (...args) {
+    const real = originals.getAll.apply(this, args);
+    return readFailure !== null ? failingRead(real, this.transaction) : real;
+  };
+}
+// a read that fails with readFailure.error, as readFailure.how says: the
+// real request keeps its transaction alive; when it would succeed it is
+// made to fail instead, and what the bridge set to hear of success is not
+// told. 'request': the request errors (its error is the one given), and
+// its transaction aborts; 'abort': the transaction aborts with its error
+function failingRead(real, tx) {
+  const { error, how } = readFailure;
+  let onerror = null;
+  Object.defineProperty(real, 'onsuccess', { set() {}, configurable: true });
+  Object.defineProperty(real, 'onerror', { set(handler) { onerror = handler; }, configurable: true });
+  // a failed request aborts its transaction with the request's error
+  if (how === 'request') Object.defineProperty(real, 'error', { get: () => error, set() {}, configurable: true });
+  Object.defineProperty(tx, 'error', { get: () => error, set() {}, configurable: true });
+  real.addEventListener('success', () => {
+    if (how === 'request' && onerror) onerror();
+    try { tx.abort(); } catch (e) {}
+  });
+  return real;
 }
 function unpatched() {
   IDBObjectStore.prototype.put = originals.put;
   IDBObjectStore.prototype.get = originals.get;
+  IDBObjectStore.prototype.getAllKeys = originals.getAllKeys;
+  IDBObjectStore.prototype.getAll = originals.getAll;
 }
 // indexedDB.open that fails the first `failures` times, or never answers
 function openFails(failures) {
@@ -186,6 +233,22 @@ function openFails(failures) {
     if (calls.count > failures) return real(...args);
     const request = {};
     setTimeout(() => { request.error = new Error('blocked'); request.onerror && request.onerror(); });
+    return request;
+  };
+  return calls;
+}
+// indexedDB.open that fails the first `failures` times with the error (the
+// request's error, or, when `throws`, thrown by open itself)
+function openFailsWith(error, { failures = 1, throws = false } = {}) {
+  const factory = globalThis.indexedDB;
+  const real = factory.open.bind(factory);
+  const calls = { count: 0 };
+  factory.open = (...args) => {
+    calls.count++;
+    if (calls.count > failures) return real(...args);
+    if (throws) throw error;
+    const request = {};
+    setTimeout(() => { request.error = error; request.onerror && request.onerror(); });
     return request;
   };
   return calls;
@@ -249,11 +312,11 @@ await session('codes bridge does not recognise', async s => {
     op(KEYS, 'p'), op(PREFIX, 'q'), op(WRITE_ALL, '', batchPut('a', 'b')), op(GET, 'm')];
   const got = await s.run(ops, { wait: false });
   const e = s.exports;
-  e.bats_idb_fire_get(0, -9);
+  e.bats_idb_fire_get(0, -5);
   e.bats_idb_fire_get(1, 777);
-  e.bats_idb_fire(2, -9);
+  e.bats_idb_fire(2, -5);
   e.bats_idb_fire(3, -3);
-  e.bats_idb_update_done(4, -9);
+  e.bats_idb_update_done(4, -5);
   e.bats_idb_fire_get(5, -1);
   e.bats_idb_fire_get(6, -2);
   e.bats_idb_fire(7, -2);
@@ -402,6 +465,151 @@ await session('update with a batch', async s => {
   const before = putCalls;
   await s.go('unreadable', [op(BATCH, 'bad', batchPut('quarantine/bad', 'copy'))]);
   print(`  puts made: ${putCalls - before}; quarantine/bad is ${await stored('quarantine/bad')}`);
+});
+
+// ---- what the browser said (bats-lang/quire#374)
+const named = (name, message = `${name} was raised`) => new DOMException(message, name);
+const errors = {
+  'UnknownError': named('UnknownError'),
+  'SecurityError': named('SecurityError'),
+  'VersionError': named('VersionError'),
+  'AbortError': named('AbortError'),
+  'a made-up name': named('MadeUpError', 'a message\nof two lines, and é'),
+};
+
+await session('an open that fails, by the error the browser gave', async s => {
+  for (const [what, error] of Object.entries(errors)) {
+    globalThis.indexedDB = new IDBFactory();
+    openFailsWith(error);
+    await s.go(what, [op(GET, 'a')]);
+    openFailsWith(error);
+    await s.go(`${what}, other calls`, [op(KEYS, 'a'), op(PREFIX, 'a'), op(SET, 'a', 'two')]);
+    openFailsWith(error);
+    await s.go(`${what}, writes`, [op(PUT, 'a', 'one'), op(DELETE, 'a')]);
+  }
+});
+
+await session('an open that throws, and an open that gives no error', async s => {
+  openFailsWith(named('SecurityError'), { throws: true });
+  await s.go('open throws SecurityError', [op(GET, 'a')]);
+  globalThis.indexedDB = new IDBFactory();
+  openFailsWith(null);
+  await s.go('request error is null', [op(GET, 'a')]);
+  globalThis.indexedDB = new IDBFactory();
+  openFailsWith(undefined);
+  await s.go('request error is undefined', [op(KEYS, 'a')]);
+});
+
+await session('a failed open with an error is forgotten', async s => {
+  const calls = openFailsWith(named('UnknownError'));
+  await s.go('run 1', [op(GET, 'a'), op(PUT, 'a', 'one')]);
+  print(`  opens so far: ${calls.count}`);
+  await s.go('run 2', [op(PUT, 'a', 'one')]);
+  await s.go('run 3', [op(GET, 'a')]);
+  print(`  opens in all: ${calls.count}`);
+});
+
+await session('a read request that fails, by the error the browser gave', async s => {
+  await s.go('seed', [op(PUT, 'a', 'one')]);
+  for (const [what, error] of Object.entries(errors)) {
+    readFailure = { error, how: 'request' };
+    await s.go(what, [op(GET, 'a'), op(KEYS, 'a'), op(PREFIX, 'a')]);
+    const before = putCalls;
+    await s.go(`${what}, update`, [op(SET, 'a', 'overwritten')]);
+    readFailure = null;
+    print(`  puts made: ${putCalls - before}; a is ${await stored('a')}`);
+  }
+  readFailure = null;
+  await s.go('after', [op(GET, 'a')]);
+});
+
+await session('a transaction that aborts with an error, by the error the browser gave', async s => {
+  await s.go('seed', [op(PUT, 'a', 'one')]);
+  for (const [what, error] of Object.entries(errors)) {
+    readFailure = { error, how: 'abort' };
+    await s.go(what, [op(GET, 'a'), op(KEYS, 'a'), op(PREFIX, 'a')]);
+    await s.go(`${what}, update`, [op(SET, 'a', 'overwritten')]);
+    readFailure = null;
+    print(`  a is ${await stored('a')}`);
+  }
+});
+
+await session('an update whose transaction aborts before its read', async s => {
+  // the abort comes first: the closure is given the failure, once, with the error
+  await s.go('seed', [op(PUT, 'a', 'one')]);
+  readFailure = { error: named('AbortError'), how: 'abort' };
+  await s.go('abort first', [op(INCREMENT, 'a'), op(KEEP, 'a')]);
+  readFailure = null;
+  print(`  a is ${await stored('a')}`);
+});
+
+await session('names that are none of the four', async s => {
+  const odd = {
+    'a known name with more after it': named('UnknownErrorX'),
+    'a known name in lower case': named('unknownerror'),
+    'a long name': named('AVeryLongMadeUpErrorNameIndeed', 'm'),
+    'a long name that begins with a known one': named('SecurityErrorSecurityError', 'm'),
+    'a name of 15 bytes': named('FifteenBytesErr', 'm'),
+    'a name of 16 bytes': named('SixteenBytesErrr', 'm'),
+    'a name of 17 bytes': named('SeventeenBytesErr', 'm'),
+    'a known name, no message': named('AbortError', ''),
+    'an empty name': Object.assign(new Error('only a message'), { name: '' }),
+    'a plain object': { reason: 'not an error' },
+    'a string': 'just a string',
+    'a number': 42,
+    'a name with a line feed': Object.assign(new Error('after'), { name: 'Two\nLines' }),
+    'a name that throws, a string form that does not': { get name() { throw new Error('no'); }, toString() { return 'its string form'; } },
+    'nothing can be written': { get name() { throw new Error('no'); }, toString() { throw new Error('no'); } },
+    'a huge message': named('HugeError', 'x'.repeat(300000)),
+  };
+  for (const [what, error] of Object.entries(odd)) {
+    globalThis.indexedDB = new IDBFactory();
+    openFailsWith(error);
+    const ops = [op(GET, 'a')];
+    const got = await s.run(ops);
+    const r = got[0];
+    // the message of a huge one is shortened here, not in what is checked
+    const said = describe(r);
+    print(`  ${what}: ${said.length > 200 ? said.slice(0, 120) + `... (${said.length} characters)` : said}`);
+  }
+});
+
+await session('the database cannot make a transaction, for every call', async s => {
+  // db.transaction throws (a closed database): the promise still settles
+  await s.go('open', [op(GET, 'a')]);
+  IDBDatabase.prototype.transaction = function () { throw named('InvalidStateError', 'the database connection is closing'); };
+  await s.go('run 1', [op(GET, 'a'), op(PUT, 'a', 'one'), op(DELETE, 'a'), op(KEYS, 'a'),
+    op(PREFIX, 'a'), op(WRITE_ALL, '', batchPut('a', 'one')), op(SET, 'a', 'two'), op(INCREMENT, 'a')]);
+  IDBDatabase.prototype.transaction = originals.transaction;
+  // the database is opened anew: nothing is left waiting
+  await s.go('run 2', [op(PUT, 'a', 'one')]);
+  await s.go('run 3', [op(GET, 'a')]);
+});
+
+await session('every kind of code, with and without an error written down', async s => {
+  openHangs();
+  const e = s.exports;
+  // none of these is answered by JS: each is the resolver of its number
+  const ops = [op(GET, 'a'), op(GET, 'b'), op(GET, 'c'), op(GET, 'd'), op(GET, 'e'), op(GET, 'f'),
+    op(KEYS, 'g'), op(PREFIX, 'h'), op(SET, 'i', 'v'), op(SET, 'j', 'v'), op(SET, 'k', 'v'), op(SET, 'l', 'v'),
+    op(SET, 'm', 'v'), op(SET, 'n', 'v')];
+  await s.run(ops, { wait: false });
+  e.bats_idb_fire_get(0, -1);       // the old codes, with no error written down
+  e.bats_idb_fire_get(1, -2);
+  e.bats_idb_fire_get(2, -9);       // kind 1, a blob nobody handed out
+  e.bats_idb_fire_get(3, -10);      // kind 2, a blob nobody handed out
+  e.bats_idb_fire_get(4, -11);      // kind 3 is an update's, not a lookup's
+  e.bats_idb_fire_get(5, -6);       // kind 6 does not exist
+  e.bats_idb_fire_get(6, -4);       // kind 4 is a write's
+  e.bats_idb_fire_get(7, -8);       // kind 0 with a blob nobody handed out
+  e.bats_idb_update_done(8, -1);    // the update's old codes
+  e.bats_idb_update_done(9, -3);
+  e.bats_idb_update_done(10, -2);
+  e.bats_idb_update_done(11, -4);
+  e.bats_idb_update_done(12, -17);  // kind 1, a blob nobody handed out
+  e.bats_idb_update_done(13, -10);  // kind 2 is not an update's end
+  await s.settled(0, ops.length, 'run 1');
+  s.say(ops, s.reports, 'run 1');
 });
 
 unpatched();

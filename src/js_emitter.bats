@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 100250 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 100250] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 102600 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 102600] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -340,8 +340,8 @@ fn emit_js_timer {n:nat | n + 170 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_idb {n:nat | n + 4840 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4840] $B.builder(m)): void = let
+fn emit_js_idb {n:nat | n + 6100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6100] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- IndexedDB ---\n")
   val () = $B.bput(b,"  //\n")
@@ -351,6 +351,12 @@ fn emit_js_idb {n:nat | n + 4840 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  // only aborts it: abort is the one failure event), -3 a malformed\n")
   val () = $B.bput(b,"  // batch; a read's blob handle, 0 for nothing there, -1 the database\n")
   val () = $B.bput(b,"  // could not be opened, -2 the request or transaction errored or aborted.\n")
+  val () = $B.bput(b,"  // A read that failed with an error object writes the error down\n")
+  val () = $B.bput(b,"  // (idbReason: its name, a line feed and its message, as a blob) and\n")
+  val () = $B.bput(b,"  // its code is -(kind + 8 * the blob's handle), the kind being the\n")
+  val () = $B.bput(b,"  // code without a blob (1 the database, 2 the read, 3 an update's\n")
+  val () = $B.bput(b,"  // read), so a code without a blob is the same as ever. JS decides\n")
+  val () = $B.bput(b,"  // nothing from the name: Bats does.\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  let dbPromise = null;\n")
   val () = $B.bput(b,"  function openDB() {\n")
@@ -372,9 +378,25 @@ fn emit_js_idb {n:nat | n + 4840 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // A transaction on the store, or null when the database cannot be used\n")
-  val () = $B.bput(b,"  // (closed under us): then it is opened anew next time\n")
-  val () = $B.bput(b,"  function idbTransaction(db, mode) {\n")
-  val () = $B.bput(b,"    try { return db.transaction('kv', mode); } catch (e) { dbPromise = null; return null; }\n")
+  val () = $B.bput(b,"  // (closed under us): then it is opened anew next time, and unusable\n")
+  val () = $B.bput(b,"  // is told what was thrown\n")
+  val () = $B.bput(b,"  function idbTransaction(db, mode, unusable) {\n")
+  val () = $B.bput(b,"    try { return db.transaction('kv', mode); } catch (e) { dbPromise = null; unusable(e); return null; }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // An error written down: its name, a line feed and its message, as a\n")
+  val () = $B.bput(b,"  // blob handle; 0 when there is no error, or it cannot be written\n")
+  val () = $B.bput(b,"  function idbReason(error) {\n")
+  val () = $B.bput(b,"    if (error === null || error === undefined) return 0;\n")
+  val () = $B.bput(b,"    let text;\n")
+  val () = $B.bput(b,"    try { text = String(error.name) + '\\n' + String(error.message); }\n")
+  val () = $B.bput(b,"    catch (e) { try { text = String(error); } catch (e2) { return 0; } }\n")
+  val () = $B.bput(b,"    try { return idbHandle(new TextEncoder().encode(text)); } catch (e) { return 0; }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // A read's failure code: -(kind + 8 * the error's handle)\n")
+  val () = $B.bput(b,"  function idbFailure(kind, error) {\n")
+  val () = $B.bput(b,"    return -(kind + 8 * idbReason(error));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // The bytes of a stored value, or null when it is not bytes\n")
@@ -399,7 +421,7 @@ fn emit_js_idb {n:nat | n + 4840 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const key = readString(keyPtr, keyLen);\n")
   val () = $B.bput(b,"    const val_ = readBytes(valPtr, valLen);\n")
   val () = $B.bput(b,"    openDB().then(db => {\n")
-  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readwrite');\n")
+  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readwrite', () => {});\n")
   val () = $B.bput(b,"      if (!tx) { instance.exports.bats_idb_fire(resolverId, -1); return; }\n")
   val () = $B.bput(b,"      tx.objectStore('kv').put(val_, key);\n")
   val () = $B.bput(b,"      tx.oncomplete = () => instance.exports.bats_idb_fire(resolverId, 0);\n")
@@ -411,23 +433,23 @@ fn emit_js_idb {n:nat | n + 4840 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const key = readString(keyPtr, keyLen);\n")
   val () = $B.bput(b,"    const answer = idbOnce(code => instance.exports.bats_idb_fire_get(resolverId, code));\n")
   val () = $B.bput(b,"    openDB().then(db => {\n")
-  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readonly');\n")
-  val () = $B.bput(b,"      if (!tx) { answer(-1); return; }\n")
+  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readonly', e => answer(idbFailure(1, e)));\n")
+  val () = $B.bput(b,"      if (!tx) return;\n")
   val () = $B.bput(b,"      const req = tx.objectStore('kv').get(key);\n")
   val () = $B.bput(b,"      req.onsuccess = () => {\n")
   val () = $B.bput(b,"        const result = req.result;\n")
   val () = $B.bput(b,"        const data = result === undefined ? null : idbBytes(result);\n")
   val () = $B.bput(b,"        answer(result === undefined ? 0 : data === null ? -2 : idbHandle(data));\n")
   val () = $B.bput(b,"      };\n")
-  val () = $B.bput(b,"      req.onerror = () => answer(-2);\n")
-  val () = $B.bput(b,"      tx.onabort = () => answer(-2);\n")
-  val () = $B.bput(b,"    }, () => answer(-1));\n")
+  val () = $B.bput(b,"      req.onerror = () => answer(idbFailure(2, req.error));\n")
+  val () = $B.bput(b,"      tx.onabort = () => answer(idbFailure(2, tx.error));\n")
+  val () = $B.bput(b,"    }, e => answer(idbFailure(1, e)));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsIdbDelete(keyPtr, keyLen, resolverId) {\n")
   val () = $B.bput(b,"    const key = readString(keyPtr, keyLen);\n")
   val () = $B.bput(b,"    openDB().then(db => {\n")
-  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readwrite');\n")
+  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readwrite', () => {});\n")
   val () = $B.bput(b,"      if (!tx) { instance.exports.bats_idb_fire(resolverId, -1); return; }\n")
   val () = $B.bput(b,"      tx.objectStore('kv').delete(key);\n")
   val () = $B.bput(b,"      tx.oncomplete = () => instance.exports.bats_idb_fire(resolverId, 0);\n")
@@ -440,8 +462,8 @@ fn emit_js_idb {n:nat | n + 4840 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const prefix = readString(prefixPtr, prefixLen);\n")
   val () = $B.bput(b,"    const answer = idbOnce(code => instance.exports.bats_idb_fire_get(resolverId, code));\n")
   val () = $B.bput(b,"    openDB().then(db => {\n")
-  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readonly');\n")
-  val () = $B.bput(b,"      if (!tx) { answer(-1); return; }\n")
+  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readonly', e => answer(idbFailure(1, e)));\n")
+  val () = $B.bput(b,"      if (!tx) return;\n")
   val () = $B.bput(b,"      const req = tx.objectStore('kv').getAllKeys();\n")
   val () = $B.bput(b,"      req.onsuccess = () => {\n")
   val () = $B.bput(b,"        const keys = req.result.filter(k => typeof k === 'string' && k.startsWith(prefix));\n")
@@ -460,14 +482,14 @@ fn emit_js_idb {n:nat | n + 4840 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"        for (const c of chunks) { combined.set(c, off); off += c.length; }\n")
   val () = $B.bput(b,"        answer(idbHandle(combined));\n")
   val () = $B.bput(b,"      };\n")
-  val () = $B.bput(b,"      req.onerror = () => answer(-2);\n")
-  val () = $B.bput(b,"      tx.onabort = () => answer(-2);\n")
-  val () = $B.bput(b,"    }, () => answer(-1));\n")
+  val () = $B.bput(b,"      req.onerror = () => answer(idbFailure(2, req.error));\n")
+  val () = $B.bput(b,"      tx.onabort = () => answer(idbFailure(2, tx.error));\n")
+  val () = $B.bput(b,"    }, e => answer(idbFailure(1, e)));\n")
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_idb_batch {n:nat | n + 4290 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4290] $B.builder(m)): void = let
+fn emit_js_idb_batch {n:nat | n + 4400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // IDB get prefix: every entry whose key starts with the prefix, read in\n")
   val () = $B.bput(b,"  // one readonly transaction. The key range is exactly the keys that\n")
@@ -509,23 +531,23 @@ fn emit_js_idb_batch {n:nat | n + 4290 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const prefix = readString(prefixPtr, prefixLen);\n")
   val () = $B.bput(b,"    const answer = idbOnce(code => instance.exports.bats_idb_fire_get(resolverId, code));\n")
   val () = $B.bput(b,"    openDB().then(db => {\n")
-  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readonly');\n")
-  val () = $B.bput(b,"      if (!tx) { answer(-1); return; }\n")
+  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readonly', e => answer(idbFailure(1, e)));\n")
+  val () = $B.bput(b,"      if (!tx) return;\n")
   val () = $B.bput(b,"      let keysReq, valuesReq;\n")
   val () = $B.bput(b,"      try {\n")
   val () = $B.bput(b,"        const store = tx.objectStore('kv');\n")
   val () = $B.bput(b,"        const range = idbPrefixRange(prefix);\n")
   val () = $B.bput(b,"        keysReq = store.getAllKeys(range);\n")
   val () = $B.bput(b,"        valuesReq = store.getAll(range);\n")
-  val () = $B.bput(b,"      } catch (e) { answer(-2); return; }\n")
+  val () = $B.bput(b,"      } catch (e) { answer(idbFailure(2, e)); return; }\n")
   val () = $B.bput(b,"      tx.oncomplete = () => {\n")
   val () = $B.bput(b,"        const keys = keysReq.result;\n")
   val () = $B.bput(b,"        if (keys.length === 0) { answer(0); return; }\n")
   val () = $B.bput(b,"        const packed = idbPack(keys, valuesReq.result);\n")
   val () = $B.bput(b,"        answer(packed === null ? -2 : idbHandle(packed));\n")
   val () = $B.bput(b,"      };\n")
-  val () = $B.bput(b,"      tx.onabort = () => answer(-2);\n")
-  val () = $B.bput(b,"    }, () => answer(-1));\n")
+  val () = $B.bput(b,"      tx.onabort = () => answer(idbFailure(2, tx.error));\n")
+  val () = $B.bput(b,"    }, e => answer(idbFailure(1, e)));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // IDB write all: the batch's operations (u8 op, u16le key length, key,\n")
@@ -560,7 +582,7 @@ fn emit_js_idb_batch {n:nat | n + 4290 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const answer = idbOnce(code => instance.exports.bats_idb_fire(resolverId, code));\n")
   val () = $B.bput(b,"    if (ops === null) { Promise.resolve().then(() => answer(-3)); return; }\n")
   val () = $B.bput(b,"    openDB().then(db => {\n")
-  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readwrite');\n")
+  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readwrite', () => {});\n")
   val () = $B.bput(b,"      if (!tx) { answer(-1); return; }\n")
   val () = $B.bput(b,"      tx.oncomplete = () => answer(0);\n")
   val () = $B.bput(b,"      tx.onabort = () => answer(-2);\n")
@@ -572,8 +594,8 @@ fn emit_js_idb_batch {n:nat | n + 4290 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_idb_update {n:nat | n + 3500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3500] $B.builder(m)): void = let
+fn emit_js_idb_update {n:nat | n + 4480 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4480] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // IDB update: read, decide and write in one readwrite transaction. The\n")
   val () = $B.bput(b,"  // read's success is dispatched while the transaction is active, and\n")
@@ -583,7 +605,12 @@ fn emit_js_idb_update {n:nat | n + 3500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  // the same transaction. Nothing is put after a read that failed. The\n")
   val () = $B.bput(b,"  // end is 0 put, 1 nothing put, -1 the database could not be opened,\n")
   val () = $B.bput(b,"  // -3 the read failed, -2 the transaction aborted after a good read, -4 a\n")
-  val () = $B.bput(b,"  // malformed batch (nothing written).\n")
+  val () = $B.bput(b,"  // malformed batch (nothing written). -1 and -3 carry the error written\n")
+  val () = $B.bput(b,"  // down, as a read's codes do (-(kind + 8 * handle)); so does the code\n")
+  val () = $B.bput(b,"  // the closure is given when the read failed (kind 1 or 2). Where the\n")
+  val () = $B.bput(b,"  // closure has not been given the read yet (the database did not open,\n")
+  val () = $B.bput(b,"  // or the transaction aborted first), it is given the failure now, with\n")
+  val () = $B.bput(b,"  // a blob of its own, before the end is told.\n")
   val () = $B.bput(b,"  const idbUpdates = new Map();\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function batsIdbUpdate(keyPtr, keyLen, resolverId) {\n")
@@ -592,11 +619,16 @@ fn emit_js_idb_update {n:nat | n + 3500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      idbUpdates.delete(resolverId);\n")
   val () = $B.bput(b,"      instance.exports.bats_idb_update_done(resolverId, code);\n")
   val () = $B.bput(b,"    });\n")
+  val () = $B.bput(b,"    // the closure is given the failure, and the update ends with it\n")
+  val () = $B.bput(b,"    const unread = (closureKind, endKind, error) => {\n")
+  val () = $B.bput(b,"      instance.exports.bats_idb_update_apply(resolverId, idbFailure(closureKind, error));\n")
+  val () = $B.bput(b,"      finish(idbFailure(endKind, error));\n")
+  val () = $B.bput(b,"    };\n")
   val () = $B.bput(b,"    openDB().then(db => {\n")
-  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readwrite');\n")
-  val () = $B.bput(b,"      if (!tx) { finish(-1); return; }\n")
+  val () = $B.bput(b,"      const tx = idbTransaction(db, 'readwrite', e => unread(1, 1, e));\n")
+  val () = $B.bput(b,"      if (!tx) return;\n")
   val () = $B.bput(b,"      // read: 0 not yet, 1 good, 2 failed; applying: wasm is deciding\n")
-  val () = $B.bput(b,"      const state = { store: tx.objectStore('kv'), tx, key, read: 0, applying: false, wrote: false, bad: false };\n")
+  val () = $B.bput(b,"      const state = { store: tx.objectStore('kv'), tx, key, read: 0, applying: false, wrote: false, bad: false, failure: null };\n")
   val () = $B.bput(b,"      idbUpdates.set(resolverId, state);\n")
   val () = $B.bput(b,"      const apply = answer => {\n")
   val () = $B.bput(b,"        state.applying = true;\n")
@@ -604,7 +636,7 @@ fn emit_js_idb_update {n:nat | n + 3500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      };\n")
   val () = $B.bput(b,"      let req;\n")
   val () = $B.bput(b,"      try { req = state.store.get(key); } catch (e) {\n")
-  val () = $B.bput(b,"        state.read = 2; apply(-2); try { tx.abort(); } catch (e2) {} return;\n")
+  val () = $B.bput(b,"        state.read = 2; state.failure = e; apply(idbFailure(2, e)); try { tx.abort(); } catch (e2) {} return;\n")
   val () = $B.bput(b,"      }\n")
   val () = $B.bput(b,"      req.onsuccess = () => {\n")
   val () = $B.bput(b,"        const result = req.result;\n")
@@ -616,11 +648,18 @@ fn emit_js_idb_update {n:nat | n + 3500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      req.onerror = () => {\n")
   val () = $B.bput(b,"        if (state.read !== 0) return;\n")
   val () = $B.bput(b,"        state.read = 2;\n")
-  val () = $B.bput(b,"        apply(-2);\n")
+  val () = $B.bput(b,"        state.failure = req.error;\n")
+  val () = $B.bput(b,"        apply(idbFailure(2, req.error));\n")
   val () = $B.bput(b,"      };\n")
   val () = $B.bput(b,"      tx.oncomplete = () => finish(state.read !== 1 ? -3 : state.wrote ? 0 : 1);\n")
-  val () = $B.bput(b,"      tx.onabort = () => finish(state.bad ? -4 : state.read === 1 ? -2 : -3);\n")
-  val () = $B.bput(b,"    }, () => finish(-1));\n")
+  val () = $B.bput(b,"      tx.onabort = () => {\n")
+  val () = $B.bput(b,"        if (state.bad) { finish(-4); return; }\n")
+  val () = $B.bput(b,"        if (state.read === 1) { finish(-2); return; }\n")
+  val () = $B.bput(b,"        const error = tx.error || state.failure;\n")
+  val () = $B.bput(b,"        if (state.read === 0) { state.read = 2; unread(2, 3, error); return; }\n")
+  val () = $B.bput(b,"        finish(idbFailure(3, error));\n")
+  val () = $B.bput(b,"      };\n")
+  val () = $B.bput(b,"    }, e => unread(1, 1, e));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // wasm hands back the bytes of the closure's answer: put in the\n")
@@ -2513,8 +2552,8 @@ fn _emit_1 {n:nat | n + 14840 <= $B.BUILDER_CAP}
   val () = emit_js_dom(b)
 in end
 
-fn _emit_2 {n:nat | n + 14100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 14100] $B.builder(m)): void = let
+fn _emit_2 {n:nat | n + 16450 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16450] $B.builder(m)): void = let
   val () = emit_js_timer(b)
   val () = emit_js_idb(b)
   val () = emit_js_idb_batch(b)
@@ -2580,8 +2619,8 @@ fn _emit_9 {n:nat | n + 9510 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 41920 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 41920] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 44270 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 44270] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
