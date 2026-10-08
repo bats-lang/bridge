@@ -7,6 +7,7 @@
   run 3 #0 delete "k1": stored
   run 4 #0 get "k1": absent
   run 4 #1 get "k2": found "value two"
+  pending blobs left: 0
 == a failed open is forgotten
   run 1 #0 get "a": unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #1 put "a": not stored
@@ -15,6 +16,7 @@
   opens so far: 2
   run 3 #0 get "a": found "one"
   opens in all: 2
+  pending blobs left: 0
 == a database that cannot be opened, for every call
   run 1 #0 get "a": unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #1 put "a": not stored
@@ -24,12 +26,14 @@
   run 1 #5 write_all "": not stored
   run 1 #6 update-set "a": the closure was given: unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #6 update-set "a": update unreadable (no database), unexpected, name "Error", message "blocked"
+  pending blobs left: 0
 == a request or transaction that fails
   run 1 #0 put "good": stored
   run 2 #0 get "bad": unreadable (read failed), no error given
   run 2 #1 put "bad": stored
   run 2 #2 put "quota": not stored
   run 2 #3 get "good": found "g"
+  pending blobs left: 0
 == codes bridge does not recognise
   run 1 #0 get "x": unreadable (unexpected: unknown code) -5
   run 1 #1 get "y": unreadable (unexpected: unclaimed handle) 777
@@ -42,6 +46,7 @@
   run 1 #7 write_all "": not stored
   run 1 #8 get "m": absent
   reports after a second fire: 10
+  pending blobs left: 0
 == get_prefix
   run 1 #0 put "a": stored
   run 1 #1 put "a/1": stored
@@ -60,6 +65,7 @@
   prefix "é": 16 bytes, "é/1"="accent"
   prefix "zz" #0 prefix "zz": absent
   prefix "a/3" #0 prefix "a/3": absent
+  pending blobs left: 0
 == write_all
   setup #0 put "old": stored
   setup #1 put "keep": stored
@@ -82,6 +88,7 @@
   together #0 write_all "": stored
   together #1 write_all "": stored
   t is "third"
+  pending blobs left: 0
 == update
   50 increments: {"updated":50}
   counter is 50
@@ -112,17 +119,20 @@
   abort again #0 update-set "quota": the closure was given: absent
   abort again #0 update-set "quota": not updated (aborted)
   other is "v1"
+  pending blobs left: 0
 == an abort of an update leaves the old value
   seed #0 put "quota": stored
   update #0 update-set "quota": the closure was given: found "old"
   update #0 update-set "quota": not updated (aborted)
   quota is "old"
+  pending blobs left: 0
 == an update whose database never opens
   run 1 #0 update-set "a": the closure was given: unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #0 update-set "a": update unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #1 increment "a": update unreadable (no database), unexpected, name "Error", message "blocked"
   run 2 #0 increment "a": updated
   a is 01 00 00 00; opens: 3
+  pending blobs left: 0
 == update with a batch
   seed #0 put "rec": stored
   seed #1 put "other": stored
@@ -144,6 +154,7 @@
   unreadable #0 update-batch "bad": the closure was given: unreadable (read failed), no error given
   unreadable #0 update-batch "bad": update unreadable (read failed), no error given
   puts made: 0; quarantine/bad is nothing
+  pending blobs left: 0
 == an open that fails, by the error the browser gave
   UnknownError #0 get "a": unreadable (no database), transient
   UnknownError, other calls #0 keys "a": unreadable (no database), transient
@@ -180,10 +191,12 @@
   a made-up name, other calls #2 update-set "a": update unreadable (no database), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
   a made-up name, writes #0 put "a": not stored
   a made-up name, writes #1 delete "a": not stored
+  pending blobs left: 0
 == an open that throws, and an open that gives no error
   open throws SecurityError #0 get "a": unreadable (no database), storage blocked
   request error is null #0 get "a": unreadable (no database), no error given
   request error is undefined #0 keys "a": unreadable (no database), no error given
+  pending blobs left: 0
 == a failed open with an error is forgotten
   run 1 #0 get "a": unreadable (no database), transient
   run 1 #1 put "a": not stored
@@ -191,6 +204,7 @@
   run 2 #0 put "a": stored
   run 3 #0 get "a": found "one"
   opens in all: 2
+  pending blobs left: 0
 == a read request that fails, by the error the browser gave
   seed #0 put "a": stored
   UnknownError #0 get "a": unreadable (read failed), transient
@@ -224,6 +238,7 @@
   a made-up name, update #0 update-set "a": update unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
   puts made: 0; a is "one"
   after #0 get "a": found "one"
+  pending blobs left: 0
 == a transaction that aborts with an error, by the error the browser gave
   seed #0 put "a": stored
   UnknownError #0 get "a": unreadable (read failed), transient
@@ -256,12 +271,14 @@
   a made-up name, update #0 update-set "a": the closure was given: unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
   a made-up name, update #0 update-set "a": update unreadable (read failed), unexpected, name "MadeUpError", message "a message\nof two lines, and é"
   a is "one"
+  pending blobs left: 0
 == an update whose transaction aborts before its read
   seed #0 put "a": stored
   abort first #0 increment "a": update unreadable (read failed), aborted
   abort first #1 update-keep "a": the closure was given: unreadable (read failed), aborted
   abort first #1 update-keep "a": update unreadable (read failed), aborted
   a is "one"
+  pending blobs left: 0
 == names that are none of the four
   a known name with more after it: unreadable (no database), unexpected, name "UnknownErrorX", message "UnknownErrorX was raised"
   a known name in lower case: unreadable (no database), unexpected, name "unknownerror", message "unknownerror was raised"
@@ -272,13 +289,16 @@
   a name of 17 bytes: unreadable (no database), unexpected, name "SeventeenBytesErr", message "m"
   a known name, no message: unreadable (no database), aborted
   an empty name: unreadable (no database), unexpected, name "", message "only a message"
-  a plain object: unreadable (no database), unexpected, name "undefined", message "undefined"
-  a string: unreadable (no database), unexpected, name "undefined", message "undefined"
-  a number: unreadable (no database), unexpected, name "undefined", message "undefined"
+  a plain object: unreadable (no database), unexpected, name "", message "[object Object]"
+  a string: unreadable (no database), unexpected, name "", message "just a string"
+  a number: unreadable (no database), unexpected, name "", message "42"
+  a string that is a known name: unreadable (no database), unexpected, name "", message "UnknownError"
+  an object with a name that is not a string: unreadable (no database), unexpected, name "", message "[object Object]"
   a name with a line feed: unreadable (no database), unexpected, name "Two", message "Lines\nafter"
-  a name that throws, a string form that does not: unreadable (no database), unexpected, text "its string form"
+  a name that throws, a string form that does not: unreadable (no database), unexpected, name "", message "its string form"
   nothing can be written: unreadable (no database), no error given
   a huge message: unreadable (no database), unexpected, name "HugeError", message "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx... (300066 characters)
+  pending blobs left: 0
 == the database cannot make a transaction, for every call
   open #0 get "a": absent
   run 1 #0 get "a": unreadable (no database), unexpected, name "InvalidStateError", message "the database connection is closing"
@@ -292,6 +312,11 @@
   run 1 #7 increment "a": update unreadable (no database), unexpected, name "InvalidStateError", message "the database connection is closing"
   run 2 #0 put "a": stored
   run 3 #0 get "a": found "one"
+  pending blobs left: 0
+== an update whose closure traps while it is given the failure
+  run 1 #0 update-trap "a": update unreadable (no database), transient
+  pending blobs left: 0
+  unhandled rejections: 1
 == every kind of code, with and without an error written down
   run 1 #0 get "a": unreadable (no database), no error given
   run 1 #1 get "b": unreadable (read failed), no error given
@@ -313,3 +338,4 @@
   run 1 #12 update-set "m": update unreadable (unexpected: unclaimed handle) -17
   run 1 #13 update-set "n": the closure was given: unreadable (read failed), no error given
   run 1 #13 update-set "n": not updated (unexpected: unknown code) -10
+  pending blobs left: 0

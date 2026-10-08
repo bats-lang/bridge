@@ -40,9 +40,10 @@ staload "./decompress.bats"
   | BrowserUnexpected of ([n:nat] dblob(n))
       (* any other name: the blob is exactly what JS wrote: the error's
          name (up to the first line feed), a line feed, its message, as
-         UTF-8; a name with no message ends the text; an error JS could
-         not take a name and message from is its String() form, with no
-         line feed needed *)
+         UTF-8; a name with no message ends the text; a value that has
+         no string name (a thrown string or number) is written with no
+         name: the text starts with the line feed and goes on with its
+         String() form *)
 
 (* Why a read found nothing it could use: where it failed, and what the
    browser said. JS's codes, decoded here once: -1 the database could not

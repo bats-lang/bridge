@@ -20,17 +20,26 @@ global.window = dom.window;
 const src = readFileSync('dist/pwa/bridge.js', 'utf-8');
 const boot = src.lastIndexOf("\nconst root = document.getElementById('bats-root');");
 if (boot < 0) throw new Error('bridge.js: boot code not found');
+// the blobs JS has made and nobody has claimed are made reachable here, to
+// check that none is left behind (globalThis.__bridgePending is the map of
+// the app loaded last)
+const pendingDeclaration = '  const pendingBlobs = new Map();';
+if (!src.includes(pendingDeclaration)) throw new Error('bridge.js: pendingBlobs not found');
 const tmp = join(tmpdir(), `bridge-idb-${process.pid}.mjs`);
-writeFileSync(tmp, src.slice(0, boot) + '\n');
+writeFileSync(tmp, src.slice(0, boot).replace(pendingDeclaration,
+  '  const pendingBlobs = (globalThis.__bridgePending = new Map());') + '\n');
+// a rejection nobody handles is counted, not fatal, so a test can look for one
+let unhandled = 0;
+process.on('unhandledRejection', () => { unhandled++; });
 const { loadWASM } = await import(tmp);
 unlinkSync(tmp);
 const wasm = readFileSync('dist/pwa/app.wasm');
 
 // ---- the script's commands
 const PUT = 1, GET = 2, DELETE = 3, KEYS = 4, PREFIX = 5, WRITE_ALL = 6,
-  INCREMENT = 7, KEEP = 8, SET = 9, BATCH = 10;
+  INCREMENT = 7, KEEP = 8, SET = 9, BATCH = 10, TRAP = 11;
 const names = { 1: 'put', 2: 'get', 3: 'delete', 4: 'keys', 5: 'prefix', 6: 'write_all',
-  7: 'increment', 8: 'update-keep', 9: 'update-set', 10: 'update-batch' };
+  7: 'increment', 8: 'update-keep', 9: 'update-set', 10: 'update-batch', 11: 'update-trap' };
 const encoder = new TextEncoder();
 const bytesOf = x => (typeof x === 'string' ? encoder.encode(x) : x === undefined ? new Uint8Array(0) : x);
 const op = (command, key, data) => [command, bytesOf(key), bytesOf(data)];
@@ -159,6 +168,10 @@ async function session(name, body) {
     async go(label, ops) { const got = await api.run(ops); api.say(ops, got, label); return got; },
   };
   await body(api);
+  await new Promise(r => setTimeout(r, 50));
+  // every blob JS made for a failure was claimed by wasm: none is left pending
+  print(`  pending blobs left: ${globalThis.__bridgePending.size}`);
+  if (unhandled > 0) { print(`  unhandled rejections: ${unhandled}`); unhandled = 0; }
 }
 
 // ---- patches of fake-indexeddb, undone after each scenario
@@ -557,6 +570,8 @@ await session('names that are none of the four', async s => {
     'a plain object': { reason: 'not an error' },
     'a string': 'just a string',
     'a number': 42,
+    'a string that is a known name': 'UnknownError',
+    'an object with a name that is not a string': { name: 7, message: 'm' },
     'a name with a line feed': Object.assign(new Error('after'), { name: 'Two\nLines' }),
     'a name that throws, a string form that does not': { get name() { throw new Error('no'); }, toString() { return 'its string form'; } },
     'nothing can be written': { get name() { throw new Error('no'); }, toString() { throw new Error('no'); } },
@@ -584,6 +599,13 @@ await session('the database cannot make a transaction, for every call', async s 
   // the database is opened anew: nothing is left waiting
   await s.go('run 2', [op(PUT, 'a', 'one')]);
   await s.go('run 3', [op(GET, 'a')]);
+});
+
+await session('an update whose closure traps while it is given the failure', async s => {
+  // apply throws (the closure traps in wasm): the update still ends, with
+  // the failure, once
+  openFailsWith(named('UnknownError'));
+  await s.go('run 1', [op(TRAP, 'a')]);
 });
 
 await session('every kind of code, with and without an error written down', async s => {

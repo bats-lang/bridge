@@ -20,7 +20,8 @@ staload DC = "wasm.bats-packages.dev/bridge/src/decompress.bats"
    data; 7 update key by adding 1 to the counter it holds (4 bytes,
    little-endian; absent is 0; unreadable is kept); 8 update key keeping
    what it holds; 9 update key to put data, whatever it holds; 10 update key
-   to apply the batch data, whatever it holds. A closure
+   to apply the batch data, whatever it holds; 11 update key with a closure
+   that traps (wasm's unreachable) when it is run. A closure
    of an update reports what it was given too, as its tag + 100.
 
    Tags: lookups 0 absent, 1 found, 2 no database, 3 read failed,
@@ -266,6 +267,14 @@ fn run_command (index: int, command: int, script: ptr, key_at: int, key_len: int
     in $P.finish<$ID.updated>(promise, llam (outcome) => report_updated(index, outcome)) end
     else if command = 8 then let
       val promise = $ID.idb_update(key, n, llam (found) => let
+        val () = report_lookup(index, 100, found)
+      in $ID.Keep() end)
+      val () = $A.drop<byte>(frozen, key)
+      val () = $A.free<byte>($A.thaw<byte>(frozen))
+    in $P.finish<$ID.updated>(promise, llam (outcome) => report_updated(index, outcome)) end
+    else if command = 11 then let
+      val promise = $ID.idb_update(key, n, llam (found) => let
+        val () = $UNSAFE begin $extfcall(void, "__builtin_trap") end
         val () = report_lookup(index, 100, found)
       in $ID.Keep() end)
       val () = $A.drop<byte>(frozen, key)
