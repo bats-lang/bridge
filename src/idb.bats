@@ -13,7 +13,9 @@ staload "./decompress.bats"
 
 (* Which case of JS's answer bridge did not recognise (bats-lang/quire#354:
    an answer is never folded into another). JS gives only the codes
-   below; anything else is one of these, with the code as JS gave it. *)
+   below; anything else is one of these, with the code as JS gave it.
+   (An error the browser gave whose name bridge does not recognise is
+   not a code: it is browser_reason's BrowserUnexpected.) *)
 #pub datatype idb_unexpected =
   | UnknownCode      (* a negative code JS never gives *)
   | UnclaimedHandle  (* a positive code that is not a blob JS handed out *)
@@ -22,12 +24,36 @@ staload "./decompress.bats"
    (a constructor with data allocates, and wasm has no collector): the one
    consumer matches with case+ ~, or hands a cause to its _free. *)
 
-(* Why a read found nothing it could use. JS's codes, decoded here once:
-   -1 the database could not be opened, -2 the request or its transaction
-   errored or aborted. *)
+(* What the browser said when a read failed (bats-lang/quire#374): the
+   error's name, decoded here once. JS writes the error down as text (its
+   `name`, a line feed, its `message`) and bridge decides here, from the
+   name alone, with the IndexedDB specification's meanings
+   (https://w3c.github.io/IndexedDB/). JS never says what class an error
+   is: a name is only a string it was given.
+   Linear: BrowserUnexpected holds the blob JS wrote. *)
+#pub datavtype browser_reason =
+  | Transient          (* UnknownError: the operation failed for transient reasons unrelated to the database itself *)
+  | StorageBlocked     (* SecurityError: no storage key can be obtained (a private window, site data blocked) *)
+  | NewerVersion       (* VersionError: the stored database is newer than the code asked for *)
+  | Aborted            (* AbortError: the operation was aborted *)
+  | NoErrorGiven       (* JS had no error object to write down (a request that failed without one, a stored value that is not bytes) *)
+  | BrowserUnexpected of ([n:nat] dblob(n))
+      (* any other name: the blob is exactly what JS wrote: the error's
+         name (up to the first line feed), a line feed, its message, as
+         UTF-8; a name with no message ends the text; a value that has
+         no string name (a thrown string or number) is written with no
+         name: the text starts with the line feed and goes on with its
+         String() form *)
+
+(* Why a read found nothing it could use: where it failed, and what the
+   browser said. JS's codes, decoded here once: -1 the database could not
+   be opened (or used), -2 the request or its transaction errored or
+   aborted, each with the error written down as -(kind + 8 * handle) when
+   JS had one (kind 1 or 2; handle 1 or more) and the old code when it
+   had none. *)
 #pub datavtype unreadable_cause =
-  | NoDatabase                                   (* indexedDB.open failed, or the database could not be used *)
-  | ReadFailed                                   (* the request or its transaction errored or aborted *)
+  | NoDatabase of (browser_reason)                (* indexedDB.open failed, or the database could not be used *)
+  | ReadFailed of (browser_reason)                (* the request or its transaction errored or aborted *)
   | UnreadableUnexpected of (idb_unexpected, int) (* an answer bridge does not recognise, and its code *)
 
 (* Why an update's write was not kept (idb_update's NotUpdated: a caller
@@ -58,6 +84,8 @@ staload "./decompress.bats"
   | Found of ([n:nat] dblob(n))
   | Absent                              (* nothing is stored there *)
   | Unreadable of (unreadable_cause)    (* it could not be read *)
+
+#pub fun browser_reason_free (reason: browser_reason): void
 
 #pub fun unreadable_cause_free (cause: unreadable_cause): void
 
@@ -140,8 +168,10 @@ staload "./decompress.bats"
    change: the second reads what the first wrote. The closure runs
    exactly once and is freed, even when the read failed (it is then
    given Unreadable and nothing is written, whatever it answers: a
-   record that could not be read is never written over). It is run
-   while JS dispatches the read's success, so it must not wait. *)
+   a record that could not be read is never written over). It is run
+   while JS dispatches the read's success, so it must not wait. The
+   cause it is told is the one the update ends with
+   (UpdateUnreadable), each with the error the browser gave. *)
 #pub fun idb_update
   : {lk:agz}{nk:pos}
   (!$A.borrow(byte, lk, nk), int nk,
@@ -169,8 +199,11 @@ staload "./decompress.bats"
 
 (* The update's transaction ended (0 put, 1 nothing put, or a negative
    code: -1 the database could not be used, -3 the read failed, -2 the
-   transaction aborted after a good read, -4 a malformed batch). A closure not yet run is run
-   first, with an unreadable lookup, so it is never lost *)
+   transaction aborted after a good read, -4 a malformed batch; -1 and -3
+   carry the error written down, as a read's codes do). A closure not yet run is run
+   first, with an unreadable lookup (told no error: JS gives the closure
+   its failure, with the error, before it ends the update), so it is
+   never lost *)
 #pub fun on_idb_update_done
   (resolver_id: int, status: Int): void = "ext#bats_idb_update_done"
 
@@ -267,10 +300,19 @@ fn _stored (code: Int): stored =
 (* A write's outcome nobody took: nothing to free. ATS2 resolves a
    template's instances in file order, so each dispose comes before its
    first use. *)
+implement browser_reason_free (reason) =
+  case+ reason of
+  | ~Transient() => ()
+  | ~StorageBlocked() => ()
+  | ~NewerVersion() => ()
+  | ~Aborted() => ()
+  | ~NoErrorGiven() => ()
+  | ~BrowserUnexpected(blob) => blob_free(blob)
+
 implement unreadable_cause_free (cause) =
   case+ cause of
-  | ~NoDatabase() => ()
-  | ~ReadFailed() => ()
+  | ~NoDatabase(reason) => browser_reason_free(reason)
+  | ~ReadFailed(reason) => browser_reason_free(reason)
   | ~UnreadableUnexpected(_, _) => ()
 
 implement write_failure_free (cause) =
@@ -282,18 +324,142 @@ implement write_failure_free (cause) =
 
 implement $P.dispose<stored>(_) = ()
 
-(* The cause of a read JS's code names: -1 the database could not be
-   used, -2 the read failed; any other negative is not one JS gives *)
-fn _unreadable_cause (code: Int): unreadable_cause =
-  if code = ~1 then NoDatabase()
-  else if code = ~2 then ReadFailed()
-  else UnreadableUnexpected(UnknownCode(), code)
+(* The names of the errors the browser gives are all under 16 bytes: a
+   name longer than that is none of them, so only the first 16 bytes of
+   the text are read to find out *)
+fn _window {n:nat} (n: int n): [k:nat | k <= n; k <= 16] int k =
+  if n >= 16 then 16 else n
+
+fun _same {l:agz}{size:nat}{length:nat | length <= size}{n:nat}{at:nat | at <= n} .<n - at>.
+  (bytes: !$A.arr(byte, l, size), length: int length, text: string n, n: int n, at: int at): bool =
+  if at >= n then true
+  else if at >= length then false
+  else if byte2int0($A.get<byte>(bytes, at)) <> char2int0(string_get_at(text, at)) then false
+  else _same(bytes, length, text, n, at + 1)
+
+(* Whether the first length bytes are exactly the text *)
+fn _is {l:agz}{size:nat}{length:nat | length <= size}{n:nat}
+  (bytes: !$A.arr(byte, l, size), length: int length, text: string n): bool = let
+  val n = g1u2i(string1_length(text))
+in if length <> n then false else _same(bytes, length, text, n, 0) end
+
+(* The index of the first line feed among the first length bytes, or
+   length when there is none *)
+fun _line_end {l:agz}{size:nat}{length:nat | length <= size}{at:nat | at <= length} .<length - at>.
+  (bytes: !$A.arr(byte, l, size), length: int length, at: int at): [line_end:nat | line_end <= length] int line_end =
+  if at >= length then length
+  else if byte2int0($A.get<byte>(bytes, at)) = 10 then at
+  else _line_end(bytes, length, at + 1)
+
+(* The error names the specification gives a failed open or read *)
+datavtype error_name =
+  | NameUnknownError
+  | NameSecurityError
+  | NameVersionError
+  | NameAbortError
+  | NameOther
+
+fn _error_name {l:agz}{size:nat}{length:nat | length <= size}
+  (bytes: !$A.arr(byte, l, size), length: int length): error_name =
+  if _is(bytes, length, "UnknownError") then NameUnknownError()
+  else if _is(bytes, length, "SecurityError") then NameSecurityError()
+  else if _is(bytes, length, "VersionError") then NameVersionError()
+  else if _is(bytes, length, "AbortError") then NameAbortError()
+  else NameOther()
+
+(* The name in the window: all of the text before a line feed; with none
+   in the window it is all of the text only when the window holds all of
+   it (n bytes in all), else it is none of the four *)
+fn _name_of_window {l:agz}{size:nat}{window:nat | window <= size}{name_end:nat | name_end <= window}
+  (bytes: !$A.arr(byte, l, size), window: int window, name_end: int name_end, n: int): error_name =
+  if name_end < window then _error_name(bytes, name_end)
+  else if window = n then _error_name(bytes, name_end)
+  else NameOther()
+
+(* The reason a blob JS wrote down gives: decoded from the error's name,
+   the text before the first line feed (or all of it, when it is short
+   and has none). The blob is kept only for a name that is none of the
+   four *)
+fn _reason_of_blob {n:nat} (blob: dblob(n)): browser_reason = let
+  val n = blob_len(blob)
+  val window = _window(n)
+  val bytes = $A.alloc<byte>(16)
+  val () = blob_read(blob, 0, bytes, window)
+  val name_end = _line_end(bytes, window, 0)
+  val name = _name_of_window(bytes, window, name_end, n)
+  val () = $A.free<byte>(bytes)
+in
+  case+ name of
+  | ~NameUnknownError() => let val () = blob_free(blob) in Transient() end
+  | ~NameSecurityError() => let val () = blob_free(blob) in StorageBlocked() end
+  | ~NameVersionError() => let val () = blob_free(blob) in NewerVersion() end
+  | ~NameAbortError() => let val () = blob_free(blob) in Aborted() end
+  | ~NameOther() => BrowserUnexpected(blob)
+end
+
+(* The reason a handle names: none written down is NoErrorGiven; none when
+   the handle is not a blob JS handed out *)
+fn _reason_of_handle (handle: int): $R.option(browser_reason) =
+  if handle = 0 then $R.some(NoErrorGiven())
+  else (case+ _claimed_blob(handle) of
+    | ~$R.some(blob) => $R.some(_reason_of_blob(blob))
+    | ~$R.none() => $R.none())
+
+(* A blob JS handed out with a code bridge does not take apart is not
+   left pending: it is claimed and freed *)
+fn _discard_handle (handle: int): void =
+  if handle > 0 then
+    (case+ _claimed_blob(handle) of
+     | ~$R.some(blob) => blob_free(blob)
+     | ~$R.none() => ())
+  else ()
+
+(* Where a read's code came from: a lookup's (kinds 1 and 2), or an
+   update's (kinds 1, 2 and 3: 3 is the update's read failing) *)
+datavtype failure_site =
+  | FromLookup
+  | FromUpdate
+
+(* Where a code says the read failed *)
+datavtype failure_place =
+  | PlaceDatabase
+  | PlaceRead
+  | PlaceNone
+
+(* The cause of a read JS's code names: -(kind + 8 * handle), the kind 1
+   the database could not be used, 2 the read failed (3, in an update, the
+   same), the handle the error written down (0 for none); any other
+   negative is not one JS gives *)
+fn _place (site: failure_site, kind: int): failure_place =
+  case+ site of
+  | ~FromLookup() =>
+      (if kind = 1 then PlaceDatabase() else if kind = 2 then PlaceRead() else PlaceNone())
+  | ~FromUpdate() =>
+      (if kind = 1 then PlaceDatabase() else if kind = 3 then PlaceRead() else PlaceNone())
+
+fn _unreadable_cause (site: failure_site, code: Int): unreadable_cause = let
+  val magnitude = ~code
+  val kind = magnitude % 8
+  val handle = magnitude / 8
+  val place = _place(site, kind)
+in
+  case+ place of
+  | ~PlaceNone() => let
+      val () = _discard_handle(handle)
+    in UnreadableUnexpected(UnknownCode(), code) end
+  | ~PlaceDatabase() => (case+ _reason_of_handle(handle) of
+      | ~$R.some(reason) => NoDatabase(reason)
+      | ~$R.none() => UnreadableUnexpected(UnclaimedHandle(), code))
+  | ~PlaceRead() => (case+ _reason_of_handle(handle) of
+      | ~$R.some(reason) => ReadFailed(reason)
+      | ~$R.none() => UnreadableUnexpected(UnclaimedHandle(), code))
+end
 
 (* JS's code for a blob, as a handle: bridge's own atoms are the only
    ones that give one *)
 fn _lookup_of_code (code: Int): lookup =
   if code = 0 then Absent()
-  else if code < 0 then Unreadable(_unreadable_cause(code))
+  else if code < 0 then Unreadable(_unreadable_cause(FromLookup(), code))
   else (case+ _claimed_blob(code) of
     | ~$R.some(blob) => Found(blob)
     | ~$R.none() => Unreadable(UnreadableUnexpected(UnclaimedHandle(), code)))
@@ -314,15 +480,19 @@ fn _lookup_promise (p: $P.promise(Int, $P.Pending)): $P.promise(lookup, $P.Chain
 
 (* An update's end, JS's code: 0 put, 1 nothing put, -1 the database
    could not be used and -3 the read failed (nothing was read, so the
-   closure was told Unreadable), -2 aborted after a good read *)
+   closure was told Unreadable; each with the error written down, as
+   -(kind + 8 * handle)), -2 aborted after a good read, -4 a malformed
+   batch (these two as ever: a write's) *)
 fn _updated (code: Int): updated =
   if code = 0 then Updated()
   else if code = 1 then KeptAsRead()
-  else if code = ~1 then UpdateUnreadable(NoDatabase())
-  else if code = ~3 then UpdateUnreadable(ReadFailed())
   else if code = ~2 then NotUpdated(WriteAborted())
   else if code = ~4 then NotUpdated(BadBatch())
-  else NotUpdated(WriteUnexpected(UnknownCode(), code))
+  else if code < 0 && ((~code) % 8 = 1 || (~code) % 8 = 3) then
+    UpdateUnreadable(_unreadable_cause(FromUpdate(), code))
+  else let
+    val () = _discard_handle((~code) / 8)
+  in NotUpdated(WriteUnexpected(UnknownCode(), code)) end
 
 implement $P.dispose<updated>(outcome) =
   case+ outcome of
@@ -435,7 +605,7 @@ implement on_idb_update_apply(resolver_id, answer) =
    open, or the transaction aborted first): it is run now, told the read
    failed, with nothing to write, and then the update's promise settles *)
 implement on_idb_update_done(resolver_id, status) = let
-  val () = _update_run(resolver_id, (if status = ~1 then ~1 else ~2), false)
+  val () = _update_run(resolver_id, (if status < 0 && (~status) % 8 = 1 then ~1 else ~2), false)
 in $P.fire(resolver_id, status) end
 
 implement on_idb_fire(resolver_id, status) =

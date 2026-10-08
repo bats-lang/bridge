@@ -20,7 +20,8 @@ staload DC = "wasm.bats-packages.dev/bridge/src/decompress.bats"
    data; 7 update key by adding 1 to the counter it holds (4 bytes,
    little-endian; absent is 0; unreadable is kept); 8 update key keeping
    what it holds; 9 update key to put data, whatever it holds; 10 update key
-   to apply the batch data, whatever it holds. A closure
+   to apply the batch data, whatever it holds; 11 update key with a closure
+   that traps (wasm's unreachable) when it is run. A closure
    of an update reports what it was given too, as its tag + 100.
 
    Tags: lookups 0 absent, 1 found, 2 no database, 3 read failed,
@@ -29,7 +30,12 @@ staload DC = "wasm.bats-packages.dev/bridge/src/decompress.bats"
    as read, 22 unreadable (no database), 23 unreadable (read failed),
    24 unreadable (unknown code), 25 unreadable (unclaimed handle),
    26 not updated (no database), 27 not updated (aborted), 28 not updated
-   (bad batch), 29 not updated (unknown code) *)
+   (bad batch), 29 not updated (unknown code)
+
+   An unreadable lookup (tags 2, 3, 22, 23, and the closure's 102, 103)
+   says what the browser gave in its number: 0 no error given, 1 transient,
+   2 storage blocked, 3 newer version, 4 aborted, 5 any other name, and
+   then its data is what JS wrote down (the name, a line feed, the message) *)
 
 $UNSAFE begin
 %{
@@ -90,14 +96,41 @@ in
   else let val () = report(index, tag, 0) in $DC.blob_free(blob) end
 end
 
+(* The blob's bytes are reported with the tag and the number; the blob is
+   freed *)
+fn report_text (index: int, tag: int, number: int, blob: [n:nat] $DC.dblob(n)): void = let
+  val n = $DC.blob_len(blob)
+in
+  if n > 0 then
+    (if n <= 1048576 then let
+       val a = $A.alloc<byte>(n)
+       val () = $DC.blob_read(blob, 0, a, n)
+       val () = _test_report(index, tag, number,
+         $UNSAFE begin $UNSAFE.castvwtp1{ptr}(a) end, n)
+       val () = $A.free<byte>(a)
+     in $DC.blob_free(blob) end
+     else let val () = report(index, tag, ~1) in $DC.blob_free(blob) end)
+  else let val () = report(index, tag, number) in $DC.blob_free(blob) end
+end
+
+(* What the browser said, as the number of the tag *)
+fn report_reason (index: int, tag: int, reason: $ID.browser_reason): void =
+  case+ reason of
+  | ~$ID.NoErrorGiven() => report(index, tag, 0)
+  | ~$ID.Transient() => report(index, tag, 1)
+  | ~$ID.StorageBlocked() => report(index, tag, 2)
+  | ~$ID.NewerVersion() => report(index, tag, 3)
+  | ~$ID.Aborted() => report(index, tag, 4)
+  | ~$ID.BrowserUnexpected(blob) => report_text(index, tag, 5, blob)
+
 (* base is 0, or 100 for what an update's closure was given *)
 fn report_lookup (index: int, base: int, found: $ID.lookup): void =
   case+ found of
   | ~$ID.Found(blob) => report_blob(index, base + 1, blob)
   | ~$ID.Absent() => report(index, base + 0, 0)
   | ~$ID.Unreadable(cause) => (case+ cause of
-    | ~$ID.NoDatabase() => report(index, base + 2, 0)
-    | ~$ID.ReadFailed() => report(index, base + 3, 0)
+    | ~$ID.NoDatabase(reason) => report_reason(index, base + 2, reason)
+    | ~$ID.ReadFailed(reason) => report_reason(index, base + 3, reason)
     | ~$ID.UnreadableUnexpected(which, code) => (case+ which of
       | $ID.UnknownCode() => report(index, base + 4, code)
       | $ID.UnclaimedHandle() => report(index, base + 5, code)))
@@ -112,8 +145,8 @@ fn report_updated (index: int, outcome: $ID.updated): void =
   | ~$ID.Updated() => report(index, 20, 0)
   | ~$ID.KeptAsRead() => report(index, 21, 0)
   | ~$ID.UpdateUnreadable(cause) => (case+ cause of
-    | ~$ID.NoDatabase() => report(index, 22, 0)
-    | ~$ID.ReadFailed() => report(index, 23, 0)
+    | ~$ID.NoDatabase(reason) => report_reason(index, 22, reason)
+    | ~$ID.ReadFailed(reason) => report_reason(index, 23, reason)
     | ~$ID.UnreadableUnexpected(which, code) => (case+ which of
       | $ID.UnknownCode() => report(index, 24, code)
       | $ID.UnclaimedHandle() => report(index, 25, code)))
@@ -234,6 +267,14 @@ fn run_command (index: int, command: int, script: ptr, key_at: int, key_len: int
     in $P.finish<$ID.updated>(promise, llam (outcome) => report_updated(index, outcome)) end
     else if command = 8 then let
       val promise = $ID.idb_update(key, n, llam (found) => let
+        val () = report_lookup(index, 100, found)
+      in $ID.Keep() end)
+      val () = $A.drop<byte>(frozen, key)
+      val () = $A.free<byte>($A.thaw<byte>(frozen))
+    in $P.finish<$ID.updated>(promise, llam (outcome) => report_updated(index, outcome)) end
+    else if command = 11 then let
+      val promise = $ID.idb_update(key, n, llam (found) => let
+        val () = $UNSAFE begin $extfcall(void, "__builtin_trap") end
         val () = report_lookup(index, 100, found)
       in $ID.Keep() end)
       val () = $A.drop<byte>(frozen, key)

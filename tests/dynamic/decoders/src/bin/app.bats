@@ -96,8 +96,12 @@ fn show_lookup {ni:pos | ni < 32} (name: string ni, found: $ID.lookup): void =
     in $DC.blob_free(blob) end
   | ~$ID.Absent() => say(name, "absent")
   | ~$ID.Unreadable(cause) => (case+ cause of
-    | ~$ID.NoDatabase() => say(name, "unreadable: no database")
-    | ~$ID.ReadFailed() => say(name, "unreadable: read failed")
+    | ~$ID.NoDatabase(reason) => let
+        val () = $ID.browser_reason_free(reason)
+      in say(name, "unreadable: no database") end
+    | ~$ID.ReadFailed(reason) => let
+        val () = $ID.browser_reason_free(reason)
+      in say(name, "unreadable: read failed") end
     | ~$ID.UnreadableUnexpected(_, _) => say(name, "unreadable: unexpected"))
 
 fn show_stored {ni:pos | ni < 32} (name: string ni, outcome: $ID.stored): void =
