@@ -5,6 +5,7 @@ audio-4-play: refused
 audio-5-play: unplayable
 caret-1: offset 003
 caret-2: none
+clear-1: cleared
 clipboard-1: copied
 clipboard-2: not copied
 clipboard-3-read: text 005
@@ -44,6 +45,12 @@ push-1-get: none
 push-2-subscribe: subscribed 016
 push-3-get-failed: failed
 refusing: audio
+select-1: selected
+select-2-past-end: selected
+select-3-no-element: no such element
+select-4-no-end-element: no such element
+select-5-refused: refused
+selection-1: available
 url-1: length 022
 url-2-cut: length 005
 url-3-hash: length 005
@@ -51,5 +58,10 @@ visibility-1: visible
 visibility-2: hidden
 scroll element smooth
 scroll element instant
+selection empty
+selection select "ex"
+selection empty
+selection select "xt"
+selection empty
 [bats:warn] hello
 [bats:error] hello

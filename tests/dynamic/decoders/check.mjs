@@ -91,6 +91,19 @@ Object.defineProperty(win.HTMLElement.prototype, 'files', {
 const answers = ['granted', 'default', 'denied'];
 global.Notification = { requestPermission: () => Promise.resolve(answers.shift()) };
 
+// the selection: each range it is given and each time it is emptied
+const selections = [];
+const addRange = win.Selection.prototype.addRange;
+win.Selection.prototype.addRange = function (range) {
+  selections.push(`select "${range.toString()}"`);
+  return addRange.call(this, range);
+};
+const removeAllRanges = win.Selection.prototype.removeAllRanges;
+win.Selection.prototype.removeAllRanges = function () {
+  selections.push('empty');
+  return removeAllRanges.call(this);
+};
+
 const logs = [];
 const consoleLog = console.log;
 console.log = (...parts) => logs.push(parts.join(' '));
@@ -114,4 +127,5 @@ console.log = consoleLog;
 const lines = [...root.children].map(e => `${e.id}: ${e.textContent}`).sort();
 for (const l of lines) console.log(l);
 for (const s of scrolls) console.log(`scroll ${s}`);
+for (const s of selections) console.log(`selection ${s}`);
 for (const l of logs.filter(l => l.startsWith('[bats:'))) console.log(l);

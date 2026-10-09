@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 103220 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 103220] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 104690 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 104690] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -1667,8 +1667,8 @@ fn emit_js_gestures {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_extra {n:nat | n + 4640 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4640] $B.builder(m)): void = let
+fn emit_js_extra {n:nat | n + 5940 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5940] $B.builder(m)): void = let
   val () = $B.bput(b,"  // --- Window listeners, clock, picked, dropped and external files ---\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  let droppedFiles = [];\n")
@@ -1766,6 +1766,40 @@ fn emit_js_extra {n:nat | n + 4640 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    if (typeof CSS === 'undefined' || !CSS.highlights) return;\n")
   val () = $B.bput(b,"    CSS.highlights.delete('bats-mark-' + kind);\n")
   val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // Selection: what the reader has selected, set from a range as marks are\n")
+  val () = $B.bput(b,"  // (the offsets of the element's first text node) or emptied; 1 done,\n")
+  val () = $B.bput(b,"  // 0 no such element, -1 refused or no Selection API\n")
+  val () = $B.bput(b,"  function selectionOf() {\n")
+  val () = $B.bput(b,"    const w = root.ownerDocument.defaultView;\n")
+  val () = $B.bput(b,"    return (w && typeof w.getSelection === 'function') ? w.getSelection() : null;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsSelectionAvailable() {\n")
+  val () = $B.bput(b,"    try { return selectionOf() ? 1 : 0; } catch (err) { return 0; }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsSelectRange(sidPtr, sidLen, soff, eidPtr, eidLen, eoff) {\n")
+  val () = $B.bput(b,"    const s = getEl(readIdFromPtr(sidPtr, sidLen));\n")
+  val () = $B.bput(b,"    const e = getEl(readIdFromPtr(eidPtr, eidLen));\n")
+  val () = $B.bput(b,"    if (!s || !e) return 0;\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const sel = selectionOf();\n")
+  val () = $B.bput(b,"      if (!sel) return -1;\n")
+  val () = $B.bput(b,"      const sn = textNodeOf(s), en = textNodeOf(e);\n")
+  val () = $B.bput(b,"      const range = root.ownerDocument.createRange();\n")
+  val () = $B.bput(b,"      range.setStart(sn, Math.min(soff, sn.length || 0));\n")
+  val () = $B.bput(b,"      range.setEnd(en, Math.min(eoff, en.length || 0));\n")
+  val () = $B.bput(b,"      sel.removeAllRanges();\n")
+  val () = $B.bput(b,"      sel.addRange(range);\n")
+  val () = $B.bput(b,"      return 1;\n")
+  val () = $B.bput(b,"    } catch (err) { return -1; }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsClearSelection() {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const sel = selectionOf();\n")
+  val () = $B.bput(b,"      if (!sel) return -1;\n")
+  val () = $B.bput(b,"      sel.removeAllRanges();\n")
+  val () = $B.bput(b,"      return 1;\n")
+  val () = $B.bput(b,"    } catch (err) { return -1; }\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsElementAtPoint(x, y) {\n")
   val () = $B.bput(b,"    let el = document.elementFromPoint(x, y);\n")
   val () = $B.bput(b,"    while (el && !el.id) el = el.parentElement;\n")
@@ -1778,8 +1812,8 @@ fn emit_js_extra {n:nat | n + 4640 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports {n:nat | n + 5820 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5820] $B.builder(m)): void = let
+fn emit_js_imports {n:nat | n + 5990 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5990] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  const envObj = {\n")
   val () = $B.bput(b,"      ...extraImports,\n")
@@ -1863,6 +1897,9 @@ fn emit_js_imports {n:nat | n + 5820 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_pointer_capture: batsJsPointerCapture,\n")
   val () = $B.bput(b,"      bats_js_animation_frame: batsJsAnimationFrame,\n")
   val () = $B.bput(b,"      bats_js_mark_range: batsJsMarkRange,\n")
+  val () = $B.bput(b,"      bats_js_selection_available: batsJsSelectionAvailable,\n")
+  val () = $B.bput(b,"      bats_js_select_range: batsJsSelectRange,\n")
+  val () = $B.bput(b,"      bats_js_clear_selection: batsJsClearSelection,\n")
   val () = $B.bput(b,"      bats_js_clear_marks: batsJsClearMarks,\n")
   val () = $B.bput(b,"      bats_js_element_at_point: batsJsElementAtPoint,\n")
   val () = $B.bput(b,"      bats_js_focus_node: batsJsFocusNode,\n")
@@ -2603,8 +2640,8 @@ fn _emit_8 {n:nat | n + 3300 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_10 {n:nat | n + 7140 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7140] $B.builder(m)): void = let
+fn _emit_10 {n:nat | n + 8440 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8440] $B.builder(m)): void = let
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
@@ -2617,8 +2654,8 @@ fn _emit_11 {n:nat | n + 25340 <= $B.BUILDER_CAP}
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 9510 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9510] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 9680 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9680] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2632,8 +2669,8 @@ fn _emit_first_half {n:nat | n + 44890 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 57410 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 57410] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 58880 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 58880] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

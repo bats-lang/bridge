@@ -126,6 +126,17 @@ fn show_measured {ni:pos | ni < 32} (name: string ni, outcome: $DR.measured): vo
   | $DR.Measured() => say(name, "measured")
   | $DR.NoElement() => say(name, "no element")
 
+fn show_selecting {ni:pos | ni < 32} (name: string ni, outcome: $DR.range_selection): void =
+  case+ outcome of
+  | $DR.RangeSelected() => say(name, "selected")
+  | $DR.NoSuchElement() => say(name, "no such element")
+  | $DR.SelectionRefused() => say(name, "refused")
+
+fn show_clearing {ni:pos | ni < 32} (name: string ni, outcome: $DR.selection_clearing): void =
+  case+ outcome of
+  | $DR.SelectionCleared() => say(name, "cleared")
+  | $DR.SelectionUnavailable() => say(name, "unavailable")
+
 fn show_media {ni:pos | ni < 32} (name: string ni, outcome: $ME.media_match): void =
   case+ outcome of
   | $ME.Matches() => say(name, "matches")
@@ -244,6 +255,22 @@ implement main0 () = let
   val () = show_measured("measure-2", $DR.measure(missing, 7))
   val () = show_measured("measure-3-text", $DR.measure_text_offset(element, 7, 2))
   val () = show_measured("measure-4-text", $DR.measure_text_offset(missing, 7, 2))
+  (* the selection: check.mjs prints the ranges it is given and each
+     time it is emptied *)
+  val @(again_frozen, again) = $A.freeze<byte>(bytes("element"))
+  val @(absent_frozen, absent) = $A.freeze<byte>(bytes("missing"))
+  val () = (if $DR.selection_available() then say("selection-1", "available")
+    else say("selection-1", "unavailable"))
+  val () = show_selecting("select-1", $DR.select_range(element, 7, 1, again, 7, 3))
+  val () = show_selecting("select-2-past-end", $DR.select_range(element, 7, 2, again, 7, 99))
+  val () = show_selecting("select-3-no-element", $DR.select_range(missing, 7, 0, again, 7, 1))
+  val () = show_selecting("select-4-no-end-element", $DR.select_range(element, 7, 0, absent, 7, 1))
+  val () = show_selecting("select-5-refused", $DR.select_range(element, 7, ~1, again, 7, 2))
+  val () = $A.drop<byte>(absent_frozen, absent)
+  val () = $A.free<byte>($A.thaw<byte>(absent_frozen))
+  val () = $A.drop<byte>(again_frozen, again)
+  val () = $A.free<byte>($A.thaw<byte>(again_frozen))
+  val () = show_clearing("clear-1", $DR.clear_selection())
   val () = (case+ $DR.caret_position_from_point(10, 10) of
     | ~$R.some(offset) => count("caret-1", "offset", offset)
     | ~$R.none() => say("caret-1", "none"))
