@@ -1,0 +1,9 @@
+[package]
+name = "range-selection-unmatched"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
