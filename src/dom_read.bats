@@ -78,6 +78,39 @@ staload "./decompress.bats"
 #pub fun get_selection_range()
   : @($R.option([k:nat] dblob(k)), $R.option([k:nat] dblob(k)))
 
+(* How select_range ended. JS's answer is decoded here, once: its 1 is
+   RangeSelected, its 0 NoSuchElement, anything else (a range the
+   browser refused, or no Selection API) SelectionRefused. *)
+#pub datatype range_selection =
+  | RangeSelected     (* the selection is now the range *)
+  | NoSuchElement     (* an element of the range is not there: nothing changed *)
+  | SelectionRefused  (* refused, or there is no Selection API: nothing changed *)
+
+(* How clear_selection ended. JS's answer is decoded here, once: its 1
+   is SelectionCleared, anything else SelectionUnavailable. *)
+#pub datatype selection_clearing =
+  | SelectionCleared      (* the selection is empty now *)
+  | SelectionUnavailable  (* there is no Selection API, or it threw *)
+
+(* Whether the page has a selection that select_range and
+   clear_selection can set (window.getSelection) *)
+#pub fun selection_available(): bool
+
+(* Selects the range from offset soff (UTF-16 code units) of element
+   sid's first text node to offset eoff of element eid's, as mark_range
+   takes them (an offset past the text is its end), replacing the
+   selection (Selection.removeAllRanges, then addRange). An end before
+   the start gives the range the DOM makes of it (collapsed at the end).
+   The page is not changed. *)
+#pub fun select_range
+  {ls,le:agz}{ns,ne:pos}
+  (sid: !$A.borrow(byte, ls, ns), slen: int ns, soff: int,
+   eid: !$A.borrow(byte, le, ne), elen: int ne, eoff: int)
+  : range_selection
+
+(* Empties the selection (Selection.removeAllRanges) *)
+#pub fun clear_selection(): selection_clearing
+
 (* A form input's value as a blob; none when there is no such input or
    its value is empty *)
 #pub fun read_input_value
@@ -110,6 +143,9 @@ extern int bats_js_element_at_point(int, int);
 extern void bats_js_get_selection_rect(void);
 extern void bats_js_get_selection_range(void);
 extern int bats_js_read_input_value(void*, int);
+extern int bats_js_selection_available(void);
+extern int bats_js_select_range(void*, int, int, void*, int, int);
+extern int bats_js_clear_selection(void);
 %}
 extern fun _bats_js_measure_node
   (id: ptr, id_len: int): int = "mac#bats_js_measure_node"
@@ -131,6 +167,13 @@ extern fun _bats_js_get_selection_range
   (): void = "mac#bats_js_get_selection_range"
 extern fun _bats_js_read_input_value
   (id: ptr, id_len: int): [v:int] int v = "mac#bats_js_read_input_value"
+extern fun _bats_js_selection_available
+  (): int = "mac#bats_js_selection_available"
+extern fun _bats_js_select_range
+  (sid: ptr, slen: int, soff: int, eid: ptr, elen: int, eoff: int)
+  : int = "mac#bats_js_select_range"
+extern fun _bats_js_clear_selection
+  (): int = "mac#bats_js_clear_selection"
 end
 
 (* JS's codes: 1 measured; 0 (measure) or -1 (measure_text_offset) no
@@ -188,6 +231,22 @@ implement get_selection_range() = let
   val s = _claimed_blob(get_measure_w())
   val e = _claimed_blob(get_measure_h())
 in @(s, e) end
+
+implement selection_available() = _bats_js_selection_available() > 0
+
+implement select_range{ls,le}{ns,ne}(sid, slen, soff, eid, elen, eoff) = let
+  val code = _bats_js_select_range(
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(sid) end, slen, soff,
+    $UNSAFE begin $UNSAFE.castvwtp1{ptr}(eid) end, elen, eoff)
+in
+  if code = 1 then RangeSelected()
+  else if code = 0 then NoSuchElement()
+  else SelectionRefused()
+end
+
+implement clear_selection() =
+  if _bats_js_clear_selection() = 1 then SelectionCleared()
+  else SelectionUnavailable()
 
 implement read_input_value{li}{ni}(node_id, id_len) =
   _claimed_blob(_bats_js_read_input_value(
