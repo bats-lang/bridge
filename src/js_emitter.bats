@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 106817 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 106817] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 108017 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 108017] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -75,8 +75,8 @@ fn emit_js_loadwasm_open {n:nat | n + 1240 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom {n:nat | n + 11300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11300] $B.builder(m)): void = let
+fn emit_js_dom {n:nat | n + 12500 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12500] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM helpers ---\n")
   val () = $B.bput(b,"\n")
@@ -117,11 +117,25 @@ fn emit_js_dom {n:nat | n + 11300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   (* An element that runs or loads code, or changes how the page is read,
      is never made (createElement lower-cases the name, so it is compared
-     lower-cased). The dom package's tag type has no constructor for one *)
+     lower-cased; a name with a colon is never made here: MathML is "math:" and
+     handled below). The dom package's tag type has no constructor for one *)
   val () = $B.bput(b,"  let tagRefusedLogged = false;\n")
   val () = $B.bput(b,"  function tagRefused(tag) {\n")
-  val () = $B.bput(b,"    const refused = /^(script|iframe|frame|object|embed|base|link|meta|template|noscript|form)$/.test(tag.toLowerCase());\n")
+  val () = $B.bput(b,"    const refused = /^(script|iframe|frame|object|embed|base|link|meta|template|noscript|form)$/.test(tag.toLowerCase()) || tag.includes(':');\n")
   val () = $B.bput(b,"    if (refused && !tagRefusedLogged) { tagRefusedLogged = true; console.error('bats: element refused: ' + tag); }\n")
+  val () = $B.bput(b,"    return refused;\n")
+  val () = $B.bput(b,"  }\n")
+  (* A MathML element, made by CREATE_ELEMENT when its tag is written
+     "math:" and the local name (the name is the stream's, like any tag:
+     the dom package's types give only the MathML names it lists). Its
+     local name is letters and digits only (a custom element's hyphen is
+     refused), and maction is refused: its action attribute changes what
+     the page shows when it is clicked *)
+  val () = $B.bput(b,"  const MATHML_NS = 'http://www.w3.org/1998/Math/MathML';\n")
+  val () = $B.bput(b,"  let mathRefusedLogged = false;\n")
+  val () = $B.bput(b,"  function mathRefused(name) {\n")
+  val () = $B.bput(b,"    const refused = !/^[A-Za-z][A-Za-z0-9]*$/.test(name) || /^maction$/i.test(name);\n")
+  val () = $B.bput(b,"    if (refused && !mathRefusedLogged) { mathRefusedLogged = true; console.error('bats: element refused: math:' + name); }\n")
   val () = $B.bput(b,"    return refused;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
@@ -140,8 +154,9 @@ fn emit_js_dom {n:nat | n + 11300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"          const d2 = dataStart + 2 + pid.len;\n")
   val () = $B.bput(b,"          const tagLen = mem[bufPtr + d2];\n")
   val () = $B.bput(b,"          const tag = _dec.decode(mem.slice(bufPtr + d2 + 1, bufPtr + d2 + 1 + tagLen));\n")
-  val () = $B.bput(b,"          if (!tagRefused(tag)) {\n")
-  val () = $B.bput(b,"            const el = document.createElement(tag);\n")
+  val () = $B.bput(b,"          const math = tag.startsWith('math:');\n")
+  val () = $B.bput(b,"          if (math ? !mathRefused(tag.slice(5)) : !tagRefused(tag)) {\n")
+  val () = $B.bput(b,"            const el = math ? document.createElementNS(MATHML_NS, tag.slice(5)) : document.createElement(tag);\n")
   val () = $B.bput(b,"            el.id = nid.s;\n")
   val () = $B.bput(b,"            const parent = getEl(pid.s);\n")
   val () = $B.bput(b,"            if (parent) parent.appendChild(el);\n")
@@ -194,7 +209,7 @@ fn emit_js_dom {n:nat | n + 11300 <= $B.BUILDER_CAP}
      when it is the copy itself, nothing is put in. A custom element's
      constructor has run in cloneNode by then; a closed shadow root
      cannot be seen *)
-  val () = $B.bput(b,"        case 8:{const sr=readStr(mem,bufPtr,dataStart);const d2=dataStart+2+sr.len;const pr=readStr(mem,bufPtr,d2);const s=getEl(sr.s),p=getEl(pr.s);const ce=globalThis.customElements;const out=(e)=>e.namespaceURI!=='http://www.w3.org/1999/xhtml'||tagRefused(e.tagName)||e.hasAttribute('is')||!!e.shadowRoot||!!(ce&&ce.getName&&ce.getName(e.constructor));if(s&&p){const c=s.cloneNode(true);if(!out(c)){for(const e of [c,...c.querySelectorAll('*')]){if(e!==c){if(out(e)){e.remove();continue;}e.removeAttribute('id');}for(let i=e.attributes.length-1;i>=0;i--){const a=e.attributes[i];if(attrRefused(a.name,a.value))e.removeAttribute(a.name);}}c.id=nid.s;p.appendChild(c);}}pos=d2+2+pr.len;break;} // CLONE_NODE\n")
+  val () = $B.bput(b,"        case 8:{const sr=readStr(mem,bufPtr,dataStart);const d2=dataStart+2+sr.len;const pr=readStr(mem,bufPtr,d2);const s=getEl(sr.s),p=getEl(pr.s);const ce=globalThis.customElements;const out=(e)=>(e.namespaceURI===MATHML_NS?mathRefused(e.localName):(e.namespaceURI!=='http://www.w3.org/1999/xhtml'||tagRefused(e.tagName)))||e.hasAttribute('is')||!!e.shadowRoot||!!(ce&&ce.getName&&ce.getName(e.constructor));if(s&&p){const c=s.cloneNode(true);if(!out(c)){for(const e of [c,...c.querySelectorAll('*')]){if(e!==c){if(out(e)){e.remove();continue;}e.removeAttribute('id');}for(let i=e.attributes.length-1;i>=0;i--){const a=e.attributes[i];if(attrRefused(a.name,a.value))e.removeAttribute(a.name);}}c.id=nid.s;p.appendChild(c);}}pos=d2+2+pr.len;break;} // CLONE_NODE\n")
   (* SET_SCROLL_LEFT (11) and SET_SCROLL_TOP (12): one property write
      each, in order with the other operations. 9 was a two-axis scroll
      in 2026.10.3.72358 and is retired, as is 10, so a stream in that
@@ -2630,8 +2645,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 14840 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 14840] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 16040 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16040] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_early(b)
   val () = emit_js_loadwasm_open(b)
@@ -2705,8 +2720,8 @@ fn _emit_9 {n:nat | n + 9680 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 45100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 45100] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 46300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46300] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)

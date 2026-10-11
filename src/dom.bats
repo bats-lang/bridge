@@ -17,6 +17,17 @@
    axes in 2026.10.3.72358, so a stream written for that shape stops
    at an unknown operation rather than being misread.
 
+   CREATE_ELEMENT's tag is an HTML element's name, or "math:" and a
+   MathML element's local name (math:mi), made in the MathML namespace
+   (createElementNS): the web platform draws MathML only for elements
+   in that namespace, so CREATE_ELEMENT's createElement cannot make it.
+   The local name is letters and digits (no custom element) and not
+   maction, whose action attribute makes a click change the page; the
+   flush refuses the others as it refuses an HTML tag it will not make.
+   There is no SVG: a drawing can run no script as an image, and an
+   element of the SVG namespace could (its script, foreignObject, use,
+   animate and set elements).
+
    CLONE_NODE ([8][id][source id][parent id]) puts a deep copy of
    element source, as earlier operations of the flush left it, at the
    end of element parent's children, the copy taking the id. The
@@ -34,7 +45,7 @@
 
    The copy's ordinary tree is checked, element by element (on the
    copy, not the source), against what the stream itself makes: HTML
-   elements only (CREATE_ELEMENT makes no SVG or MathML), none that
+   and MathML elements only (CREATE_ELEMENT makes no SVG), none that
    CREATE_ELEMENT refuses, no custom element, none carrying an open
    shadow root, and no attribute that SET_ATTR refuses. A custom
    element is one with an is attribute, or one whose constructor
