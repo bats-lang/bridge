@@ -12,7 +12,13 @@ const dom = new JSDOM(
   '<!DOCTYPE html><html><body><div id="bats-root">' +
   // text parts: "第", "12" and "章" of one element
   '<p id="parts"><span id="part-1" data-part>第</span><span id="part-2" data-part>12</span>' +
-  '<span id="part-3" data-part>章</span></p></div></body></html>',
+  '<span id="part-3" data-part>章</span></p>' +
+  // parts of parts, and an element with no parts but two text nodes
+  '<p id="nested"><span data-part>a<span data-part>b</span>c</span>d</p>' +
+  '<p id="mixed">ab<b>x</b>cd</p>' +
+  // a part whose owner has no id, in an element that has one
+  '<div id="outermost"><p><span id="orphan" data-part>z</span></p></div>' +
+  '</div></body></html>',
   { url: 'http://localhost/#frag', pretendToBeVisual: true });
 const win = dom.window;
 global.document = win.document;
@@ -44,7 +50,7 @@ win.matchMedia = query => ({
 // (a caret at x of 20 is in the second part, after its first digit)
 win.document.caretPositionFromPoint = x => (x < 0 ? null
   : x === 20 ? { offsetNode: win.document.getElementById('part-2').firstChild, offset: 1 } : { offset: 3 });
-win.document.elementFromPoint = x => (x === 20 ? win.document.getElementById('part-2') : null);
+win.document.elementFromPoint = x => (x === 20 ? win.document.getElementById('part-2') : x === 30 ? win.document.getElementById('orphan') : null);
 win.Range.prototype.getBoundingClientRect = () => ({ x: 0, y: 0 });
 const scrolls = [];
 win.Element.prototype.scrollIntoView = function (options) { scrolls.push(`${this.id} ${options.behavior}`); };

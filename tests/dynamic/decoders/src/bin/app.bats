@@ -10,7 +10,6 @@ staload CL = "wasm.bats-packages.dev/bridge/src/clipboard.bats"
 staload DC = "wasm.bats-packages.dev/bridge/src/decompress.bats"
 staload DR = "wasm.bats-packages.dev/bridge/src/dom_read.bats"
 staload EV = "wasm.bats-packages.dev/bridge/src/event.bats"
-staload EV = "wasm.bats-packages.dev/bridge/src/event.bats"
 staload BF = "wasm.bats-packages.dev/bridge/src/file.bats"
 staload ID = "wasm.bats-packages.dev/bridge/src/idb.bats"
 staload ME = "wasm.bats-packages.dev/bridge/src/media.bats"
@@ -252,10 +251,32 @@ fn text_parts (): void = let
   val () = (if start >= 0 then (if start < 1000 then count("parts-4-start", "offset", start) else say("parts-4-start", "too large")) else say("parts-4-start", "negative"))
   val () = (if stop >= 0 then (if stop < 1000 then count("parts-5-end", "offset", stop) else say("parts-5-end", "too large")) else say("parts-5-end", "negative"))
   val () = show_selecting("parts-6-past-end", $DR.select_range(parts, 5, 0, ends, 5, 99))
+  (* a negative offset is refused by the range, as it was *)
+  val () = show_selecting("parts-b-refused", $DR.select_range(parts, 5, ~1, ends, 5, 2))
+  (* parts of parts: "nested" is a, b, c in parts (b in a part of a part) and d, so "bc" is 1 to 3 *)
+  val @(nested_frozen, nested) = $A.freeze<byte>(bytes("nested"))
+  val @(nested_end_frozen, nested_end) = $A.freeze<byte>(bytes("nested"))
+  val () = show_selecting("parts-c-nested", $DR.select_range(nested, 6, 1, nested_end, 6, 3))
+  val () = $A.drop<byte>(nested_end_frozen, nested_end)
+  val () = $A.free<byte>($A.thaw<byte>(nested_end_frozen))
+  val () = $A.drop<byte>(nested_frozen, nested)
+  val () = $A.free<byte>($A.thaw<byte>(nested_frozen))
+  (* an element with no parts has its first text node alone: "mixed" is ab, a b element and cd *)
+  val @(mixed_frozen, mixed) = $A.freeze<byte>(bytes("mixed"))
+  val @(mixed_end_frozen, mixed_end) = $A.freeze<byte>(bytes("mixed"))
+  val () = show_selecting("parts-d-mixed", $DR.select_range(mixed, 5, 0, mixed_end, 5, 99))
+  val () = $A.drop<byte>(mixed_end_frozen, mixed_end)
+  val () = $A.free<byte>($A.thaw<byte>(mixed_end_frozen))
+  val () = $A.drop<byte>(mixed_frozen, mixed)
+  val () = $A.free<byte>($A.thaw<byte>(mixed_frozen))
   val () = show_measured("parts-7-measure", $DR.measure_text_offset(parts, 5, 3))
   val () = (case+ $DR.element_at_point(20, 20) of
     | ~$R.some(id) => let val () = count("parts-8-point-id", "length", $DC.blob_len(id)) in $DC.blob_free(id) end
     | ~$R.none() => say("parts-8-point-id", "none"))
+  (* the part's owner has no id: the nearest ancestor that has one, "outermost" *)
+  val () = (case+ $DR.element_at_point(30, 30) of
+    | ~$R.some(id) => let val () = count("parts-e-point-outer", "length", $DC.blob_len(id)) in $DC.blob_free(id) end
+    | ~$R.none() => say("parts-e-point-outer", "none"))
   val () = (case+ $DR.caret_position_from_point(20, 20) of
     | ~$R.some(offset) => count("parts-9-caret", "offset", offset)
     | ~$R.none() => say("parts-9-caret", "none"))

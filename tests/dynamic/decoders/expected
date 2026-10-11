@@ -36,6 +36,9 @@ measure-4-text: no element
 media-1: matches
 media-2: no match
 media-3-change: no match
+mixed: abxcd
+nested: abcd
+outermost: z
 parts-1-select: selected
 parts-2-start-id: length 005
 parts-3-end-id: length 005
@@ -46,6 +49,10 @@ parts-7-measure: measured
 parts-8-point-id: length 005
 parts-9-caret: offset 002
 parts-a-click: payload length 015
+parts-b-refused: refused
+parts-c-nested: selected
+parts-d-mixed: selected
+parts-e-point-outer: length 009
 parts: 第12章
 permission-1: granted
 permission-2: not asked
@@ -78,5 +85,9 @@ selection empty
 selection select "2章"
 selection empty
 selection select "第12章"
+selection empty
+selection select "bc"
+selection empty
+selection select "ab"
 [bats:warn] hello
 [bats:error] hello

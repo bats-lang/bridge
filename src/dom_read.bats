@@ -49,9 +49,12 @@ staload "./decompress.bats"
    caret_position_from_point, get_selection_range, measure_text_offset,
    mark_range and select_range take and give offsets into the owner's
    text, and element_at_point, get_selection_range and an event's target
-   name the owner, never a part. An element with no parts is as it was:
-   its text is its text node. The attribute is the app's to set (dom's
-   Data("part")). *)
+   name the owner, never a part (an owner with no id: element_at_point
+   goes on to its nearest ancestor that has one, get_selection_range
+   gives none). A position whose container is an element, not a text
+   node, is given as it was, the offset being a child's index. An element
+   with no parts is as it was: its text is its first text node. The
+   attribute is the app's to set (dom's Data("part")). *)
 (* The offset of the caret at viewport point (x, y) in the text of the
    element that owns the position (below: text parts); none when there
    is none *)
