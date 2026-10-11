@@ -9,7 +9,10 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const dom = new JSDOM(
-  '<!DOCTYPE html><html><body><div id="bats-root"></div></body></html>',
+  '<!DOCTYPE html><html><body><div id="bats-root">' +
+  // text parts: "第", "12" and "章" of one element
+  '<p id="parts"><span id="part-1" data-part>第</span><span id="part-2" data-part>12</span>' +
+  '<span id="part-3" data-part>章</span></p></div></body></html>',
   { url: 'http://localhost/#frag', pretendToBeVisual: true });
 const win = dom.window;
 global.document = win.document;
@@ -38,7 +41,10 @@ win.matchMedia = query => ({
 });
 
 // the caret: an offset of 3, or none left of the page
-win.document.caretPositionFromPoint = x => (x < 0 ? null : { offset: 3 });
+// (a caret at x of 20 is in the second part, after its first digit)
+win.document.caretPositionFromPoint = x => (x < 0 ? null
+  : x === 20 ? { offsetNode: win.document.getElementById('part-2').firstChild, offset: 1 } : { offset: 3 });
+win.document.elementFromPoint = x => (x === 20 ? win.document.getElementById('part-2') : null);
 win.Range.prototype.getBoundingClientRect = () => ({ x: 0, y: 0 });
 const scrolls = [];
 win.Element.prototype.scrollIntoView = function (options) { scrolls.push(`${this.id} ${options.behavior}`); };
@@ -122,6 +128,8 @@ await loadWASM(readFileSync('dist/pwa/app.wasm'), root, {});
 Object.defineProperty(win.document, 'visibilityState', { value: 'hidden', configurable: true });
 for (const f of changeListeners) f({ matches: false });
 await new Promise(r => setTimeout(r, 500));
+win.document.getElementById('part-2').click();
+await new Promise(r => setTimeout(r, 100));
 
 console.log = consoleLog;
 const lines = [...root.children].map(e => `${e.id}: ${e.textContent}`).sort();

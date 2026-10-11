@@ -36,6 +36,17 @@ measure-4-text: no element
 media-1: matches
 media-2: no match
 media-3-change: no match
+parts-1-select: selected
+parts-2-start-id: length 005
+parts-3-end-id: length 005
+parts-4-start: offset 002
+parts-5-end: offset 004
+parts-6-past-end: selected
+parts-7-measure: measured
+parts-8-point-id: length 005
+parts-9-caret: offset 002
+parts-a-click: payload length 015
+parts: 第12章
 permission-1: granted
 permission-2: not asked
 permission-3: denied
@@ -63,5 +74,9 @@ selection select "ex"
 selection empty
 selection select "xt"
 selection empty
+selection empty
+selection select "2章"
+selection empty
+selection select "第12章"
 [bats:warn] hello
 [bats:error] hello

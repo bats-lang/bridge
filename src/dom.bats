@@ -75,7 +75,7 @@
 
 (* Shows text as marked (a highlight of this kind, styled with the CSS
    ::highlight(bats-mark-<kind>) pseudo-element): from offset soff of
-   element sid's first text node to offset eoff of element eid's. The
+   element sid's text to offset eoff of element eid's. The
    page is not changed; where the browser has no Custom Highlight API
    nothing is shown. *)
 #pub fun mark_range

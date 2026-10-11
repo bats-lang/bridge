@@ -9,6 +9,8 @@ staload AU = "wasm.bats-packages.dev/bridge/src/audio.bats"
 staload CL = "wasm.bats-packages.dev/bridge/src/clipboard.bats"
 staload DC = "wasm.bats-packages.dev/bridge/src/decompress.bats"
 staload DR = "wasm.bats-packages.dev/bridge/src/dom_read.bats"
+staload EV = "wasm.bats-packages.dev/bridge/src/event.bats"
+staload EV = "wasm.bats-packages.dev/bridge/src/event.bats"
 staload BF = "wasm.bats-packages.dev/bridge/src/file.bats"
 staload ID = "wasm.bats-packages.dev/bridge/src/idb.bats"
 staload ME = "wasm.bats-packages.dev/bridge/src/media.bats"
@@ -227,6 +229,51 @@ in $P.finish<$ID.stored>(put_promise, llam (outcome) => let
   val () = $A.drop<byte>(key_frozen, key)
 in $A.free<byte>($A.thaw<byte>(key_frozen)) end) end
 
+(* Text parts: element "parts" holds three parts of its text, "第", "12"
+   and "章" (check.mjs made them). A position in a part is an offset
+   into the owner's text, and a target in a part is the owner: the
+   range from 2 to 4 is "2章", its offsets come back as 2 and 4 and
+   both ends are in "parts" (5 bytes; a part's id is longer); the
+   caret and the element at a point in the second part, and a click on
+   it, name "parts" and offset 2 *)
+fn text_parts (): void = let
+  val @(parts_frozen, parts) = $A.freeze<byte>(bytes("parts"))
+  val @(ends_frozen, ends) = $A.freeze<byte>(bytes("parts"))
+  val () = show_selecting("parts-1-select", $DR.select_range(parts, 5, 2, ends, 5, 4))
+  val @(first, second) = $DR.get_selection_range()
+  val () = (case+ first of
+    | ~$R.some(id) => let val () = count("parts-2-start-id", "length", $DC.blob_len(id)) in $DC.blob_free(id) end
+    | ~$R.none() => say("parts-2-start-id", "none"))
+  val () = (case+ second of
+    | ~$R.some(id) => let val () = count("parts-3-end-id", "length", $DC.blob_len(id)) in $DC.blob_free(id) end
+    | ~$R.none() => say("parts-3-end-id", "none"))
+  val start = $DR.get_measure_x()
+  val stop = $DR.get_measure_y()
+  val () = (if start >= 0 then (if start < 1000 then count("parts-4-start", "offset", start) else say("parts-4-start", "too large")) else say("parts-4-start", "negative"))
+  val () = (if stop >= 0 then (if stop < 1000 then count("parts-5-end", "offset", stop) else say("parts-5-end", "too large")) else say("parts-5-end", "negative"))
+  val () = show_selecting("parts-6-past-end", $DR.select_range(parts, 5, 0, ends, 5, 99))
+  val () = show_measured("parts-7-measure", $DR.measure_text_offset(parts, 5, 3))
+  val () = (case+ $DR.element_at_point(20, 20) of
+    | ~$R.some(id) => let val () = count("parts-8-point-id", "length", $DC.blob_len(id)) in $DC.blob_free(id) end
+    | ~$R.none() => say("parts-8-point-id", "none"))
+  val () = (case+ $DR.caret_position_from_point(20, 20) of
+    | ~$R.some(offset) => count("parts-9-caret", "offset", offset)
+    | ~$R.none() => say("parts-9-caret", "none"))
+  (* check.mjs clicks the second part: the payload is the click's place
+     (8 bytes), the target id's length (2) and the id *)
+  val @(click_frozen, click) = $A.freeze<byte>(bytes("click"))
+  val () = $EV.listen(parts, 5, click, 5, 100, llam (payload) => let
+    val () = (case+ $EV.event_take(payload) of
+      | ~$R.some(blob) => let val () = count("parts-a-click", "payload length", $DC.blob_len(blob)) in $DC.blob_free(blob) end
+      | ~$R.none() => say("parts-a-click", "none"))
+  in 0 end)
+  val () = $A.drop<byte>(click_frozen, click)
+  val () = $A.free<byte>($A.thaw<byte>(click_frozen))
+  val () = $A.drop<byte>(ends_frozen, ends)
+  val () = $A.free<byte>($A.thaw<byte>(ends_frozen))
+  val () = $A.drop<byte>(parts_frozen, parts)
+in $A.free<byte>($A.thaw<byte>(parts_frozen)) end
+
 implement main0 () = let
   (* an element to measure and scroll to, with a text *)
   val () = say("element", "text")
@@ -277,6 +324,7 @@ implement main0 () = let
   val () = (case+ $DR.caret_position_from_point(~1, ~1) of
     | ~$R.some(offset) => count("caret-2", "offset", offset)
     | ~$R.none() => say("caret-2", "none"))
+  val () = text_parts()
   val url = $A.alloc<byte>(64)
   val () = count("url-1", "length", $NV.get_url(url, 64))
   val () = $A.free<byte>(url)
