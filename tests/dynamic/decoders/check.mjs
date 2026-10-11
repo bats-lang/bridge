@@ -16,6 +16,7 @@ const dom = new JSDOM(
   // parts of parts, and an element with no parts but two text nodes
   '<p id="nested"><span data-part>a<span data-part>b</span>c</span>d</p>' +
   '<p id="mixed">ab<b>x</b>cd</p>' +
+  '<p id="inline"><b>xy</b>text</p>' +
   // a part whose owner has no id, in an element that has one
   '<div id="outermost"><p><span id="orphan" data-part>z</span></p></div>' +
   '</div></body></html>',

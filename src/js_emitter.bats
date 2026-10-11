@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 106706 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 106706] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 106817 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 106817] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -798,8 +798,8 @@ fn emit_js_nav {n:nat | n + 1600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom_read {n:nat | n + 4826 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4826] $B.builder(m)): void = let
+fn emit_js_dom_read {n:nat | n + 4950 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4950] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM read ---\n")
   val () = $B.bput(b,"\n")
@@ -896,7 +896,8 @@ fn emit_js_dom_read {n:nat | n + 4826 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    if (!el || !el.firstChild) return -1;\n")
   val () = $B.bput(b,"    try {\n")
   val () = $B.bput(b,"      const range = document.createRange();\n")
-  val () = $B.bput(b,"      const point = textPointAt(el, offset);\n")
+  val () = $B.bput(b,"      const first = el.firstChild;\n")
+  val () = $B.bput(b,"      const point = partsIn(el) ? textPointAt(el, offset) : { node: first, off: Math.min(offset, (first.textContent || '').length) };\n")
   val () = $B.bput(b,"      range.setStart(point.node, point.off);\n")
   val () = $B.bput(b,"      range.collapse(true);\n")
   val () = $B.bput(b,"      const rect = range.getBoundingClientRect();\n")
@@ -1666,8 +1667,8 @@ fn emit_js_gestures {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_extra {n:nat | n + 7870 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7870] $B.builder(m)): void = let
+fn emit_js_extra {n:nat | n + 7857 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7857] $B.builder(m)): void = let
   val () = $B.bput(b,"  // --- Window listeners, clock, picked, dropped and external files ---\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  let droppedFiles = [];\n")
@@ -1806,7 +1807,7 @@ fn emit_js_extra {n:nat | n + 7870 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    CSS.highlights.delete('bats-mark-' + kind);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  // Selection: what the reader has selected, set from a range as marks are\n")
-  val () = $B.bput(b,"  // (the offsets of the element's first text node) or emptied; 1 done,\n")
+  val () = $B.bput(b,"  // (offsets into the element's text) or emptied; 1 done,\n")
   val () = $B.bput(b,"  // 0 no such element, -1 refused or no Selection API\n")
   val () = $B.bput(b,"  function selectionOf() {\n")
   val () = $B.bput(b,"    const w = root.ownerDocument.defaultView;\n")
@@ -2646,8 +2647,8 @@ fn _emit_2 {n:nat | n + 17070 <= $B.BUILDER_CAP}
   val () = emit_js_window(b)
 in end
 
-fn _emit_3 {n:nat | n + 6426 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6426] $B.builder(m)): void = let
+fn _emit_3 {n:nat | n + 6550 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6550] $B.builder(m)): void = let
   val () = emit_js_nav(b)
   val () = emit_js_dom_read(b)
 in end
@@ -2683,8 +2684,8 @@ fn _emit_8 {n:nat | n + 3300 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_10 {n:nat | n + 10370 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10370] $B.builder(m)): void = let
+fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10357] $B.builder(m)): void = let
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
@@ -2704,16 +2705,16 @@ fn _emit_9 {n:nat | n + 9680 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 44976 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 44976] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 45100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 45100] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 60810 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 60810] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 60797 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 60797] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

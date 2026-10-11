@@ -51,7 +51,7 @@ staload "./decompress.bats"
    text, and element_at_point, get_selection_range and an event's target
    name the owner, never a part (an owner with no id: element_at_point
    goes on to its nearest ancestor that has one, get_selection_range
-   gives none). A position whose container is an element, not a text
+   gives an empty blob). A position whose container is an element, not a text
    node, is given as it was, the offset being a child's index. An element
    with no parts is as it was: its text is its first text node. The
    attribute is the app's to set (dom's Data("part")). *)
@@ -88,8 +88,8 @@ staload "./decompress.bats"
 
 (* The selection's start and end offsets (into the text of the elements
    that own them) go to measure slots 0 and 1; the ids of those elements
-   are returned as blobs (none when there is no selection or the element
-   has no id) *)
+   are returned as blobs (none when there is no selection; the blob is
+   empty for an element with no id) *)
 #pub fun get_selection_range()
   : @($R.option([k:nat] dblob(k)), $R.option([k:nat] dblob(k)))
 
