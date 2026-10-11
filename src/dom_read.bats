@@ -42,15 +42,30 @@ staload "./decompress.bats"
   (sel: !$A.borrow(byte, lb, n), sel_len: int n)
   : $R.option([k:nat] dblob(k))
 
-(* The offset of the caret at viewport point (x, y) in its text node;
-   none when there is none *)
+(* Text parts. An element with the attribute data-part is a part of the
+   text of the nearest ancestor that has none, its owner: the owner's
+   text is its own text nodes and its parts' (their parts too), in order,
+   and a position in a part is an offset into the owner's text. So
+   caret_position_from_point, get_selection_range, measure_text_offset,
+   mark_range and select_range take and give offsets into the owner's
+   text, and element_at_point, get_selection_range and an event's target
+   name the owner, never a part (an owner with no id: element_at_point
+   goes on to its nearest ancestor that has one, get_selection_range
+   gives an empty blob). A position whose container is an element, not a text
+   node, is given as it was, the offset being a child's index. An element
+   with no parts is as it was: its text is its first text node. The
+   attribute is the app's to set (dom's Data("part")). *)
+(* The offset of the caret at viewport point (x, y) in the text of the
+   element that owns the position (below: text parts); none when there
+   is none *)
 #pub fun caret_position_from_point
   (x: int, y: int): $R.option([v:nat] int v)
 
 (* The node's text content as a blob; none when there is no such node
    or its text is empty *)
 (* The id of the element at viewport point (x, y), or of its nearest
-   ancestor that has one; none when there is none *)
+   ancestor that has one, or, when that is a text part, of its owner;
+   none when there is none *)
 #pub fun element_at_point
   (x: int, y: int): $R.option([k:nat] dblob(k))
 
@@ -59,9 +74,8 @@ staload "./decompress.bats"
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni)
   : $R.option([k:nat] dblob(k))
 
-(* Where the offset-th character of the element's first text node is
-   (slots 0 and 1: x, y); NoElement when there is no such element or
-   text *)
+(* Where the offset-th UTF-16 unit of the element's text is (slots 0
+   and 1: x, y); NoElement when there is no such element or text *)
 #pub fun measure_text_offset
   {li:agz}{ni:pos}
   (node_id: !$A.borrow(byte, li, ni), id_len: int ni,
@@ -72,9 +86,10 @@ staload "./decompress.bats"
 
 #pub fun get_selection_rect(): void
 
-(* The selection's start and end offsets go to measure slots 0 and 1;
-   the ids of the elements it starts and ends in are returned as blobs
-   (none when there is no selection or the element has no id) *)
+(* The selection's start and end offsets (into the text of the elements
+   that own them) go to measure slots 0 and 1; the ids of those elements
+   are returned as blobs (none when there is no selection; the blob is
+   empty for an element with no id) *)
 #pub fun get_selection_range()
   : @($R.option([k:nat] dblob(k)), $R.option([k:nat] dblob(k)))
 
@@ -97,7 +112,7 @@ staload "./decompress.bats"
 #pub fun selection_available(): bool
 
 (* Selects the range from offset soff (UTF-16 code units) of element
-   sid's first text node to offset eoff of element eid's, as mark_range
+   sid's text to offset eoff of element eid's, as mark_range
    takes them (an offset past the text is its end), replacing the
    selection (Selection.removeAllRanges, then addRange). An end before
    the start gives the range the DOM makes of it (collapsed at the end).

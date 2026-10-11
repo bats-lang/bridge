@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 104690 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 104690] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 106817 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 106817] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -798,8 +798,8 @@ fn emit_js_nav {n:nat | n + 1600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom_read {n:nat | n + 4740 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4740] $B.builder(m)): void = let
+fn emit_js_dom_read {n:nat | n + 4950 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4950] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM read ---\n")
   val () = $B.bput(b,"\n")
@@ -837,11 +837,11 @@ fn emit_js_dom_read {n:nat | n + 4740 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    try {\n")
   val () = $B.bput(b,"      if (document.caretPositionFromPoint) {\n")
   val () = $B.bput(b,"        const pos = document.caretPositionFromPoint(x, y);\n")
-  val () = $B.bput(b,"        return pos ? pos.offset : -1;\n")
+  val () = $B.bput(b,"        return pos ? textOffsetOf(pos.offsetNode, pos.offset) : -1;\n")
   val () = $B.bput(b,"      }\n")
   val () = $B.bput(b,"      if (document.caretRangeFromPoint) {\n")
   val () = $B.bput(b,"        const range = document.caretRangeFromPoint(x, y);\n")
-  val () = $B.bput(b,"        return range ? range.startOffset : -1;\n")
+  val () = $B.bput(b,"        return range ? textOffsetOf(range.startContainer, range.startOffset) : -1;\n")
   val () = $B.bput(b,"      }\n")
   val () = $B.bput(b,"      return -1;\n")
   val () = $B.bput(b,"    } catch(e) { return -1; }\n")
@@ -896,9 +896,9 @@ fn emit_js_dom_read {n:nat | n + 4740 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    if (!el || !el.firstChild) return -1;\n")
   val () = $B.bput(b,"    try {\n")
   val () = $B.bput(b,"      const range = document.createRange();\n")
-  val () = $B.bput(b,"      const textNode = el.firstChild;\n")
-  val () = $B.bput(b,"      const clampOff = Math.min(offset, (textNode.textContent || '').length);\n")
-  val () = $B.bput(b,"      range.setStart(textNode, clampOff);\n")
+  val () = $B.bput(b,"      const first = el.firstChild;\n")
+  val () = $B.bput(b,"      const point = partsIn(el) ? textPointAt(el, offset) : { node: first, off: Math.min(offset, (first.textContent || '').length) };\n")
+  val () = $B.bput(b,"      range.setStart(point.node, point.off);\n")
   val () = $B.bput(b,"      range.collapse(true);\n")
   val () = $B.bput(b,"      const rect = range.getBoundingClientRect();\n")
   val () = $B.bput(b,"      instance.exports.bats_measure_set(0, Math.round(rect.x));\n")
@@ -938,10 +938,10 @@ fn emit_js_dom_read {n:nat | n + 4740 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      const sel = root.ownerDocument.defaultView.getSelection();\n")
   val () = $B.bput(b,"      if (!sel || sel.rangeCount === 0) return;\n")
   val () = $B.bput(b,"      const range = sel.getRangeAt(0);\n")
-  val () = $B.bput(b,"      instance.exports.bats_measure_set(0, range.startOffset);\n")
-  val () = $B.bput(b,"      instance.exports.bats_measure_set(1, range.endOffset);\n")
-  val () = $B.bput(b,"      const sc = range.startContainer.parentNode || range.startContainer;\n")
-  val () = $B.bput(b,"      const ec = range.endContainer.parentNode || range.endContainer;\n")
+  val () = $B.bput(b,"      instance.exports.bats_measure_set(0, textOffsetOf(range.startContainer, range.startOffset));\n")
+  val () = $B.bput(b,"      instance.exports.bats_measure_set(1, textOffsetOf(range.endContainer, range.endOffset));\n")
+  val () = $B.bput(b,"      const sc = ownerOf(range.startContainer.parentNode || range.startContainer);\n")
+  val () = $B.bput(b,"      const ec = ownerOf(range.endContainer.parentNode || range.endContainer);\n")
   val () = $B.bput(b,"      const sid = (sc.id || '');\n")
   val () = $B.bput(b,"      const eid = (ec.id || '');\n")
   val () = $B.bput(b,"      const sb = new TextEncoder().encode(sid);\n")
@@ -965,7 +965,7 @@ fn emit_js_event {n:nat | n + 5030 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    if (eventType === 'click' || eventType === 'dblclick' || eventType === 'contextmenu' ||\n")
   val () = $B.bput(b,"        eventType === 'pointerdown' || eventType === 'pointerup' || eventType === 'pointermove' ||\n")
   val () = $B.bput(b,"        eventType === 'focusin' || eventType === 'focusout') {\n")
-  val () = $B.bput(b,"      const targetId = (event.target && event.target.id) || '';\n")
+  val () = $B.bput(b,"      const targetId = (ownerOf(event.target) || {}).id || '';\n")
   val () = $B.bput(b,"      const idBytes = new TextEncoder().encode(targetId);\n")
   val () = $B.bput(b,"      const buf = new ArrayBuffer(8 + 2 + idBytes.length);\n")
   val () = $B.bput(b,"      const dv = new DataView(buf);\n")
@@ -1667,8 +1667,8 @@ fn emit_js_gestures {n:nat | n + 2500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_extra {n:nat | n + 5940 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5940] $B.builder(m)): void = let
+fn emit_js_extra {n:nat | n + 7857 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7857] $B.builder(m)): void = let
   val () = $B.bput(b,"  // --- Window listeners, clock, picked, dropped and external files ---\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  let droppedFiles = [];\n")
@@ -1742,20 +1742,60 @@ fn emit_js_extra {n:nat | n + 5940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  globalThis.batsExternalEarly = [];\n")
   val () = $B.bput(b,"  // Marks: text ranges shown through the CSS Custom Highlight API (no\n")
   val () = $B.bput(b,"  // DOM change), one highlight per kind; none where it is missing\n")
-  val () = $B.bput(b,"  function textNodeOf(el) {\n")
-  val () = $B.bput(b,"    for (const c of el.childNodes) if (c.nodeType === 3) return c;\n")
+  val () = $B.bput(b,"  // Text parts: an element with a data-part attribute is a part of the\n")
+  val () = $B.bput(b,"  // text of the nearest ancestor without one, its owner. A position in a\n")
+  val () = $B.bput(b,"  // part is an offset into the owner's text (its text nodes and its\n")
+  val () = $B.bput(b,"  // parts', in order), and a target in a part is the owner\n")
+  val () = $B.bput(b,"  function ownerOf(el) {\n")
+  val () = $B.bput(b,"    while (el && el.nodeType === 1 && el.hasAttribute('data-part') && el.parentElement) el = el.parentElement;\n")
   val () = $B.bput(b,"    return el;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function partsIn(el) {\n")
+  val () = $B.bput(b,"    for (const c of el.childNodes) if (c.nodeType === 1 && c.hasAttribute('data-part')) return true;\n")
+  val () = $B.bput(b,"    return false;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function partTexts(el, out) {\n")
+  val () = $B.bput(b,"    for (const c of el.childNodes) {\n")
+  val () = $B.bput(b,"      if (c.nodeType === 3) out.push(c);\n")
+  val () = $B.bput(b,"      else if (c.nodeType === 1 && c.hasAttribute('data-part')) partTexts(c, out);\n")
+  val () = $B.bput(b,"    }\n")
+  val () = $B.bput(b,"    return out;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // The text nodes of an owner's text: with no parts, its first text node\n")
+  val () = $B.bput(b,"  // alone, as it always was\n")
+  val () = $B.bput(b,"  function textNodesOf(owner) {\n")
+  val () = $B.bput(b,"    if (partsIn(owner)) return partTexts(owner, []);\n")
+  val () = $B.bput(b,"    for (const c of owner.childNodes) if (c.nodeType === 3) return [c];\n")
+  val () = $B.bput(b,"    return [];\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // The text node and the offset in it of owner's offset-th UTF-16 unit:\n")
+  val () = $B.bput(b,"  // the end of its text when past it, the owner itself when it has no text,\n")
+  val () = $B.bput(b,"  // and a negative offset as it is (for the range to refuse)\n")
+  val () = $B.bput(b,"  function textPointAt(owner, offset) {\n")
+  val () = $B.bput(b,"    const nodes = textNodesOf(owner);\n")
+  val () = $B.bput(b,"    if (offset < 0) return { node: nodes[0] || owner, off: offset };\n")
+  val () = $B.bput(b,"    let rest = offset;\n")
+  val () = $B.bput(b,"    for (const n of nodes) { if (rest <= n.length) return { node: n, off: rest }; rest -= n.length; }\n")
+  val () = $B.bput(b,"    const last = nodes[nodes.length - 1];\n")
+  val () = $B.bput(b,"    return last ? { node: last, off: last.length } : { node: owner, off: 0 };\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // A position (node, offset) of the page as an offset into its owner's text\n")
+  val () = $B.bput(b,"  function textOffsetOf(node, offset) {\n")
+  val () = $B.bput(b,"    if (!node || node.nodeType !== 3 || !node.parentElement) return offset;\n")
+  val () = $B.bput(b,"    let sum = 0;\n")
+  val () = $B.bput(b,"    for (const n of textNodesOf(ownerOf(node.parentElement))) { if (n === node) return sum + offset; sum += n.length; }\n")
+  val () = $B.bput(b,"    return offset;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsMarkRange(kind, sidPtr, sidLen, soff, eidPtr, eidLen, eoff) {\n")
   val () = $B.bput(b,"    if (typeof CSS === 'undefined' || !CSS.highlights || typeof Highlight === 'undefined') return;\n")
   val () = $B.bput(b,"    const s = getEl(readIdFromPtr(sidPtr, sidLen));\n")
   val () = $B.bput(b,"    const e = getEl(readIdFromPtr(eidPtr, eidLen));\n")
   val () = $B.bput(b,"    if (!s || !e) return;\n")
-  val () = $B.bput(b,"    const sn = textNodeOf(s), en = textNodeOf(e);\n")
+  val () = $B.bput(b,"    const sp = textPointAt(s, soff), ep = textPointAt(e, eoff);\n")
   val () = $B.bput(b,"    const range = document.createRange();\n")
   val () = $B.bput(b,"    try {\n")
-  val () = $B.bput(b,"      range.setStart(sn, Math.min(soff, sn.length || 0));\n")
-  val () = $B.bput(b,"      range.setEnd(en, Math.min(eoff, en.length || 0));\n")
+  val () = $B.bput(b,"      range.setStart(sp.node, sp.off);\n")
+  val () = $B.bput(b,"      range.setEnd(ep.node, ep.off);\n")
   val () = $B.bput(b,"    } catch (err) { return; }\n")
   val () = $B.bput(b,"    const name = 'bats-mark-' + kind;\n")
   val () = $B.bput(b,"    let h = CSS.highlights.get(name);\n")
@@ -1767,7 +1807,7 @@ fn emit_js_extra {n:nat | n + 5940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    CSS.highlights.delete('bats-mark-' + kind);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  // Selection: what the reader has selected, set from a range as marks are\n")
-  val () = $B.bput(b,"  // (the offsets of the element's first text node) or emptied; 1 done,\n")
+  val () = $B.bput(b,"  // (offsets into the element's text) or emptied; 1 done,\n")
   val () = $B.bput(b,"  // 0 no such element, -1 refused or no Selection API\n")
   val () = $B.bput(b,"  function selectionOf() {\n")
   val () = $B.bput(b,"    const w = root.ownerDocument.defaultView;\n")
@@ -1783,10 +1823,10 @@ fn emit_js_extra {n:nat | n + 5940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    try {\n")
   val () = $B.bput(b,"      const sel = selectionOf();\n")
   val () = $B.bput(b,"      if (!sel) return -1;\n")
-  val () = $B.bput(b,"      const sn = textNodeOf(s), en = textNodeOf(e);\n")
+  val () = $B.bput(b,"      const sp = textPointAt(s, soff), ep = textPointAt(e, eoff);\n")
   val () = $B.bput(b,"      const range = root.ownerDocument.createRange();\n")
-  val () = $B.bput(b,"      range.setStart(sn, Math.min(soff, sn.length || 0));\n")
-  val () = $B.bput(b,"      range.setEnd(en, Math.min(eoff, en.length || 0));\n")
+  val () = $B.bput(b,"      range.setStart(sp.node, sp.off);\n")
+  val () = $B.bput(b,"      range.setEnd(ep.node, ep.off);\n")
   val () = $B.bput(b,"      sel.removeAllRanges();\n")
   val () = $B.bput(b,"      sel.addRange(range);\n")
   val () = $B.bput(b,"      return 1;\n")
@@ -1802,7 +1842,11 @@ fn emit_js_extra {n:nat | n + 5940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsElementAtPoint(x, y) {\n")
   val () = $B.bput(b,"    let el = document.elementFromPoint(x, y);\n")
-  val () = $B.bput(b,"    while (el && !el.id) el = el.parentElement;\n")
+  val () = $B.bput(b,"    while (el) {\n")
+  val () = $B.bput(b,"      el = ownerOf(el);\n")
+  val () = $B.bput(b,"      if (el.id) break;\n")
+  val () = $B.bput(b,"      el = el.parentElement;\n")
+  val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    if (!el) return 0;\n")
   val () = $B.bput(b,"    return pendBlob(new TextEncoder().encode(el.id));\n")
   val () = $B.bput(b,"  }\n")
@@ -2603,8 +2647,8 @@ fn _emit_2 {n:nat | n + 17070 <= $B.BUILDER_CAP}
   val () = emit_js_window(b)
 in end
 
-fn _emit_3 {n:nat | n + 6340 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6340] $B.builder(m)): void = let
+fn _emit_3 {n:nat | n + 6550 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6550] $B.builder(m)): void = let
   val () = emit_js_nav(b)
   val () = emit_js_dom_read(b)
 in end
@@ -2640,8 +2684,8 @@ fn _emit_8 {n:nat | n + 3300 <= $B.BUILDER_CAP}
   val () = emit_js_scroll(b)
 in end
 
-fn _emit_10 {n:nat | n + 8440 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8440] $B.builder(m)): void = let
+fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10357] $B.builder(m)): void = let
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
@@ -2661,16 +2705,16 @@ fn _emit_9 {n:nat | n + 9680 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 44890 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 44890] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 45100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 45100] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 58880 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 58880] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 60797 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 60797] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
