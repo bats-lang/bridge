@@ -5,11 +5,11 @@
 staload DM = "wasm.bats-packages.dev/bridge/src/dom.bats"
 
 (* Gives the image "pic" a new picture: one byte of image/png *)
-fn picture_set (shade: int): void = let
+fn picture_set {v:nat | v < 256} (shade: int v): void = let
   val id = $A.alloc<byte>(3)
   val () = $A.write_text(id, 0, $A.text_lit("pic"), 3)
   val data = $A.alloc<byte>(1)
-  val () = $A.set<byte>(data, 0, $A.int2byte(g1ofg0(shade) mod 256))
+  val () = $A.set<byte>(data, 0, $A.int2byte(shade))
   val mime = $A.alloc<byte>(9)
   val () = $A.write_text(mime, 0, $A.text_lit("image/png"), 9)
   val @(id_frozen, id_bytes) = $A.freeze<byte>(id)
