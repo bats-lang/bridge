@@ -1,0 +1,3 @@
+pic shows blob:3
+revoked while the copy loads: blob:2
+revoked once it has loaded: blob:2 blob:1
