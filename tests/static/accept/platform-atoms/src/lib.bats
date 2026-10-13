@@ -9,6 +9,7 @@ staload SP = "wasm.bats-packages.dev/bridge/src/speech.sats"
 staload ST = "wasm.bats-packages.dev/bridge/src/storage.sats"
 staload AP = "wasm.bats-packages.dev/bridge/src/app.sats"
 staload TM = "wasm.bats-packages.dev/bridge/src/timer.sats"
+staload BD = "wasm.bats-packages.dev/bridge/src/decompress.sats"
 
 (* The sentences counted, each start in the text *)
 fun count {n,f:int | f <= n} .<n - f>. (s: $SP.sentences(n, f)): int =
@@ -51,8 +52,10 @@ fn f (): int = let
   val () = (if $SC.orientation_available() then
     $P.finish<$SC.lock_outcome>($SC.orientation_lock_current(), llam (lock) =>
       case+ lock of
-      | $SC.Locked() => ()
-      | $SC.LockRefused() => ()) else ())
+      | ~$SC.Locked() => ()
+      | ~$SC.LockRefused(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+      | ~$SC.LockUnavailable() => ()
+      | ~$SC.LockUnexpected(_) => ()) else ())
   val text = $A.alloc<byte>(5)
   val () = $A.write_text(text, 0, $A.text_lit("Hi. O"), 5)
   val @(frozen, borrowed) = $A.freeze<byte>(text)

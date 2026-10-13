@@ -1,0 +1,32 @@
+== the plugin locks to the orientation the screen has
+plugin lock({"orientation":"landscape-primary"})
+hash: #locked
+== in the WebView the plugin is used, never the web API that is also there
+plugin lock({"orientation":"landscape-primary"})
+hash: #locked
+== the plugin rejects with an Error: its name, message and code are kept
+plugin lock({"orientation":"landscape-primary"})
+hash: #{"name":"Error","message":"not allowed","code":"UNIMPLEMENTED"}
+== the plugin rejects with a string
+plugin lock({"orientation":"landscape-primary"})
+hash: #"refused as text"
+== the plugin rejects with nothing
+plugin lock({"orientation":"landscape-primary"})
+hash: #refused: no text
+== the plugin throws
+plugin lock({"orientation":"landscape-primary"})
+hash: #{"name":"Error","message":"threw"}
+== a browser that can lock (full screen) locks through the web API
+web lock(landscape-primary)
+hash: #locked
+== a browser that can lock, refused: the error is kept
+web lock(landscape-primary)
+hash: #{"name":"NotSupportedError"}
+== a browser that cannot lock does not offer it
+hash: #not offered
+== the plugin is there for the question and gone for the lock: unavailable, not refused
+hash: #unavailable
+== a code the bridge never gives is LockUnexpected
+plugin lock({"orientation":"landscape-primary"})
+hash: #unexpected
+done

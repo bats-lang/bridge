@@ -4,6 +4,8 @@
 staload "./event.bats"
 
 #use promise as P
+#use result as R
+staload "./decompress.bats"
 
 (* ============================================================
    Public API
@@ -14,11 +16,16 @@ staload "./event.bats"
   | FullscreenEntered
   | FullscreenLeft
 
-(* How a rotation lock ended. JS's answer is decoded here, once:
-   anything but its yes is LockRefused. *)
-#pub datatype lock_outcome =
+(* How a rotation lock ended. JS's answer is decoded here, once, and
+   each outcome is its own: the plugin's refusal keeps its error as text
+   (none when JS could not write it down), nothing to lock with is
+   apart, and a code JS never gives is LockUnexpected. Linear: it holds a
+   text. *)
+#pub datavtype lock_outcome =
   | Locked       (* the rotation is locked to the one the screen has *)
-  | LockRefused  (* refused, or it cannot be locked here *)
+  | LockRefused of $R.option([n:nat] dblob(n))  (* the call was rejected: the error as text *)
+  | LockUnavailable  (* neither the app's plugin nor the web API is here *)
+  | LockUnexpected of Int  (* a code JS never gives *)
 
 (* The screen's brightness, as brightness_get reads it. JS's answer is
    decoded here, once: anything outside 0 to 100 that is not the
@@ -132,6 +139,7 @@ extern int bats_js_system_bars(void);
 extern void bats_js_listen_system_bars(int);
 extern int bats_js_orientation_available(void);
 extern void bats_js_orientation_lock(int);
+extern int bats_js_orientation_lock_text(int);
 extern void bats_js_orientation_unlock(void);
 extern int bats_js_brightness_available(void);
 extern void bats_js_brightness_get(int);
@@ -153,6 +161,8 @@ extern fun _bats_js_orientation_available
   (): int = "mac#bats_js_orientation_available"
 extern fun _bats_js_orientation_lock
   (resolver_id: int): void = "mac#bats_js_orientation_lock"
+extern fun _bats_js_orientation_lock_text
+  (resolver_id: int): int = "mac#bats_js_orientation_lock_text"
 extern fun _bats_js_orientation_unlock
   (): void = "mac#bats_js_orientation_unlock"
 extern fun _bats_js_brightness_available
@@ -217,19 +227,32 @@ in _bats_js_listen_system_bars(listener_id) end
 
 implement orientation_available() = _bats_js_orientation_available() > 0
 
-(* JS's codes: 1 locked, 0 refused *)
-fn _lock_outcome (code: Int): lock_outcome =
-  if code = 1 then Locked() else LockRefused()
+(* JS's codes: 1 locked, 2 refused (its text kept), 0 nothing to lock with *)
+fn _lock_outcome (code: Int, resolver_id: int): lock_outcome =
+  if code = 1 then Locked()
+  else if code = 0 then LockUnavailable()
+  else if code = 2 then let
+    val handle = _bats_js_orientation_lock_text(resolver_id)
+  in
+    if handle <= 0 then LockRefused($R.none())
+    else LockRefused(blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(handle) end))
+  end
+  else LockUnexpected(code)
 
-(* An outcome nobody took: nothing to free *)
-implement $P.dispose<lock_outcome>(_) = ()
+(* An outcome nobody took: its text freed *)
+implement $P.dispose<lock_outcome>(outcome) =
+  case+ outcome of
+  | ~Locked() => ()
+  | ~LockRefused(text) => (case+ text of ~$R.some(blob) => blob_free(blob) | ~$R.none() => ())
+  | ~LockUnavailable() => ()
+  | ~LockUnexpected(_) => ()
 
 implement orientation_lock_current() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_orientation_lock(id)
 in $P.and_then<Int><lock_outcome>(p, llam (code) =>
-  $P.ret<lock_outcome>(_lock_outcome(code))) end
+  $P.ret<lock_outcome>(_lock_outcome(code, id))) end
 
 implement orientation_unlock() = _bats_js_orientation_unlock()
 
