@@ -1,0 +1,8 @@
+[package]
+name = "image-src"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""
