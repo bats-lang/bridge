@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 108017 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 108017] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 109017 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109017] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2080,8 +2080,8 @@ fn emit_js_early {n:nat | n + 1850 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"};\n")
 in end
 
-fn emit_js_screen {n:nat | n + 5000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5000] $B.builder(m)): void = let
+fn emit_js_screen {n:nat | n + 6000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6000] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Platform: the browser's APIs, or the app's (Capacitor) plugins ---\n")
   val () = $B.bput(b,"  function capNative() {\n")
@@ -2164,11 +2164,30 @@ fn emit_js_screen {n:nat | n + 5000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const o = view.screen && view.screen.orientation;\n")
   val () = $B.bput(b,"    return (o && o.type) || (view.innerWidth > view.innerHeight ? 'landscape-primary' : 'portrait-primary');\n")
   val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // The rotation lock's rejection, written down as text (googleSay's form)\n")
+  val () = $B.bput(b,"  // and kept for orientation_lock_current to take; JS decides nothing\n")
+  val () = $B.bput(b,"  const lockTexts = new Map();\n")
+  val () = $B.bput(b,"  function lockRefused(id, v) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) lockTexts.set(id, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return 2;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsOrientationLockText(id) {\n")
+  val () = $B.bput(b,"    const h = lockTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    lockTexts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // In the app the plugin is used and the web API never (the WebView has\n")
+  val () = $B.bput(b,"  // no screen.orientation.lock); the answer is 1 locked, 2 refused (its\n")
+  val () = $B.bput(b,"  // text kept), 0 neither the plugin nor the web API is there\n")
   val () = $B.bput(b,"  function batsJsOrientationLock(id) {\n")
   val () = $B.bput(b,"    const p = ")
   val () = put_plugin_call(b, PluginScreenOrientation())
-  val () = $B.bput(b,", web = orWeb();\n")
-  val () = $B.bput(b,"    settleBy(id, () => web ? view.screen.orientation.lock(orNow()) : p.lock({ orientation: orNow() }), () => 1, () => 0);\n")
+  val () = $B.bput(b,", web = !p && orWeb();\n")
+  val () = $B.bput(b,"    if (!p && !web) { settle(id, 0); return; }\n")
+  val () = $B.bput(b,"    settleBy(id, () => web ? view.screen.orientation.lock(orNow()) : p.lock({ orientation: orNow() }), () => 1, e => lockRefused(id, e));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsOrientationUnlock() {\n")
   val () = $B.bput(b,"    const p = ")
@@ -2595,6 +2614,7 @@ fn emit_js_imports_platform {n:nat | n + 3000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_listen_system_bars: l => { barsListener = l; Promise.resolve().then(barsFire); },\n")
   val () = $B.bput(b,"      bats_js_orientation_available: batsJsOrientationAvailable,\n")
   val () = $B.bput(b,"      bats_js_orientation_lock: batsJsOrientationLock,\n")
+  val () = $B.bput(b,"      bats_js_orientation_lock_text: batsJsOrientationLockText,\n")
   val () = $B.bput(b,"      bats_js_orientation_unlock: batsJsOrientationUnlock,\n")
   val () = $B.bput(b,"      bats_js_brightness_available: batsJsBrightnessAvailable,\n")
   val () = $B.bput(b,"      bats_js_brightness_get: batsJsBrightnessGet,\n")
@@ -2704,8 +2724,8 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 25340 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 25340] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 26340 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26340] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2728,8 +2748,8 @@ fn _emit_first_half {n:nat | n + 46300 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 60797 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 60797] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 61797 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61797] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
