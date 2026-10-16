@@ -1,0 +1,26 @@
+# Keeps the pins of check.yml moving through reviewed pull requests
+# (bridge#174). Dependabot's github-actions ecosystem updates an action
+# pinned by commit together with its "# vX.Y.Z" comment; the npm entry
+# updates tests/dynamic's exact versions and package-lock.json.
+#
+# Not here: the shared workflows of bats-lang/repository-prototype (the
+# daily relock.yml moves those by commit), the ATS2 tarball's commit and
+# sha256 and the runner label (moved by hand, see CLAUDE.md).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # a release is a week old before it is proposed, so a compromised one
+    # can be noticed first
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: bats-lang/*
+  - package-ecosystem: npm
+    directory: /tests/dynamic
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
