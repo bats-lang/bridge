@@ -23,16 +23,24 @@ so a commit that passes keeps passing:
   its release in a comment (`actions/checkout` and `actions/setup-node`
   at v4.4.0); the ATS2 tarball by a fixed commit of ats-lang.github.io and
   its sha256, checked before it is unpacked. The apt packages (libgmp-dev,
-  lld) are unversioned: they are bounded by the pinned runner image, not
+  lld) are unversioned: they are bounded by the pinned Ubuntu series (`ubuntu-24.04` is re-imaged about weekly), not
   pinned by version, because Ubuntu's archive drops superseded versions
-  and an exact version would fail the day a security update lands. They
-  are replaced by the setup action's own install in bats-lang/bats#287,
-  which will move bridge's ATS2 and lld install to bats's action.
+  and an exact version would fail the day a security update lands. bats-lang/bats#287
+  will move bridge's ATS2 install to bats's setup action (lld too, only if
+  that action installs it).
 * The dynamic tests' npm dependencies (jsdom, fake-indexeddb) are exact
   versions in `tests/dynamic/package.json`, and `tests/dynamic/package-lock.json`
   is committed (bridge#153): `check.yml` installs them with `npm ci`, never
   `npm install`. A dependency is changed by `npm install --package-lock-only`
   in `tests/dynamic`, in a pull request of its own.
+* What the relock does not move is moved by Dependabot
+  (`.github/dependabot.yml`, bridge#174): the actions' commits with their
+  release comments (`github-actions`) and the npm versions and lock
+  (`npm`, `tests/dynamic`), checked weekly, one pull request per update, each release
+  proposed once it is 7 days old, each running the same CI and reviewed.
+  Moved by hand, in a pull request of their own: the ATS2 tarball's commit
+  and sha256, and the runner label (`ubuntu-24.04`, moved when GitHub
+  announces its successor).
 
 Pins move only through a reviewed pull request that runs the same CI. The
 daily `relock.yml` (the shared `relock-pins.yml`) relocks against the
