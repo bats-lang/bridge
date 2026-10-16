@@ -18,6 +18,11 @@ so a commit that passes keeps passing:
   called by commit, never `@main`.
 * Node, which runs the dynamic tests, is the exact version `check.yml`
   names.
+* The dynamic tests' npm dependencies (jsdom, fake-indexeddb) are exact
+  versions in `tests/dynamic/package.json`, and `tests/dynamic/package-lock.json`
+  is committed (bridge#153): `check.yml` installs them with `npm ci`, never
+  `npm install`. A dependency is changed by `npm install --package-lock-only`
+  in `tests/dynamic`, in a pull request of its own.
 
 Pins move only through a reviewed pull request that runs the same CI. The
 daily `relock.yml` (the shared `relock-pins.yml`) relocks against the

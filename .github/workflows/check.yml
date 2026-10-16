@@ -76,5 +76,5 @@ jobs:
       - name: Dynamic tests
         run: |
           export PATH=~/bats-bin:$PATH
-          (cd tests/dynamic && npm install --no-audit --no-fund --no-package-lock)
+          (cd tests/dynamic && npm ci --no-audit --no-fund)
           tests/dynamic/run.sh ~/repository
