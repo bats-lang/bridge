@@ -7,7 +7,7 @@
 # HTML, which must match the package's `expected` file exactly.
 #
 # usage: tests/dynamic/run.sh <repository-dir>
-#   (bats and node on PATH; npm install run in tests/dynamic for jsdom)
+#   (bats and node on PATH; npm ci run in tests/dynamic for jsdom)
 set -eu
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TMP=$(mktemp -d)

@@ -11,14 +11,17 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # ubuntu-latest is ubuntu-24.04 today (runner-images README); pinned so it cannot move
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Install ATS2
         run: |
           sudo apt-get install -y -q libgmp-dev
-          curl -sL "https://raw.githubusercontent.com/ats-lang/ats-lang.github.io/master/FROZEN000/ATS-Postiats/ATS2-Postiats-gmp-0.4.2.tgz" -o /tmp/ats2.tgz
+          # the ATS2 tarball at a fixed commit of ats-lang.github.io, checked by its sha256
+          curl -sL "https://raw.githubusercontent.com/ats-lang/ats-lang.github.io/de8a182827cc560e9ca6cfba81200539fd49b546/FROZEN000/ATS-Postiats/ATS2-Postiats-gmp-0.4.2.tgz" -o /tmp/ats2.tgz
+          echo "73c64f1480df170d65aef5c7e5648677898855a2fa9ea2f3c0502f1b6d7e1b80  /tmp/ats2.tgz" | sha256sum -c -
           mkdir -p ~/.ats2
           tar -xzf /tmp/ats2.tgz -C ~/.ats2
           cd ~/.ats2/ATS2-Postiats-gmp-0.4.2
@@ -34,7 +37,7 @@ jobs:
         run: echo "bats=$(tr -d '[:space:]' < .github/bats-version)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout bats compiler
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           repository: bats-lang/bats
           ref: ${{ steps.pins.outputs.bats }}
@@ -69,12 +72,12 @@ jobs:
         run: sudo apt-get install -y -q lld
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22.23.3
 
       - name: Dynamic tests
         run: |
           export PATH=~/bats-bin:$PATH
-          (cd tests/dynamic && npm install --no-audit --no-fund --no-package-lock)
+          (cd tests/dynamic && npm ci --no-audit --no-fund)
           tests/dynamic/run.sh ~/repository

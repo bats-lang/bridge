@@ -4,4 +4,3 @@ bats_modules/
 dist/
 tests/dynamic/node_modules/
 tests/dynamic/node_modules
-tests/dynamic/package-lock.json
