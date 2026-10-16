@@ -18,6 +18,16 @@ so a commit that passes keeps passing:
   called by commit, never `@main`.
 * Node, which runs the dynamic tests, is the exact version `check.yml`
   names.
+* `check.yml`'s other inputs are pinned too (bridge#154): the runner image
+  (`ubuntu-24.04`, not `ubuntu-latest`); every action by its commit, with
+  its release in a comment (`actions/checkout` and `actions/setup-node`
+  at v4.4.0); the ATS2 tarball by a fixed commit of ats-lang.github.io and
+  its sha256, checked before it is unpacked. The apt packages (libgmp-dev,
+  lld) are unversioned: they are bounded by the pinned runner image, not
+  pinned by version, because Ubuntu's archive drops superseded versions
+  and an exact version would fail the day a security update lands. They
+  are replaced by the setup action's own install in bats-lang/bats#287,
+  which will move bridge's ATS2 and lld install to bats's action.
 * The dynamic tests' npm dependencies (jsdom, fake-indexeddb) are exact
   versions in `tests/dynamic/package.json`, and `tests/dynamic/package-lock.json`
   is committed (bridge#153): `check.yml` installs them with `npm ci`, never
