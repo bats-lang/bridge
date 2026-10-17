@@ -94,7 +94,7 @@ const tagNames = {
   27: 'not updated (aborted)', 28: 'not updated (bad batch)', 29: 'not updated (unexpected: unknown code)',
 };
 const show = bytes => {
-  const text = new TextDecoder().decode(bytes);
+  const text = new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes);
   return /^[\x20-\x7e]*$/.test(text) ? JSON.stringify(text)
     : [...bytes].map(b => b.toString(16).padStart(2, '0')).join(' ');
 };
@@ -295,6 +295,14 @@ await session('put, get, delete and list keys unchanged', async s => {
   await s.go('run 2', [op(GET, 'k1'), op(GET, 'k3'), op(KEYS, 'k')]);
   await s.go('run 3', [op(DELETE, 'k1')]);
   await s.go('run 4', [op(GET, 'k1'), op(GET, 'k2')]);
+});
+
+// a key that begins with a byte order mark (EF BB BF) reaches IndexedDB
+// with it: listing by the key's first letter finds nothing, and listing by
+// the mark finds the key with its mark
+await session('a leading byte order mark is kept in a key', async s => {
+  await s.go('run 1', [op(PUT, '﻿k', 'v')]);
+  await s.go('run 2', [op(KEYS, 'k'), op(KEYS, '﻿')]);
 });
 
 await session('a failed open is forgotten', async s => {
