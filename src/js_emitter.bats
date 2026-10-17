@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 109017 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109017] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 109045 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109045] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -35,8 +35,8 @@ fn emit_js_header {n:nat | n + 450 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"}\n")
 in end
 
-fn emit_js_loadwasm_open {n:nat | n + 1240 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1240] $B.builder(m)): void = let
+fn emit_js_loadwasm_open {n:nat | n + 1268 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1268] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"/**\n")
   val () = $B.bput(b," * Load a bats WASM module and connect it to a DOM document.\n")
@@ -61,7 +61,7 @@ fn emit_js_loadwasm_open {n:nat | n + 1240 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function readString(ptr, len) {\n")
-  val () = $B.bput(b,"    return new TextDecoder().decode(readBytes(ptr, len));\n")
+  val () = $B.bput(b,"    return new TextDecoder('utf-8', { ignoreBOM: true }).decode(readBytes(ptr, len));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Blob URL lifecycle tracking — revoked when element gets new image or is removed\n")
@@ -2677,8 +2677,8 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 16040 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16040] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 16068 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16068] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_early(b)
   val () = emit_js_loadwasm_open(b)
@@ -2752,8 +2752,8 @@ fn _emit_9 {n:nat | n + 9680 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 46300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46300] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 46328 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46328] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
