@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 109017 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109017] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 109107 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109107] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2092,8 +2092,8 @@ fn emit_js_early {n:nat | n + 1850 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"};\n")
 in end
 
-fn emit_js_screen {n:nat | n + 6000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6000] $B.builder(m)): void = let
+fn emit_js_screen {n:nat | n + 6090 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6090] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Platform: the browser's APIs, or the app's (Capacitor) plugins ---\n")
   val () = $B.bput(b,"  function capNative() {\n")
@@ -2110,8 +2110,9 @@ fn emit_js_screen {n:nat | n + 6000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function settle(id, v) {\n")
   val () = $B.bput(b,"    Promise.resolve().then(() => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // err takes what f rejected with, and what ok threw: the call settles either way\n")
   val () = $B.bput(b,"  function settleBy(id, f, ok, err) {\n")
-  val () = $B.bput(b,"    Promise.resolve().then(f).then(ok, err).then(v => instance.exports.bats_on_permission_result(id, v));\n")
+  val () = $B.bput(b,"    Promise.resolve().then(f).then(ok).catch(err).then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  // An event's bytes, passed to listener l as its payload\n")
   val () = $B.bput(b,"  function fireBytes(l, bytes) {\n")
@@ -2736,8 +2737,8 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 26340 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26340] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 26430 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26430] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2760,8 +2761,8 @@ fn _emit_first_half {n:nat | n + 46300 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 61797 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61797] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 61887 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61887] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
