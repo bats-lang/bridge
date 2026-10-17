@@ -305,6 +305,13 @@ await session('a leading byte order mark is kept in a key', async s => {
   await s.go('run 2', [op(KEYS, 'k'), op(KEYS, '﻿')]);
 });
 
+// the same for a key of a write_all batch, which is decoded by its own
+// decoder (idbBatch): the key written is the one the batch named
+await session('a batch key that begins with a byte order mark is kept', async s => {
+  await s.go('batch', [op(WRITE_ALL, '', batchPut('﻿k', 'v'))]);
+  await s.go('after', [op(GET, '﻿k'), op(GET, 'k'), op(KEYS, '﻿')]);
+});
+
 await session('a failed open is forgotten', async s => {
   const calls = openFails(1);
   await s.go('run 1', [op(GET, 'a'), op(PUT, 'a', 'one')]);
