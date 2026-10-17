@@ -8,6 +8,17 @@
   run 4 #0 get "k1": absent
   run 4 #1 get "k2": found "value two"
   pending blobs left: 0
+== a leading byte order mark is kept in a key
+  run 1 #0 put ef bb bf 6b: stored
+  run 2 #0 keys "k": absent
+  run 2 #1 keys ef bb bf: found 04 00 ef bb bf 6b
+  pending blobs left: 0
+== a batch key that begins with a byte order mark is kept
+  batch #0 write_all "": stored
+  after #0 get ef bb bf 6b: found "v"
+  after #1 get "k": absent
+  after #2 keys ef bb bf: found 04 00 ef bb bf 6b
+  pending blobs left: 0
 == a failed open is forgotten
   run 1 #0 get "a": unreadable (no database), unexpected, name "Error", message "blocked"
   run 1 #1 put "a": not stored

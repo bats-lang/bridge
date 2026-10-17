@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 109017 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109017] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 109180 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109180] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -35,8 +35,8 @@ fn emit_js_header {n:nat | n + 450 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"}\n")
 in end
 
-fn emit_js_loadwasm_open {n:nat | n + 1240 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1240] $B.builder(m)): void = let
+fn emit_js_loadwasm_open {n:nat | n + 1268 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1268] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"/**\n")
   val () = $B.bput(b," * Load a bats WASM module and connect it to a DOM document.\n")
@@ -61,7 +61,7 @@ fn emit_js_loadwasm_open {n:nat | n + 1240 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  function readString(ptr, len) {\n")
-  val () = $B.bput(b,"    return new TextDecoder().decode(readBytes(ptr, len));\n")
+  val () = $B.bput(b,"    return new TextDecoder('utf-8', { ignoreBOM: true }).decode(readBytes(ptr, len));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Blob URL lifecycle tracking — revoked when element gets new image or is removed\n")
@@ -75,8 +75,8 @@ fn emit_js_loadwasm_open {n:nat | n + 1240 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_dom {n:nat | n + 12500 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12500] $B.builder(m)): void = let
+fn emit_js_dom {n:nat | n + 12528 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12528] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM helpers ---\n")
   val () = $B.bput(b,"\n")
@@ -97,7 +97,7 @@ fn emit_js_dom {n:nat | n + 12500 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- DOM flush ---\n")
-  val () = $B.bput(b,"  const _dec = new TextDecoder();\n")
+  val () = $B.bput(b,"  const _dec = new TextDecoder('utf-8', { ignoreBOM: true });\n")
   val () = $B.bput(b,"  function readStr(mem, base, off) {\n")
   val () = $B.bput(b,"    const len = mem[base + off] | (mem[base + off + 1] << 8);\n")
   val () = $B.bput(b,"    return { s: _dec.decode(mem.slice(base + off + 2, base + off + 2 + len)), len: len };\n")
@@ -520,8 +520,8 @@ fn emit_js_idb {n:nat | n + 6600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_idb_batch {n:nat | n + 4400 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4400] $B.builder(m)): void = let
+fn emit_js_idb_batch {n:nat | n + 4417 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4417] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // IDB get prefix: every entry whose key starts with the prefix, read in\n")
   val () = $B.bput(b,"  // one readonly transaction. The key range is exactly the keys that\n")
@@ -586,7 +586,7 @@ fn emit_js_idb_batch {n:nat | n + 4400 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  // and for a put u32le value length, value), or null when it is malformed\n")
   val () = $B.bput(b,"  function idbBatch(bytes) {\n")
   val () = $B.bput(b,"    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);\n")
-  val () = $B.bput(b,"    const decoder = new TextDecoder('utf-8', { fatal: true });\n")
+  val () = $B.bput(b,"    const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });\n")
   val () = $B.bput(b,"    const ops = [];\n")
   val () = $B.bput(b,"    let at = 0;\n")
   val () = $B.bput(b,"    while (at < bytes.length) {\n")
@@ -2092,8 +2092,8 @@ fn emit_js_early {n:nat | n + 1850 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"};\n")
 in end
 
-fn emit_js_screen {n:nat | n + 6000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6000] $B.builder(m)): void = let
+fn emit_js_screen {n:nat | n + 6090 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6090] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Platform: the browser's APIs, or the app's (Capacitor) plugins ---\n")
   val () = $B.bput(b,"  function capNative() {\n")
@@ -2110,8 +2110,9 @@ fn emit_js_screen {n:nat | n + 6000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function settle(id, v) {\n")
   val () = $B.bput(b,"    Promise.resolve().then(() => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // err takes what f rejected with, and what ok threw: the call settles either way\n")
   val () = $B.bput(b,"  function settleBy(id, f, ok, err) {\n")
-  val () = $B.bput(b,"    Promise.resolve().then(f).then(ok, err).then(v => instance.exports.bats_on_permission_result(id, v));\n")
+  val () = $B.bput(b,"    Promise.resolve().then(f).then(ok).catch(err).then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  // An event's bytes, passed to listener l as its payload\n")
   val () = $B.bput(b,"  function fireBytes(l, bytes) {\n")
@@ -2677,16 +2678,16 @@ in end
    Main entry point: emit all JS sections
    ============================================================ *)
 
-fn _emit_1 {n:nat | n + 16040 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16040] $B.builder(m)): void = let
+fn _emit_1 {n:nat | n + 16096 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 16096] $B.builder(m)): void = let
   val () = emit_js_header(b)
   val () = emit_js_early(b)
   val () = emit_js_loadwasm_open(b)
   val () = emit_js_dom(b)
 in end
 
-fn _emit_2 {n:nat | n + 17070 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 17070] $B.builder(m)): void = let
+fn _emit_2 {n:nat | n + 17087 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 17087] $B.builder(m)): void = let
   val () = emit_js_timer(b)
   val () = emit_js_idb(b)
   val () = emit_js_idb_batch(b)
@@ -2736,8 +2737,8 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 26340 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26340] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 26430 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26430] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2752,16 +2753,16 @@ fn _emit_9 {n:nat | n + 9680 <= $B.BUILDER_CAP}
   val () = emit_js_loadwasm_close(b)
 in end
 
-fn _emit_first_half {n:nat | n + 46300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46300] $B.builder(m)): void = let
+fn _emit_first_half {n:nat | n + 46373 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 46373] $B.builder(m)): void = let
   val () = _emit_1(b)
   val () = _emit_2(b)
   val () = _emit_3(b)
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 61797 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61797] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 61887 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61887] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

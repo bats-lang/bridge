@@ -1,0 +1,12 @@
+== the plugin answers the brightness it has
+plugin getBrightness()
+hash: #brightness
+== the plugin answers, and reading the answer throws: the read still settles
+plugin getBrightness()
+hash: #unreadable
+== the plugin rejects the read
+plugin getBrightness()
+hash: #unreadable
+== the app has no ScreenBrightness plugin
+hash: #not offered
+done

@@ -20,14 +20,22 @@ so a commit that passes keeps passing:
   names.
 * `check.yml`'s other inputs are pinned too (bridge#154): the runner image
   (`ubuntu-24.04`, not `ubuntu-latest`); every action by its commit, with
-  its release in a comment (`actions/checkout` and `actions/setup-node`
-  at v4.4.0); the ATS2 tarball by a fixed commit of ats-lang.github.io and
-  its sha256, checked before it is unpacked. The apt packages (libgmp-dev,
-  lld) are unversioned: they are bounded by the pinned Ubuntu series (`ubuntu-24.04` is re-imaged about weekly), not
-  pinned by version, because Ubuntu's archive drops superseded versions
-  and an exact version would fail the day a security update lands. bats-lang/bats#287
-  will move bridge's ATS2 install to bats's setup action (lld too, only if
-  that action installs it).
+  its release in a comment (`actions/checkout` and `actions/setup-node`,
+  and the bats setup action, `bats-lang/bats/.github/actions/setup`, at
+  the commit of bats main it names, #287).
+* The bats setup action (`bats-lang/bats`, `.github/actions/setup`) is
+  what sets up a bats job: it installs libgmp-dev and lld, builds bats
+  from the checked-in `bootstrap/c` of the commit in `.github/bats-version`,
+  installs ATS2 with `bats ats2 install`, clones the package repository
+  at `.github/repository-version`, and sets the patsopt caps. Its ATS2 pin
+  is bats's (`src/ats2.bats`): the GMP build's tarball, checked by its
+  SHA-256 (`73c64f14...`) before it is unpacked, from a URL on the
+  `master` branch of ats-lang.github.io, not a fixed commit, so the
+  sha256 is what pins the tarball. The apt packages (libgmp-dev, lld) are
+  unversioned: they are bounded by the pinned Ubuntu series (`ubuntu-24.04`
+  is re-imaged about weekly), not pinned by version, because Ubuntu's
+  archive drops superseded versions and an exact version would fail the
+  day a security update lands.
 * The dynamic tests' npm dependencies (jsdom, fake-indexeddb) are exact
   versions in `tests/dynamic/package.json`, and `tests/dynamic/package-lock.json`
   is committed (bridge#153): `check.yml` installs them with `npm ci`, never
@@ -38,9 +46,10 @@ so a commit that passes keeps passing:
   release comments (`github-actions`) and the npm versions and lock
   (`npm`, `tests/dynamic`), checked weekly, one pull request per update, each release
   proposed once it is 7 days old, each running the same CI and reviewed.
-  Moved by hand, in a pull request of their own: the ATS2 tarball's commit
-  and sha256, and the runner label (`ubuntu-24.04`, moved when GitHub
-  announces its successor).
+  Moved by hand, in a pull request of their own: the bats setup action's
+  commit (Dependabot ignores `bats-lang/*`), and the runner label
+  (`ubuntu-24.04`, moved when GitHub announces its successor). The ATS2
+  tarball is not here: its pin is bats's, moved in bats.
 
 Pins move only through a reviewed pull request that runs the same CI. The
 daily `relock.yml` (the shared `relock-pins.yml`) relocks against the

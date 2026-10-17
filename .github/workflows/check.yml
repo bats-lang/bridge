@@ -11,73 +11,41 @@ on:
 
 jobs:
   check:
-    # ubuntu-latest is ubuntu-24.04 today (runner-images README); pinned so it cannot move
+    # ubuntu-24.04 is the image the runner-images README names as the default today; pinned so it cannot move
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-      - name: Install ATS2
-        run: |
-          sudo apt-get install -y -q libgmp-dev
-          # the ATS2 tarball at a fixed commit of ats-lang.github.io, checked by its sha256
-          curl -fsSL "https://raw.githubusercontent.com/ats-lang/ats-lang.github.io/de8a182827cc560e9ca6cfba81200539fd49b546/FROZEN000/ATS-Postiats/ATS2-Postiats-gmp-0.4.2.tgz" -o /tmp/ats2.tgz
-          echo "73c64f1480df170d65aef5c7e5648677898855a2fa9ea2f3c0502f1b6d7e1b80  /tmp/ats2.tgz" | sha256sum -c -
-          mkdir -p ~/.ats2
-          tar -xzf /tmp/ats2.tgz -C ~/.ats2
-          cd ~/.ats2/ATS2-Postiats-gmp-0.4.2
-          make -j$(nproc) -C src/CBOOT patsopt
-          mkdir -p bin
-          cp src/CBOOT/patsopt bin/patsopt
-          mkdir -p ~/.bats
-          ln -sf ~/.ats2/ATS2-Postiats-gmp-0.4.2 ~/.bats/ats2
-
-      # The compiler at the commit .github/bats-version pins (bats-lang/repository-prototype#269)
-      - name: Read the compiler pin
-        id: pins
-        run: echo "bats=$(tr -d '[:space:]' < .github/bats-version)" >> "$GITHUB_OUTPUT"
-
-      - name: Checkout bats compiler
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: bats-lang/bats
-          ref: ${{ steps.pins.outputs.bats }}
-          path: bats-src
+          # the setup action names a pull request's head, the merge's second parent (bats#283)
+          fetch-depth: 2
 
-      - name: Build bats from checked-in bootstrap C
-        run: |
-          cp -R bats-src/bootstrap/c ~/bats-c
-          make -j$(nproc) -C ~/bats-c PATSHOME=$HOME/.ats2/ATS2-Postiats-gmp-0.4.2 debug/bats
-          mkdir -p ~/bats-bin
-          cp ~/bats-c/debug/bats ~/bats-bin/bats
-          rm -rf bats-src
+      # What every bats repository's job runs first (bats-lang/bats#287, #274), called by commit:
+      # libgmp-dev and lld, the compiler built from bootstrap/c at .github/bats-version, the
+      # GMP build of ATS2 (bats ats2 install, the pin and its SHA-256 are bats's), the package
+      # repository at .github/repository-version (cloned to ~/repository), the commit the version
+      # names, and the patsopt caps. bats.lock is required and read by the action.
+      - name: Set up bats
+        id: bats
+        uses: bats-lang/bats/.github/actions/setup@8e978dfe7fac83726730361329c91b0e829beaad # bats 8e978df (#287)
 
       - name: bats check
-        run: |
-          export PATH=~/bats-bin:$PATH
-          # The package repository at the commit .github/repository-version pins
-          # (bats-lang/repository-prototype#269): what the lock and the test packages resolve against
-          git init -q ~/repository
-          git -C ~/repository fetch -q --depth 1 https://github.com/bats-lang/repository-prototype.git "$(tr -d '[:space:]' < .github/repository-version)"
-          git -C ~/repository checkout -q FETCH_HEAD
-          # The committed lock (bats-lang/repository-prototype#269): never relocked here
-          test -f bats.lock || { echo "::error::bats.lock is missing: run 'bats lock --repository <dir>' and commit it"; exit 1; }
-          bats check --repository ~/repository
+        env:
+          REPOSITORY: ${{ steps.bats.outputs.repository }}
+        run: bats check --repository "$REPOSITORY"
 
       - name: Static tests
-        run: |
-          export PATH=~/bats-bin:$PATH
-          tests/static/run.sh ~/repository
-
-      - name: Install lld (wasm linker)
-        run: sudo apt-get install -y -q lld
+        env:
+          REPOSITORY: ${{ steps.bats.outputs.repository }}
+        run: tests/static/run.sh "$REPOSITORY"
 
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22.23.3
 
       - name: Dynamic tests
+        env:
+          REPOSITORY: ${{ steps.bats.outputs.repository }}
         run: |
-          export PATH=~/bats-bin:$PATH
           (cd tests/dynamic && npm ci --no-audit --no-fund)
-          tests/dynamic/run.sh ~/repository
+          tests/dynamic/run.sh "$REPOSITORY"

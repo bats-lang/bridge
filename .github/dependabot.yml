@@ -4,8 +4,9 @@
 # updates tests/dynamic's exact versions and package-lock.json.
 #
 # Not here: the shared workflows of bats-lang/repository-prototype (the
-# daily relock.yml moves those by commit), the ATS2 tarball's commit and
-# sha256 and the runner label (moved by hand, see CLAUDE.md).
+# daily relock.yml moves those by commit), the bats setup action of
+# bats-lang/bats (ignored below, moved by hand) and the runner label
+# (moved by hand, see CLAUDE.md). The ATS2 tarball's pin is bats's.
 version: 2
 updates:
   - package-ecosystem: github-actions
