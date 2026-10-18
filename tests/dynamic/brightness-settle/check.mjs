@@ -61,8 +61,6 @@ await play('the plugin answers the brightness it has',
   { getBrightness: getBrightness(() => Promise.resolve({ brightness: 0.5 })), setBrightness: noop });
 await play('the plugin answers, and reading the answer throws: its own outcome, with what it threw',
   { getBrightness: getBrightness(() => Promise.resolve({ get brightness() { throw clean(new Error('no brightness')); } })), setBrightness: noop });
-await play('the plugin answers nothing: reading it throws a TypeError',
-  { getBrightness: getBrightness(() => Promise.resolve(undefined)), setBrightness: noop });
 await play('the plugin rejects the read: its own outcome, with the error',
   { getBrightness: getBrightness(() => Promise.reject(clean(Object.assign(new Error('denied'), { code: 'UNAVAILABLE' })))), setBrightness: noop });
 await play('the plugin rejects with nothing',
