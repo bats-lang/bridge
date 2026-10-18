@@ -139,7 +139,7 @@ implement plugin_package (p) =
   | PluginApp() => "@capacitor/app"
   | PluginGoogleAuthorize() => "@bats-lang/capacitor-google-authorize"
 
-(* Registry versions are exact (bridge#352, the CI-pins rule): a caret
+(* Registry versions are exact (repository-prototype#352, the CI-pins rule): a caret
    range lets an install move under a passing commit. Each is the newest
    release its caret range named on 2026-10-18, within the same major
    (npm view <package> versions) *)
