@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 109180 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109180] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 110280 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 110280] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2092,8 +2092,8 @@ fn emit_js_early {n:nat | n + 1850 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"};\n")
 in end
 
-fn emit_js_screen {n:nat | n + 6090 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6090] $B.builder(m)): void = let
+fn emit_js_screen {n:nat | n + 7090 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7090] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Platform: the browser's APIs, or the app's (Capacitor) plugins ---\n")
   val () = $B.bput(b,"  function capNative() {\n")
@@ -2215,12 +2215,32 @@ fn emit_js_screen {n:nat | n + 6090 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function batsJsBrightnessAvailable() { return ")
   val () = put_plugin_call(b, PluginScreenBrightness())
   val () = $B.bput(b," ? 1 : 0; }\n")
+  val () = $B.bput(b,"  // What a brightness read threw, as text kept for brightness_get to take\n")
+  val () = $B.bput(b,"  const brightnessTexts = new Map();\n")
+  val () = $B.bput(b,"  function brightnessSaid(id, v, code) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) brightnessTexts.set(id, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return code;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsBrightnessText(id) {\n")
+  val () = $B.bput(b,"    const h = brightnessTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    brightnessTexts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsBrightnessGet(id) {\n")
   val () = $B.bput(b,"    const p = ")
   val () = put_plugin_call(b, PluginScreenBrightness())
   val () = $B.bput(b,";\n")
-  val () = $B.bput(b,"    settleBy(id, () => p.getBrightness(),\n")
-  val () = $B.bput(b,"      r => { const v = +r.brightness; return v < 0 ? -1 : Math.round(Math.min(v, 1) * 100); }, () => -2);\n")
+  val () = $B.bput(b,"    if (!p) return settle(id, -2);\n")
+  val () = $B.bput(b,"    // a rejection and a throw of reading the answer are two outcomes, each\n")
+  val () = $B.bput(b,"    // with what was thrown written down (googleSay's form); JS decides nothing\n")
+  val () = $B.bput(b,"    Promise.resolve().then(() => p.getBrightness())\n")
+  val () = $B.bput(b,"      .then(r => { const v = +r.brightness; return v < 0 ? -1 : Math.round(Math.min(v, 1) * 100); },\n")
+  val () = $B.bput(b,"        e => brightnessSaid(id, e, -3))\n")
+  val () = $B.bput(b,"      .catch(x => brightnessSaid(id, x, -4))\n")
+  val () = $B.bput(b,"      .then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsBrightnessSet(level) {\n")
   val () = $B.bput(b,"    const p = ")
@@ -2616,8 +2636,8 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 3000 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3000] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 3100 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3100] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -2631,6 +2651,7 @@ fn emit_js_imports_platform {n:nat | n + 3000 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_orientation_unlock: batsJsOrientationUnlock,\n")
   val () = $B.bput(b,"      bats_js_brightness_available: batsJsBrightnessAvailable,\n")
   val () = $B.bput(b,"      bats_js_brightness_get: batsJsBrightnessGet,\n")
+  val () = $B.bput(b,"      bats_js_brightness_text: batsJsBrightnessText,\n")
   val () = $B.bput(b,"      bats_js_brightness_set: batsJsBrightnessSet,\n")
   val () = $B.bput(b,"      bats_js_share_available: batsJsShareAvailable,\n")
   val () = $B.bput(b,"      bats_js_share_file_available: batsJsShareFileAvailable,\n")
@@ -2737,8 +2758,8 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 26430 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 26430] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 27430 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 27430] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2746,8 +2767,8 @@ fn _emit_11 {n:nat | n + 26430 <= $B.BUILDER_CAP}
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 9680 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9680] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 9780 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9780] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2761,8 +2782,8 @@ fn _emit_first_half {n:nat | n + 46373 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 61887 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 61887] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 62987 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 62987] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

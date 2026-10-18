@@ -48,7 +48,10 @@ fn f (): int = let
     case+ reading of
     | ~$SC.Brightness(level) => let val _ = level + 0 in () end
     | ~$SC.SystemBrightness() => ()
-    | ~$SC.BrightnessUnreadable() => ())
+    | ~$SC.BrightnessUnreadable() => ()
+    | ~$SC.BrightnessRefused(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+    | ~$SC.BrightnessAnswerThrew(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+    | ~$SC.BrightnessUnexpected(_) => ())
   val () = (if $SC.orientation_available() then
     $P.finish<$SC.lock_outcome>($SC.orientation_lock_current(), llam (lock) =>
       case+ lock of
