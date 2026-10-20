@@ -1,5 +1,9 @@
 # bridge
 
+## Comments name their area by keyword
+
+A comment states its reason in one line and names the area by keyword; the detail lives in this file: search it for the keyword before changing the code.
+
 ## CI is pinned
 
 Every input to CI is pinned in the source (bats-lang/repository-prototype#269),
