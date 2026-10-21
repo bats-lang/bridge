@@ -1,12 +1,24 @@
 == the plugin answers the brightness it has
 plugin getBrightness()
 hash: #brightness
-== the plugin answers, and reading the answer throws: the read still settles
+== the plugin answers, and reading the answer throws: its own outcome, with what it threw
 plugin getBrightness()
-hash: #unreadable
-== the plugin rejects the read
+hash: #threw
+hash: #{"name":"Error","message":"no brightness"}
+== the plugin rejects the read: its own outcome, with the error
 plugin getBrightness()
-hash: #unreadable
+hash: #refused
+hash: #{"name":"Error","message":"denied","code":"UNAVAILABLE"}
+== the plugin rejects with nothing
+plugin getBrightness()
+hash: #refused: no text
+== the plugin throws as it is called
+plugin getBrightness()
+hash: #refused
+hash: #{"name":"Error","message":"threw"}
 == the app has no ScreenBrightness plugin
 hash: #not offered
+== a code the bridge never gives is BrightnessUnexpected
+plugin getBrightness()
+hash: #unexpected
 done

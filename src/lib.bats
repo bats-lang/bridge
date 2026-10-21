@@ -148,11 +148,11 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge {n:nat | n + 109180 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 109180] $B.builder(m)): void
+#pub fun produce_bridge {n:nat | n + 110280 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 110280] $B.builder(m)): void
 
-#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 111180 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 111180] $B.builder(m),
+#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 112280 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 112280] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
 (* The service worker: the shell is cached when it is installed, and

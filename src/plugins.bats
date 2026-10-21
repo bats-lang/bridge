@@ -4,7 +4,7 @@
    Capacitor.Plugins[name], each behind its *_available check. This is
    the one table of those plugins: what the atoms call them (the name the
    JS reaches them by) and what the app installs for them (the npm
-   package, and where it comes from: a version range of the registry's,
+   package, and where it comes from: an exact version of the registry's,
    or a commit of a git repository's, plugin_source), or that
    Capacitor's Android runtime has it itself (plugin_origin), so the app
    installs nothing for it. The JS gets a plugin's name only
@@ -95,7 +95,7 @@ implement plugin_origin (p) =
    git repository's. Linear, as a constructor that carries data is: the
    match that reads it frees it *)
 #pub datavtype plugin_source(git:int) =
-  (* The registry's, a version range: "^8.1.0" *)
+  (* The registry's, an exact version: "8.5.3" *)
   | Registry(0) of ([s:pos | s <= 7] string s)
   (* A git repository's, on GitHub: the repository ("owner/name"), the
      full commit (40 hexadecimal digits) and the package's directory in
@@ -139,21 +139,25 @@ implement plugin_package (p) =
   | PluginApp() => "@capacitor/app"
   | PluginGoogleAuthorize() => "@bats-lang/capacitor-google-authorize"
 
+(* Registry versions are exact (repository-prototype#352, the CI-pins rule): a caret
+   range lets an install move under a passing commit. Each is the newest
+   release its caret range named on 2026-10-18, within the same major
+   (npm view <package> versions) *)
 implement plugin_source (p) =
   case+ p of
-  | PluginSystemBars() => Registry("^8.1.0")
-  | PluginScreenOrientation() => Registry("^8.0.2")
-  | PluginScreenBrightness() => Registry("^8.0.0")
-  | PluginShare() => Registry("^8.0.3")
-  | PluginFilesystem() => Registry("^8.1.3")
-  | PluginBrowser() => Registry("^8.0.5")
-  | PluginApp() => Registry("^8.1.2")
+  | PluginSystemBars() => Registry("8.5.3")
+  | PluginScreenOrientation() => Registry("8.0.2")
+  | PluginScreenBrightness() => Registry("8.0.0")
+  | PluginShare() => Registry("8.0.3")
+  | PluginFilesystem() => Registry("8.1.5")
+  | PluginBrowser() => Registry("8.0.5")
+  | PluginApp() => Registry("8.1.2")
   (* capacitor-plugins' main after its #6 (quire#334) *)
   | PluginGoogleAuthorize() => Git("bats-lang/capacitor-plugins",
       "0c5fa45f7a38a8bbce1645c912e5a81a2e495735", "/packages/google-authorize")
 
 (* The Kotlin standard library the app needs: the newest any plugin's
-   Android code is compiled with (Filesystem 8.1.3's, 2.2.20; the others
+   Android code is compiled with (Filesystem 8.1.5's, 2.2.20; the others
    are Java, Browser's, App's and GoogleAuthorize's too). An older one the app forces makes a plugin's code fail as
    it runs, missing a class of the newer library (SpillingKt, quire#223).
    A plugin added or updated here that is compiled with a newer Kotlin

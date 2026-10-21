@@ -28,8 +28,11 @@ staload "./decompress.bats"
   | LockUnexpected of Int  (* a code JS never gives *)
 
 (* The screen's brightness, as brightness_get reads it. JS's answer is
-   decoded here, once: anything outside 0 to 100 that is not the
-   system's own is BrightnessUnreadable. Linear: Brightness is boxed and
+   decoded here, once, and each outcome is its own: the plugin's
+   rejection keeps its error as text (none when JS could not write it
+   down), the plugin's answer that could not be read keeps what its
+   reading threw, and a code JS never gives is BrightnessUnexpected.
+   Nothing thrown is folded into BrightnessUnreadable. Linear: Brightness is boxed and
    there is no garbage collector, so the one consumer takes it apart
    with case+ ~, which frees it; a reading no consumer takes is freed by
    promise's dispose. *)
@@ -37,6 +40,9 @@ staload "./decompress.bats"
   | Brightness of [n:nat | n <= 100] int n  (* percent *)
   | SystemBrightness      (* the app leaves it to the system *)
   | BrightnessUnreadable  (* it cannot be read here (not the app) *)
+  | BrightnessRefused of $R.option([n:nat] dblob(n))  (* the read was rejected: the error as text *)
+  | BrightnessAnswerThrew of $R.option([n:nat] dblob(n))  (* reading the plugin's answer threw: what it threw, as text *)
+  | BrightnessUnexpected of Int  (* a code JS never gives *)
 
 (* A brightness to set: a level in percent, or the system's own. Linear,
    so the one brightness_set takes is freed there (there is no garbage
@@ -143,6 +149,7 @@ extern int bats_js_orientation_lock_text(int);
 extern void bats_js_orientation_unlock(void);
 extern int bats_js_brightness_available(void);
 extern void bats_js_brightness_get(int);
+extern int bats_js_brightness_text(int);
 extern void bats_js_brightness_set(int);
 %}
 extern fun _bats_js_fullscreen_available
@@ -169,6 +176,8 @@ extern fun _bats_js_brightness_available
   (): int = "mac#bats_js_brightness_available"
 extern fun _bats_js_brightness_get
   (resolver_id: int): void = "mac#bats_js_brightness_get"
+extern fun _bats_js_brightness_text
+  (resolver_id: int): int = "mac#bats_js_brightness_text"
 extern fun _bats_js_brightness_set
   (level: int): void = "mac#bats_js_brightness_set"
 end
@@ -258,11 +267,25 @@ implement orientation_unlock() = _bats_js_orientation_unlock()
 
 implement brightness_available() = _bats_js_brightness_available() > 0
 
-(* JS's codes: 0 to 100 percent, -1 the system's own, -2 unreadable *)
-fn _brightness_reading (code: Int): brightness_reading =
+(* What a read threw, as text: JS kept it under the call's number, and
+   none when it could not be written down *)
+fn _brightness_text (resolver_id: int): $R.option([n:nat] dblob(n)) = let
+  val handle = _bats_js_brightness_text(resolver_id)
+in
+  if handle <= 0 then $R.none()
+  else blob_claim($UNSAFE begin $UNSAFE.cast{blob_handle}(handle) end)
+end
+
+(* JS's codes: 0 to 100 percent, -1 the system's own, -2 no plugin,
+   -3 the read was rejected, -4 reading the answer threw (the text of -3
+   and -4 kept by the call's number); any other is a code JS never gives *)
+fn _brightness_reading (code: Int, resolver_id: int): brightness_reading =
   if code = ~1 then SystemBrightness()
-  else if code < 0 then BrightnessUnreadable()
-  else if code > 100 then BrightnessUnreadable()
+  else if code = ~2 then BrightnessUnreadable()
+  else if code = ~3 then BrightnessRefused(_brightness_text(resolver_id))
+  else if code = ~4 then BrightnessAnswerThrew(_brightness_text(resolver_id))
+  else if code < 0 then BrightnessUnexpected(code)
+  else if code > 100 then BrightnessUnexpected(code)
   else Brightness(code)
 
 (* A reading nobody took: freed. ATS2 resolves a template's instances
@@ -272,13 +295,16 @@ implement $P.dispose<brightness_reading>(reading) =
   | ~Brightness(_) => ()
   | ~SystemBrightness() => ()
   | ~BrightnessUnreadable() => ()
+  | ~BrightnessRefused(text) => (case+ text of ~$R.some(blob) => blob_free(blob) | ~$R.none() => ())
+  | ~BrightnessAnswerThrew(text) => (case+ text of ~$R.some(blob) => blob_free(blob) | ~$R.none() => ())
+  | ~BrightnessUnexpected(_) => ()
 
 implement brightness_get() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_brightness_get(id)
 in $P.and_then<Int><brightness_reading>(p, llam (code) =>
-  $P.ret<brightness_reading>(_brightness_reading(code))) end
+  $P.ret<brightness_reading>(_brightness_reading(code, id))) end
 
 (* JS's codes: 0 to 100 percent, -1 the system's own *)
 implement brightness_set(setting) =
