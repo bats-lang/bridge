@@ -5,8 +5,9 @@
 #
 # Not here: the shared workflows of bats-lang/repository-prototype (the
 # daily relock.yml moves those by commit), the bats setup action of
-# bats-lang/bats (ignored below, moved by hand) and the runner label
-# (moved by hand, see CLAUDE.md). The ATS2 tarball's pin is bats's.
+# bats-lang/bats (ignored by the config below, so moved by hand) and the
+# runner label (Dependabot does not track it, so moved by hand; keyword:
+# Moved by hand). The ATS2 tarball's pin is bats's.
 version: 2
 updates:
   - package-ecosystem: github-actions

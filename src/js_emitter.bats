@@ -2432,8 +2432,7 @@ fn emit_js_account {n:nat | n + 6000 <= $B.BUILDER_CAP}
 in end
 
 (* GoogleAuthorize (google_authorize.bats). JS only writes down what
-   came back, and Bats decides (CLAUDE.md, "An atom's JS only writes the
-   answer down") *)
+   came back, and Bats decides (keyword: atom's JS) *)
 fn emit_js_google_authorize {n:nat | n + 2600 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2600] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
