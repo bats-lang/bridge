@@ -48,8 +48,18 @@ so a commit that passes keeps passing:
 * What the relock does not move is moved by Dependabot
   (`.github/dependabot.yml`, bridge#174): the actions' commits with their
   release comments (`github-actions`) and the npm versions and lock
-  (`npm`, `tests/dynamic`), checked weekly, one pull request per update, each release
-  proposed once it is 7 days old, each running the same CI and reviewed.
+  (`npm`, `tests/dynamic`), checked weekly, each release proposed once it is 7
+  days old. All of its updates arrive in one pull request (owner ruling on
+  quire#795, bridge#202, as quire#799, pwa#160 and capacitor-plugins#28):
+  `.github/dependabot.yml` has one top-level `multi-ecosystem-groups` group,
+  `dependencies`, holding `schedule: interval: weekly` and `patterns: ["*"]`;
+  the `github-actions` and `npm` entries each join it with
+  `multi-ecosystem-group: dependencies` and `patterns: ["*"]` and have no
+  `schedule` of their own, since the group carries it; their cooldowns, ignores
+  and directories are unchanged. A weekly run opens one pull request for both
+  ecosystems and one `check` run, which runs the same CI and is reviewed.
+  Documentation:
+  https://docs.github.com/en/code-security/concepts/supply-chain-security/multi-ecosystem-updates
   Moved by hand, in a pull request of their own: the bats setup action's
   commit (Dependabot ignores `bats-lang/*`), and the runner label
   (`ubuntu-24.04`, moved when GitHub announces its successor). The ATS2
