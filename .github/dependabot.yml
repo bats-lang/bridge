@@ -8,12 +8,21 @@
 # bats-lang/bats (ignored by the config below, so moved by hand) and the
 # runner label (Dependabot does not track it, so moved by hand; keyword:
 # Moved by hand). The ATS2 tarball's pin is bats's.
+#
+# One pull request for all of them (bats-lang/bridge#202, as quire#799, pwa#160
+# and capacitor-plugins#28): the group below spans both ecosystems, so a weekly
+# run opens one pull request and one `check` run, not one for each update.
 version: 2
+multi-ecosystem-groups:
+  dependencies:
+    schedule:
+      interval: weekly
+    patterns: ["*"]
 updates:
   - package-ecosystem: github-actions
     directory: /
-    schedule:
-      interval: weekly
+    multi-ecosystem-group: dependencies
+    patterns: ["*"]
     # a release is a week old before it is proposed, so a compromised one
     # can be noticed first
     cooldown:
@@ -22,7 +31,7 @@ updates:
       - dependency-name: bats-lang/*
   - package-ecosystem: npm
     directory: /tests/dynamic
-    schedule:
-      interval: weekly
+    multi-ecosystem-group: dependencies
+    patterns: ["*"]
     cooldown:
       default-days: 7
