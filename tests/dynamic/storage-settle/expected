@@ -1,0 +1,47 @@
+== the platform says the storage is kept
+storage.persisted()
+storage.persisted()
+hash: #kept
+hash: #old: persisted
+== the platform says it is not kept
+storage.persisted()
+storage.persisted()
+hash: #not kept
+hash: #old: not persisted
+== the platform rejects: its own outcome, with the error
+storage.persisted()
+storage.persisted()
+hash: #refused
+hash: #{"name":"Error","message":"denied","code":"SecurityError"}
+hash: #old: not persisted
+== the platform rejects with nothing
+storage.persisted()
+storage.persisted()
+hash: #refused: no text
+hash: #old: not persisted
+== the platform throws as it is called
+storage.persisted()
+storage.persisted()
+hash: #refused
+hash: #{"name":"Error","message":"threw"}
+hash: #old: not persisted
+== the platform answers something that is no boolean
+storage.persisted()
+storage.persisted()
+hash: #odd
+hash: #"yes"
+hash: #old: not persisted
+== the platform answers nothing
+storage.persisted()
+storage.persisted()
+hash: #odd: no text
+hash: #old: not persisted
+== a code the bridge never gives is PersistUnexpected
+storage.persisted()
+storage.persisted()
+hash: #unexpected
+hash: #old: not persisted
+== the app: its storage is always kept (the platform is not asked)
+hash: #kept
+hash: #old: persisted
+done
