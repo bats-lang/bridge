@@ -16,4 +16,5 @@ fn f (): void =
     | ~$GA.SignOutRevokeFailed(text) => (case+ text of ~$R.some(blob) => $DC.blob_free(blob) | ~$R.none() => ())
     | ~$GA.SignOutLoadFailed(text) => (case+ text of ~$R.some(blob) => $DC.blob_free(blob) | ~$R.none() => ())
     | ~$GA.SignOutAnswerOdd(text) => (case+ text of ~$R.some(blob) => $DC.blob_free(blob) | ~$R.none() => ())
+    | ~$GA.SignOutAnswerUnread(text) => (case+ text of ~$R.some(blob) => $DC.blob_free(blob) | ~$R.none() => ())
     | ~$GA.SignOutUnexpected(_) => ())

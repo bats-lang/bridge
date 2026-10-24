@@ -34,10 +34,15 @@ revoke: token-2
 hash: #old: failed
 == the answer has a throwing flag
 revoke: token-1
-hash: #thrown
+hash: #unread
 hash: #{"name":"Error","message":"getter threw"}
 revoke: token-2
-hash: #old: failed
+hash: #old: signed out
+== the answer has a flag that throws nothing
+revoke: token-1
+hash: #unread: no text
+revoke: token-2
+hash: #old: signed out
 == the reader closed the window: no token, nothing to revoke
 hash: #done
 hash: #old: signed out

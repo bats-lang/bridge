@@ -47,9 +47,9 @@ staload "./decompress.bats"
   | GoogleUnavailable
 
 (* How signing out ended. Deprecated (google_account, bridge#231): it folds
-   a revoke that failed, a script that did not load and a thrown answer
-   into GoogleSignOutFailed (and an unsuccessful revoke into
-   GoogleSignedOut); sign_out_answer tells them apart. *)
+   a script that did not load and a revoke that threw into
+   GoogleSignOutFailed (and an unsuccessful revoke, an answer with no flag
+   and a flag that throws into GoogleSignedOut); sign_out_answer tells them apart. *)
 #pub datatype google_signed_out =
   | GoogleSignedOut
   | GoogleSignOutFailed
@@ -58,8 +58,8 @@ staload "./decompress.bats"
    here, once: the token revoked (or none to revoke), no way to revoke
    here, the revoke answered unsuccessful (its answer, as text), the
    sign-in script not loading (what, as text), the call rejected or thrown
-   (what, as text), an answer that tells neither (as text), and a code JS
-   never gives. The text is none when JS could not write it down. Linear
+   (what, as text), an answer that tells neither (as text), an answer whose
+   flag could not be read (what, as text), and a code JS never gives. The text is none when JS could not write it down. Linear
    (the text), so the one consumer takes it apart with case+ ~; one no
    consumer takes is freed by promise's dispose. *)
 #pub datavtype sign_out_answer =
@@ -69,6 +69,7 @@ staload "./decompress.bats"
   | SignOutLoadFailed of $R.option([n:nat] dblob(n))      (* the sign-in script did not load: what, as text *)
   | SignOutThrown of $R.option([n:nat] dblob(n))          (* the revoke was rejected or threw: what, as text *)
   | SignOutAnswerOdd of $R.option([n:nat] dblob(n))       (* the answer has no successful true or false: as text *)
+  | SignOutAnswerUnread of $R.option([n:nat] dblob(n))    (* reading the answer's successful threw: what, as text *)
   | SignOutUnexpected of Int                              (* a code JS never gives *)
 
 (* Whether a token can be asked for here: a browser (its sign-in script
@@ -193,8 +194,8 @@ fn _free_sign_out_text (text: $R.option([n:nat] dblob(n))): void =
 
 (* JS's codes: 0 revoked or nothing to revoke, 1 no way here, -2 the revoke
    answered unsuccessful, -3 the script did not load, -4 rejected or threw,
-   -5 an answer with no successful true or false (the text of -2 to -5 kept
-   by the call's number); any other is a code JS never gives *)
+   -5 an answer with no successful true or false, -6 reading the flag threw
+   (the text of -2 to -6 kept by the call's number); any other is a code JS never gives *)
 fn _sign_out_answer (code: Int, resolver_id: int): sign_out_answer =
   if code = 0 then SignOutDone()
   else if code = 1 then SignOutNotHere()
@@ -202,6 +203,7 @@ fn _sign_out_answer (code: Int, resolver_id: int): sign_out_answer =
   else if code = ~3 then SignOutLoadFailed(_sign_out_text(resolver_id))
   else if code = ~4 then SignOutThrown(_sign_out_text(resolver_id))
   else if code = ~5 then SignOutAnswerOdd(_sign_out_text(resolver_id))
+  else if code = ~6 then SignOutAnswerUnread(_sign_out_text(resolver_id))
   else SignOutUnexpected(code)
 
 (* An answer nobody took: its text freed *)
@@ -213,6 +215,7 @@ implement $P.dispose<sign_out_answer>(answer) =
   | ~SignOutLoadFailed(text) => _free_sign_out_text(text)
   | ~SignOutThrown(text) => _free_sign_out_text(text)
   | ~SignOutAnswerOdd(text) => _free_sign_out_text(text)
+  | ~SignOutAnswerUnread(text) => _free_sign_out_text(text)
   | ~SignOutUnexpected(_) => ()
 
 implement google_sign_out_answer() = let
@@ -223,8 +226,10 @@ in $P.and_then<Int><sign_out_answer>(p, llam (code) =>
   $P.ret<sign_out_answer>(_sign_out_answer(code, id))) end
 
 (* The old outcome, as it always was: signed out when the revoke was
-   answered (successful or not, or in a form with no flag) or there was
-   none to revoke, anything else GoogleSignOutFailed (the text freed) *)
+   answered (successful or not, in a form with no flag, or with a flag that
+   throws when read: the old JS never read the answer) or there was none to
+   revoke; GoogleSignOutFailed for no way here, the script not loading and
+   the revoke rejected or thrown (the text freed) *)
 fn _signed_out (answer: sign_out_answer): google_signed_out =
   case+ answer of
   | ~SignOutDone() => GoogleSignedOut()
@@ -233,6 +238,7 @@ fn _signed_out (answer: sign_out_answer): google_signed_out =
   | ~SignOutLoadFailed(text) => let val () = _free_sign_out_text(text) in GoogleSignOutFailed() end
   | ~SignOutThrown(text) => let val () = _free_sign_out_text(text) in GoogleSignOutFailed() end
   | ~SignOutAnswerOdd(text) => let val () = _free_sign_out_text(text) in GoogleSignedOut() end
+  | ~SignOutAnswerUnread(text) => let val () = _free_sign_out_text(text) in GoogleSignedOut() end
   | ~SignOutUnexpected(_) => GoogleSignOutFailed()
 
 implement google_sign_out() =

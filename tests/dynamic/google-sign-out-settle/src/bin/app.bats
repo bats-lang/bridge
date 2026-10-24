@@ -35,6 +35,7 @@ implement $P.dispose<$GA.sign_out_answer>(answer) =
   | ~$GA.SignOutLoadFailed(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
   | ~$GA.SignOutThrown(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
   | ~$GA.SignOutAnswerOdd(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+  | ~$GA.SignOutAnswerUnread(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
   | ~$GA.SignOutUnexpected(_) => ()
 
 fn say {l:agz}{n:pos | n <= 4096} (a: $A.arr(byte, l, n), n: int n): void = let
@@ -81,6 +82,10 @@ fn say_answer (answer: $GA.sign_out_answer): void =
     (case+ text of
      | ~$R.some(blob) => let val () = say_text("odd") val () = say_blob(blob) in $BD.blob_free(blob) end
      | ~$R.none() => say_text("odd: no text"))
+  | ~$GA.SignOutAnswerUnread(text) =>
+    (case+ text of
+     | ~$R.some(blob) => let val () = say_text("unread") val () = say_blob(blob) in $BD.blob_free(blob) end
+     | ~$R.none() => say_text("unread: no text"))
   | ~$GA.SignOutUnexpected(_) => say_text("unexpected")
 
 (* s's bytes in a fresh array of exactly its length *)

@@ -3,8 +3,9 @@
 // played: the app gets a token, signs out with google_sign_out_answer and
 // then, with a second token, with the old google_sign_out. Each case plays
 // the revoke differently: answered successful, answered unsuccessful,
-// answered with no flag, a throwing answer, a revoke that throws or
-// answers with a throwing getter; and a reader who closes the window (no
+// answered with no flag, a throwing answer, a revoke that throws, an answer
+// whose flag throws when read (the old form says signed out, as the old JS
+// never read the answer); and a reader who closes the window (no
 // token, nothing to revoke), the app (no way here), the sign-in script not
 // loading and a code the bridge never gives. Prints each revoke made and
 // what the app says: the outcome of google_sign_out_answer (every
@@ -93,6 +94,8 @@ await play('the revoke throws as it is called',
   () => { throw clean(new Error('threw')); });
 await play('the answer has a throwing flag',
   done => done({ get successful() { throw clean(new Error('getter threw')); } }));
+await play('the answer has a flag that throws nothing',
+  done => done({ get successful() { throw undefined; } }));
 await play('the reader closed the window: no token, nothing to revoke',
   done => done({ successful: true }), { closed: true });
 await play('the app: no way to revoke here',

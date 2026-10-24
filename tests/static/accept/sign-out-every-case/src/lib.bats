@@ -18,6 +18,7 @@ fn f (): void = let
     | ~$GA.SignOutLoadFailed(text) => (case+ text of ~$R.some(blob) => $DC.blob_free(blob) | ~$R.none() => ())
     | ~$GA.SignOutThrown(text) => (case+ text of ~$R.some(blob) => $DC.blob_free(blob) | ~$R.none() => ())
     | ~$GA.SignOutAnswerOdd(text) => (case+ text of ~$R.some(blob) => $DC.blob_free(blob) | ~$R.none() => ())
+    | ~$GA.SignOutAnswerUnread(text) => (case+ text of ~$R.some(blob) => $DC.blob_free(blob) | ~$R.none() => ())
     | ~$GA.SignOutUnexpected(_) => ())
   val () = $P.finish<$GA.google_signed_out>($GA.google_sign_out(), llam (old) =>
     case+ old of
