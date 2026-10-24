@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 110280 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 110280] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 111380 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 111380] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2250,8 +2250,8 @@ fn emit_js_screen {n:nat | n + 7090 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4200] $B.builder(m)): void = let
+fn emit_js_share {n:nat | n + 5300 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5300] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Sharing: navigator.share in a browser, else the app's Share (a file\n")
   val () = $B.bput(b,"  // through its Filesystem). 0 shared, 1 cancelled, 2 failed, 3 a file\n")
@@ -2312,6 +2312,25 @@ fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  // Installing (a browser's offer, kept from the start: batsInstall)\n")
   val () = $B.bput(b,"  let installListener = -1;\n")
   val () = $B.bput(b,"  batsInstall.changed = () => { if (installListener >= 0) instance.exports.bats_on_event(installListener, 0); };\n")
+  val () = $B.bput(b,"  // What the offer rejected with, threw, or answered that is neither accepted\n")
+  val () = $B.bput(b,"  // nor dismissed, as text (googleSay's form) kept for install_prompt_answer\n")
+  val () = $B.bput(b,"  // to take; JS decides nothing\n")
+  val () = $B.bput(b,"  const installTexts = new Map();\n")
+  val () = $B.bput(b,"  function installSaid(id, v, code) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) installTexts.set(id, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return code;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsInstallText(id) {\n")
+  val () = $B.bput(b,"    const h = installTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    installTexts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // 1 accepted, 0 dismissed, 2 there was no offer, -3 the offer was rejected\n")
+  val () = $B.bput(b,"  // or threw, -4 reading the answer threw, -5 the answer is neither accepted\n")
+  val () = $B.bput(b,"  // nor dismissed (the text of -3 to -5 kept by the call's number)\n")
   val () = $B.bput(b,"  function batsJsInstallPrompt(id) {\n")
   val () = $B.bput(b,"    const o = batsInstall.offer;\n")
   val () = $B.bput(b,"    if (!o) return settle(id, 2);\n")
@@ -2319,7 +2338,11 @@ fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    batsInstall.changed();\n")
   val () = $B.bput(b,"    let shown;\n")
   val () = $B.bput(b,"    try { shown = o.prompt(); } catch (e) { shown = Promise.reject(e); }\n")
-  val () = $B.bput(b,"    settleBy(id, () => Promise.resolve(shown).then(() => o.userChoice), c => c && c.outcome === 'accepted' ? 1 : 0, () => 2);\n")
+  val () = $B.bput(b,"    Promise.resolve(shown).then(() => o.userChoice)\n")
+  val () = $B.bput(b,"      .then(c => { const r = c.outcome; return r === 'accepted' ? 1 : r === 'dismissed' ? 0 : installSaid(id, r, -5); },\n")
+  val () = $B.bput(b,"        e => installSaid(id, e, -3))\n")
+  val () = $B.bput(b,"      .catch(x => installSaid(id, x, -4))\n")
+  val () = $B.bput(b,"      .then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Files the system opens with the app (the manifest's file_handlers,\n")
@@ -2635,8 +2658,8 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 3100 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3100] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 3160 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3160] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -2679,6 +2702,7 @@ fn emit_js_imports_platform {n:nat | n + 3100 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_storage_ask: batsJsStorageAsk,\n")
   val () = $B.bput(b,"      bats_js_install_prompt_available: () => batsInstall.offer ? 1 : 0,\n")
   val () = $B.bput(b,"      bats_js_install_prompt: batsJsInstallPrompt,\n")
+  val () = $B.bput(b,"      bats_js_install_text: batsJsInstallText,\n")
   val () = $B.bput(b,"      bats_js_listen_install_prompt: l => { installListener = l; },\n")
   val () = $B.bput(b,"      bats_js_is_ios_browser: () => navigator.standalone === false ? 1 : 0,\n")
   val () = $B.bput(b,"      bats_js_is_native_platform: () => capNative() ? 1 : 0,\n")
@@ -2757,8 +2781,8 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 27430 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 27430] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 28530 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28530] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2766,8 +2790,8 @@ fn _emit_11 {n:nat | n + 27430 <= $B.BUILDER_CAP}
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 9780 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9780] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 9840 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9840] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2781,8 +2805,8 @@ fn _emit_first_half {n:nat | n + 46373 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 62987 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 62987] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 64147 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 64147] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
