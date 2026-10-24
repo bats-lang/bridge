@@ -46,12 +46,22 @@ offer.prompt()
 hash: #odd
 hash: #"maybe"
 offer.prompt()
-hash: #old: unavailable
+hash: #old: dismissed
 == the outcome is nothing
 offer.prompt()
 hash: #odd: no text
 offer.prompt()
+hash: #old: dismissed
+== the outcome throws nothing-text when it is read
+offer.prompt()
+hash: #thrown: no text
+offer.prompt()
 hash: #old: unavailable
+== the user's choice resolves with nothing
+offer.prompt()
+hash: #odd: no text
+offer.prompt()
+hash: #old: dismissed
 == a code the bridge never gives is InstallAnswerUnexpected
 offer.prompt()
 hash: #unexpected
