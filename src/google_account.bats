@@ -46,10 +46,30 @@ staload "./decompress.bats"
   (* No way to ask here: the app, or a page with no document *)
   | GoogleUnavailable
 
-(* How signing out ended *)
+(* How signing out ended. Deprecated (google_account, bridge#231): it folds
+   a revoke that failed, a script that did not load and a thrown answer
+   into GoogleSignOutFailed (and an unsuccessful revoke into
+   GoogleSignedOut); sign_out_answer tells them apart. *)
 #pub datatype google_signed_out =
   | GoogleSignedOut
   | GoogleSignOutFailed
+
+(* How signing out ended, each outcome its own. JS's answer is decoded
+   here, once: the token revoked (or none to revoke), no way to revoke
+   here, the revoke answered unsuccessful (its answer, as text), the
+   sign-in script not loading (what, as text), the call rejected or thrown
+   (what, as text), an answer that tells neither (as text), and a code JS
+   never gives. The text is none when JS could not write it down. Linear
+   (the text), so the one consumer takes it apart with case+ ~; one no
+   consumer takes is freed by promise's dispose. *)
+#pub datavtype sign_out_answer =
+  | SignOutDone                                           (* the token was revoked, or there was none *)
+  | SignOutNotHere                                        (* no way to revoke here: the app, or a page with no document *)
+  | SignOutRevokeFailed of $R.option([n:nat] dblob(n))    (* Google answered that the revoke was not successful: its answer, as text *)
+  | SignOutLoadFailed of $R.option([n:nat] dblob(n))      (* the sign-in script did not load: what, as text *)
+  | SignOutThrown of $R.option([n:nat] dblob(n))          (* the revoke was rejected or threw: what, as text *)
+  | SignOutAnswerOdd of $R.option([n:nat] dblob(n))       (* the answer has no successful true or false: as text *)
+  | SignOutUnexpected of Int                              (* a code JS never gives *)
 
 (* Whether a token can be asked for here: a browser (its sign-in script
    is then loaded, for the click that asks); never in the app *)
@@ -65,8 +85,12 @@ staload "./decompress.bats"
    scope: !$A.borrow(byte, ls, ns), scope_len: int ns)
   : $P.promise(google_token, $P.Chained)
 
-(* Revokes the token given, so the next token is asked for anew *)
+(* Revokes the token given, so the next token is asked for anew.
+   Deprecated (google_account, bridge#231): google_sign_out_answer. *)
 #pub fun google_sign_out(): $P.promise(google_signed_out, $P.Chained)
+
+(* google_sign_out with every outcome its own *)
+#pub fun google_sign_out_answer(): $P.promise(sign_out_answer, $P.Chained)
 
 (* ============================================================
    WASM implementation
@@ -80,6 +104,7 @@ extern int bats_js_google_token_available(void);
 extern void bats_js_google_token(void*, int, void*, int, int);
 extern int bats_js_google_account(int);
 extern void bats_js_google_sign_out(int);
+extern int bats_js_google_sign_out_text(int);
 %}
 extern fun _bats_js_google_token_available
   (): int = "mac#bats_js_google_token_available"
@@ -90,6 +115,8 @@ extern fun _bats_js_google_account
   (resolver_id: int): int = "mac#bats_js_google_account"
 extern fun _bats_js_google_sign_out
   (resolver_id: int): void = "mac#bats_js_google_sign_out"
+extern fun _bats_js_google_sign_out_text
+  (resolver_id: int): int = "mac#bats_js_google_sign_out_text"
 end
 
 (* JS's code for a blob, as a handle: bridge's own atoms are the only
@@ -153,11 +180,63 @@ implement google_token_get{lc}{nc}{ls}{ns}(client_id, client_len, scope, scope_l
 in $P.and_then<Int><google_token>(p, llam (code) =>
   $P.ret<google_token>(_google_token(id, code))) end
 
-implement google_sign_out() = let
+(* What the revoke rejected with, threw or answered, as text: JS kept it
+   under the call's number, and none when it could not be written down *)
+fn _sign_out_text (resolver_id: int): $R.option([n:nat] dblob(n)) = let
+  val handle = _bats_js_google_sign_out_text(resolver_id)
+in
+  if handle <= 0 then $R.none() else _claimed(handle)
+end
+
+fn _free_sign_out_text (text: $R.option([n:nat] dblob(n))): void =
+  case+ text of ~$R.some(blob) => blob_free(blob) | ~$R.none() => ()
+
+(* JS's codes: 0 revoked or nothing to revoke, 1 no way here, -2 the revoke
+   answered unsuccessful, -3 the script did not load, -4 rejected or threw,
+   -5 an answer with no successful true or false (the text of -2 to -5 kept
+   by the call's number); any other is a code JS never gives *)
+fn _sign_out_answer (code: Int, resolver_id: int): sign_out_answer =
+  if code = 0 then SignOutDone()
+  else if code = 1 then SignOutNotHere()
+  else if code = ~2 then SignOutRevokeFailed(_sign_out_text(resolver_id))
+  else if code = ~3 then SignOutLoadFailed(_sign_out_text(resolver_id))
+  else if code = ~4 then SignOutThrown(_sign_out_text(resolver_id))
+  else if code = ~5 then SignOutAnswerOdd(_sign_out_text(resolver_id))
+  else SignOutUnexpected(code)
+
+(* An answer nobody took: its text freed *)
+implement $P.dispose<sign_out_answer>(answer) =
+  case+ answer of
+  | ~SignOutDone() => ()
+  | ~SignOutNotHere() => ()
+  | ~SignOutRevokeFailed(text) => _free_sign_out_text(text)
+  | ~SignOutLoadFailed(text) => _free_sign_out_text(text)
+  | ~SignOutThrown(text) => _free_sign_out_text(text)
+  | ~SignOutAnswerOdd(text) => _free_sign_out_text(text)
+  | ~SignOutUnexpected(_) => ()
+
+implement google_sign_out_answer() = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_google_sign_out(id)
-in $P.and_then<Int><google_signed_out>(p, llam (code) =>
-  $P.ret<google_signed_out>(if code = 0 then GoogleSignedOut() else GoogleSignOutFailed())) end
+in $P.and_then<Int><sign_out_answer>(p, llam (code) =>
+  $P.ret<sign_out_answer>(_sign_out_answer(code, id))) end
+
+(* The old outcome, as it always was: signed out when the revoke was
+   answered (successful or not, or in a form with no flag) or there was
+   none to revoke, anything else GoogleSignOutFailed (the text freed) *)
+fn _signed_out (answer: sign_out_answer): google_signed_out =
+  case+ answer of
+  | ~SignOutDone() => GoogleSignedOut()
+  | ~SignOutNotHere() => GoogleSignOutFailed()
+  | ~SignOutRevokeFailed(text) => let val () = _free_sign_out_text(text) in GoogleSignedOut() end
+  | ~SignOutLoadFailed(text) => let val () = _free_sign_out_text(text) in GoogleSignOutFailed() end
+  | ~SignOutThrown(text) => let val () = _free_sign_out_text(text) in GoogleSignOutFailed() end
+  | ~SignOutAnswerOdd(text) => let val () = _free_sign_out_text(text) in GoogleSignedOut() end
+  | ~SignOutUnexpected(_) => GoogleSignOutFailed()
+
+implement google_sign_out() =
+  $P.and_then<sign_out_answer><google_signed_out>(google_sign_out_answer(), llam (answer) =>
+    $P.ret<google_signed_out>(_signed_out(answer)))
 
 end (* #target wasm *)
