@@ -36,8 +36,11 @@ const base = src.slice(0, boot);
 // answer's -4 was, to pass InstallAnswerUnexpected through the app
 const oddCode = base.replace('installSaid(id, x, -4)', 'installSaid(id, x, -9)');
 if (oddCode === base) throw new Error('bridge.js: the answer thrown case not found');
-const real = await load(base, 'real');
-const odd = await load(oddCode, 'odd');
+// A play loads the bridge anew, so the offer and the listener of an earlier
+// one are not in it (they are module state)
+let loads = 0;
+const real = () => load(base, `real${loads++}`);
+const odd = () => load(oddCode, `odd${loads++}`);
 const wasm = readFileSync('dist/pwa/app.wasm');
 const settle = () => new Promise(r => setTimeout(r, 100));
 
@@ -52,7 +55,8 @@ const offerOf = how => ({
 });
 const chosen = outcome => ({ prompt: () => Promise.resolve(), choice: () => Promise.resolve({ outcome }) });
 
-async function play(label, how, loaded = real) {
+async function play(label, how, loadIt = real) {
+  const loaded = await loadIt();
   console.log(`== ${label}`);
   const dom = new JSDOM(
     '<!DOCTYPE html><html><body><div id="bats-root"></div></body></html>',
