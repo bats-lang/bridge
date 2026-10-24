@@ -115,5 +115,15 @@ fn f (): int = let
       | $AP.InstallAccepted() => ()
       | $AP.InstallDismissed() => ()
       | $AP.InstallUnavailable() => ()) else ())
+  val () = (if $AP.install_prompt_available() then
+    $P.finish<$AP.install_answer>($AP.install_prompt_answer(), llam (answer) =>
+      case+ answer of
+      | ~$AP.InstallAnswerAccepted() => ()
+      | ~$AP.InstallAnswerDismissed() => ()
+      | ~$AP.InstallAnswerNoOffer() => ()
+      | ~$AP.InstallAnswerRejected(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+      | ~$AP.InstallAnswerThrown(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+      | ~$AP.InstallAnswerOdd(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+      | ~$AP.InstallAnswerUnexpected(_) => ()) else ())
   val offset = $TM.timezone_offset_minutes()
 in utterance + starts + voices + offset end
