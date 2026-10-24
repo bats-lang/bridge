@@ -46,6 +46,25 @@ staload "./decompress.bats"
   (* No way to ask here: the app, or a page with no document *)
   | GoogleUnavailable
 
+(* What asking for a token came to, each outcome its own. JS's answer is
+   decoded here, once: the token (and the account's address, when Google
+   gave one), the reader closing the window, Google answering with no token
+   (its answer, as text), no way to ask here, the sign-in script not loading
+   (what, as text), the request rejected or thrown (what, as text), an
+   answer that could not be read or written down (what, as text), and a code
+   JS never gives. The text is none when JS could not write it down. Linear
+   (the blobs), so the one consumer takes it apart with case+ ~; one no
+   consumer takes is freed by promise's dispose. *)
+#pub datavtype token_answer =
+  | TokenGiven of ([n:pos] dblob(n), $R.option([k:pos] dblob(k)))   (* the access token, and the account's address *)
+  | TokenCanceled                                                   (* the reader closed Google's window or said no *)
+  | TokenRefused of $R.option([n:nat] dblob(n))                     (* Google answered with no token: its answer, as text *)
+  | TokenNotHere                                                    (* no way to ask here: the app, or a page with no document *)
+  | TokenLoadFailed of $R.option([n:nat] dblob(n))                  (* the sign-in script did not load: what, as text *)
+  | TokenThrown of $R.option([n:nat] dblob(n))                      (* the request was rejected or threw: what, as text *)
+  | TokenAnswerUnread of $R.option([n:nat] dblob(n))                (* the answer could not be read or written down: what, as text *)
+  | TokenUnexpected of Int                                          (* a code JS never gives *)
+
 (* How signing out ended. Deprecated (google_account, bridge#231): it folds
    a script that did not load and a revoke that threw into
    GoogleSignOutFailed (and an unsuccessful revoke, an answer with no flag
@@ -79,12 +98,20 @@ staload "./decompress.bats"
 (* An access token for scope[0, scope_len) (one OAuth scope, as
    https://www.googleapis.com/auth/drive.appdata), for the account the
    reader chooses in Google's window, through the web client
-   client_id[0, client_len) *)
+   client_id[0, client_len).
+   Deprecated (google_account, bridge#235): google_token_get_answer. *)
 #pub fun google_token_get
   {lc:agz}{nc:pos}{ls:agz}{ns:pos}
   (client_id: !$A.borrow(byte, lc, nc), client_len: int nc,
    scope: !$A.borrow(byte, ls, ns), scope_len: int ns)
   : $P.promise(google_token, $P.Chained)
+
+(* google_token_get with every outcome its own *)
+#pub fun google_token_get_answer
+  {lc:agz}{nc:pos}{ls:agz}{ns:pos}
+  (client_id: !$A.borrow(byte, lc, nc), client_len: int nc,
+   scope: !$A.borrow(byte, ls, ns), scope_len: int ns)
+  : $P.promise(token_answer, $P.Chained)
 
 (* Revokes the token given, so the next token is asked for anew.
    Deprecated (google_account, bridge#231): google_sign_out_answer. *)
@@ -106,6 +133,7 @@ extern void bats_js_google_token(void*, int, void*, int, int);
 extern int bats_js_google_account(int);
 extern void bats_js_google_sign_out(int);
 extern int bats_js_google_sign_out_text(int);
+extern int bats_js_google_token_text(int);
 %}
 extern fun _bats_js_google_token_available
   (): int = "mac#bats_js_google_token_available"
@@ -118,6 +146,8 @@ extern fun _bats_js_google_sign_out
   (resolver_id: int): void = "mac#bats_js_google_sign_out"
 extern fun _bats_js_google_sign_out_text
   (resolver_id: int): int = "mac#bats_js_google_sign_out_text"
+extern fun _bats_js_google_token_text
+  (resolver_id: int): int = "mac#bats_js_google_token_text"
 end
 
 (* JS's code for a blob, as a handle: bridge's own atoms are the only
@@ -134,27 +164,59 @@ fn _nonempty (code: int): $R.option([n:pos] dblob(n)) =
       else let val () = blob_free(blob) in $R.none() end
     | ~$R.none() => $R.none())
 
-(* JS's codes: the token's blob (positive), -1 no account, -2 canceled,
-   -4 not here, anything else refused. The account's address is the
-   blob JS kept for this request (bats_js_google_account), taken once *)
-fn _google_token (resolver_id: int, code: Int): google_token = let
+(* What a request for a token was rejected with, threw or was answered, as
+   text: JS kept it under the call's number, and none when it could not be
+   written down *)
+fn _token_text (resolver_id: int): $R.option([n:nat] dblob(n)) = let
+  val handle = _bats_js_google_token_text(resolver_id)
+in
+  if handle <= 0 then $R.none() else _claimed(handle)
+end
+
+fn _free_token_text (text: $R.option([n:nat] dblob(n))): void =
+  case+ text of ~$R.some(blob) => blob_free(blob) | ~$R.none() => ()
+
+(* JS's codes: the token's blob (positive), -2 the reader closed the window,
+   -3 Google answered with no token, -4 not here, -5 the script did not
+   load, -6 rejected or threw, -7 the answer could not be read or written
+   down (the text of -3, -5, -6 and -7 kept by the call's number); any other
+   is a code JS never gives. The account's address is the blob JS kept for
+   this request (bats_js_google_account), taken once *)
+fn _token_answer (resolver_id: int, code: Int): token_answer = let
   val account = _nonempty(_bats_js_google_account(resolver_id))
 in
   if code > 0 then
     (case+ _nonempty(code) of
-     | ~$R.some(token) => GoogleToken(token, account)
+     | ~$R.some(token) => TokenGiven(token, account)
      | ~$R.none() => let
          val () = (case+ account of ~$R.some(a) => blob_free(a) | ~$R.none() => ())
-       in GoogleRefused() end)
+       in TokenUnexpected(code) end)
   else let
     val () = (case+ account of ~$R.some(a) => blob_free(a) | ~$R.none() => ())
   in
-    if code = ~1 then GoogleNoAccount()
-    else if code = ~2 then GoogleCanceled()
-    else if code = ~4 then GoogleUnavailable()
-    else GoogleRefused()
+    if code = ~2 then TokenCanceled()
+    else if code = ~3 then TokenRefused(_token_text(resolver_id))
+    else if code = ~4 then TokenNotHere()
+    else if code = ~5 then TokenLoadFailed(_token_text(resolver_id))
+    else if code = ~6 then TokenThrown(_token_text(resolver_id))
+    else if code = ~7 then TokenAnswerUnread(_token_text(resolver_id))
+    else TokenUnexpected(code)
   end
 end
+
+(* An answer nobody took: its blobs are freed *)
+implement $P.dispose<token_answer>(answer) =
+  case+ answer of
+  | ~TokenGiven(token, account) => let
+      val () = blob_free(token)
+    in case+ account of ~$R.some(a) => blob_free(a) | ~$R.none() => () end
+  | ~TokenCanceled() => ()
+  | ~TokenRefused(text) => _free_token_text(text)
+  | ~TokenNotHere() => ()
+  | ~TokenLoadFailed(text) => _free_token_text(text)
+  | ~TokenThrown(text) => _free_token_text(text)
+  | ~TokenAnswerUnread(text) => _free_token_text(text)
+  | ~TokenUnexpected(_) => ()
 
 (* An answer nobody took: its blobs are freed. Before google_token_get,
    its first use. *)
@@ -172,14 +234,36 @@ implement $P.dispose<google_signed_out>(_) = ()
 
 implement google_token_available() = _bats_js_google_token_available() > 0
 
-implement google_token_get{lc}{nc}{ls}{ns}(client_id, client_len, scope, scope_len) = let
+implement google_token_get_answer{lc}{nc}{ls}{ns}(client_id, client_len, scope, scope_len) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_google_token(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(client_id) end, client_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(scope) end, scope_len, id)
-in $P.and_then<Int><google_token>(p, llam (code) =>
-  $P.ret<google_token>(_google_token(id, code))) end
+in $P.and_then<Int><token_answer>(p, llam (code) =>
+  $P.ret<token_answer>(_token_answer(id, code))) end
+
+(* The old outcome, as it always was: the token; the reader closing the
+   window is GoogleCanceled; no way here is GoogleUnavailable; Google
+   answering with no token, the script not loading, the request rejected or
+   thrown, an answer that could not be read and a code JS never gives were
+   all GoogleRefused (the text freed). GoogleNoAccount is given by no
+   platform. *)
+fn _google_token (answer: token_answer): google_token =
+  case+ answer of
+  | ~TokenGiven(token, account) => GoogleToken(token, account)
+  | ~TokenCanceled() => GoogleCanceled()
+  | ~TokenRefused(text) => let val () = _free_token_text(text) in GoogleRefused() end
+  | ~TokenNotHere() => GoogleUnavailable()
+  | ~TokenLoadFailed(text) => let val () = _free_token_text(text) in GoogleRefused() end
+  | ~TokenThrown(text) => let val () = _free_token_text(text) in GoogleRefused() end
+  | ~TokenAnswerUnread(text) => let val () = _free_token_text(text) in GoogleRefused() end
+  | ~TokenUnexpected(_) => GoogleRefused()
+
+implement google_token_get{lc}{nc}{ls}{ns}(client_id, client_len, scope, scope_len) =
+  $P.and_then<token_answer><google_token>(
+    google_token_get_answer(client_id, client_len, scope, scope_len), llam (answer) =>
+    $P.ret<google_token>(_google_token(answer)))
 
 (* What the revoke rejected with, threw or answered, as text: JS kept it
    under the call's number, and none when it could not be written down *)
