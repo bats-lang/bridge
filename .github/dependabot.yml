@@ -1,13 +1,14 @@
-# Keeps the pins of check.yml moving through reviewed pull requests
-# (bridge#174). Dependabot's github-actions ecosystem updates an action
-# pinned by commit together with its "# vX.Y.Z" comment; the npm entry
-# updates tests/dynamic's exact versions and package-lock.json.
+# Keeps the pins of this repository's workflows and of tests/dynamic moving
+# through reviewed pull requests (bridge#174). Dependabot's github-actions
+# ecosystem updates an action pinned by commit together with its "# vX.Y.Z"
+# comment; the npm entry updates tests/dynamic's exact versions and
+# package-lock.json.
 #
 # Not here: the shared workflows of bats-lang/repository-prototype (the
-# daily relock.yml moves those by commit), the bats setup action of
-# bats-lang/bats (ignored by the config below, so moved by hand) and the
-# runner label (Dependabot does not track it, so moved by hand; keyword:
-# Moved by hand). The ATS2 tarball's pin is bats's.
+# daily relock.yml moves those by commit; the check's own actions, runner
+# and Node steps are package-check.yml's) and the runner label of the
+# review-gate workflows (Dependabot does not track it, so moved by hand;
+# keyword: Moved by hand). The ATS2 tarball's pin is bats's.
 #
 # One pull request for all of them (bats-lang/bridge#202, as quire#799, pwa#160
 # and capacitor-plugins#28): the group below spans both ecosystems, so a weekly

@@ -69,7 +69,11 @@ so a commit that passes keeps passing:
   https://docs.github.com/en/code-security/concepts/supply-chain-security/multi-ecosystem-updates
   The actions and the runner label of the check are in `package-check.yml`,
   moved in repository-prototype (the relock moves the commit `check.yml`
-  names). The ATS2 tarball is not here: its pin is bats's, moved in bats.
+  names). Moved by hand, in a pull request of their own: the runner label
+  (`ubuntu-24.04`) of bridge's own `review-gate.yml` and
+  `review-gate-relay.yml`, when GitHub announces its successor, since
+  Dependabot does not track a label and nothing else moves it. The ATS2
+  tarball is not here: its pin is bats's, moved in bats.
 
 Pins move only through a reviewed pull request that runs the same CI. The
 daily `relock.yml` (the shared `relock-pins.yml`) relocks against the
