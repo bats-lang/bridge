@@ -68,6 +68,15 @@ fn say_old (old: $AP.install_outcome): void =
   | $AP.InstallDismissed() => say_text("old: dismissed")
   | $AP.InstallUnavailable() => say_text("old: unavailable")
 
+(* The old form with no offer left (the first call used it up): it says
+   unavailable. This pins InstallAnswerNoOffer to InstallUnavailable in the
+   old mapping, so an edit of that mapping fails the test *)
+fn say_old_no_offer (old: $AP.install_outcome): void =
+  case+ old of
+  | $AP.InstallAccepted() => say_text("old, no offer: accepted")
+  | $AP.InstallDismissed() => say_text("old, no offer: dismissed")
+  | $AP.InstallUnavailable() => say_text("old, no offer: unavailable")
+
 implement main0 () = let
   val () = $AP.listen_install_prompt(2, llam (offer) =>
     case+ offer of
@@ -75,6 +84,9 @@ implement main0 () = let
       $P.finish<$AP.install_outcome>($AP.install_prompt(), llam (old) => say_old(old))
     | $AP.InstallWithdrawn() => ())
 in
-  $P.finish<$AP.install_answer>($AP.install_prompt_answer(), llam (answer) =>
-    say_answer(answer))
+  $P.finish<$AP.install_answer>($AP.install_prompt_answer(), llam (answer) => let
+    val () = say_answer(answer)
+  in
+    $P.finish<$AP.install_outcome>($AP.install_prompt(), llam (old) => say_old_no_offer(old))
+  end)
 end
