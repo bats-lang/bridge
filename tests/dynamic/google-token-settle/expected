@@ -1,0 +1,62 @@
+== Google gives a token
+hash: #given
+hash: #old: token
+== the reader closes the window
+hash: #canceled
+hash: #old: canceled
+== the reader refuses access
+hash: #canceled
+hash: #old: canceled
+== Google answers with an error and no token: its own outcome, with the answer
+hash: #refused
+hash: #{"error":"invalid_client","error_description":"not registered"}
+hash: #old: refused
+== Google answers with nothing
+hash: #refused: no text
+hash: #old: refused
+== Google answers with a token that is empty
+hash: #refused
+hash: #{"access_token":"","error":"x"}
+hash: #old: refused
+== the window does not open: Google tells with an error of its own
+hash: #refused
+hash: #{"type":"popup_failed_to_open","message":"blocked"}
+hash: #old: refused
+== Google tells with an error that is no object
+hash: #refused
+hash: #"blocked"
+hash: #old: refused
+== the client throws as it is made
+hash: #thrown
+hash: #{"name":"Error","message":"made"}
+hash: #old: refused
+== the client throws as it is asked
+hash: #thrown
+hash: #{"name":"Error","message":"asked"}
+hash: #old: refused
+== the answer has a token that throws when read
+hash: #unread
+hash: #{"name":"Error","message":"getter threw"}
+hash: #old: refused
+== the answer has a token that throws nothing when read
+hash: #unread: no text
+hash: #old: refused
+== the answer has a token that cannot be written down
+hash: #unread
+hash: #{"name":"TypeError","stack":"(stack)","message":"Cannot convert a Symbol value to a string"}
+hash: #old: refused
+== the error has a type that throws when read
+hash: #unread
+hash: #{"name":"Error","message":"type threw"}
+hash: #old: refused
+== the app: no way to ask here
+hash: #not here
+hash: #old: unavailable
+== the sign-in script does not load: its own outcome, with the error
+hash: #load failed
+hash: #{"name":"Error","message":"Google sign-in did not load"}
+hash: #old: refused
+== a code the bridge never gives is TokenUnexpected
+hash: #unexpected
+hash: #old: refused
+done
