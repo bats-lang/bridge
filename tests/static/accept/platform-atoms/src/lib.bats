@@ -97,6 +97,14 @@ fn f (): int = let
       case+ kept of
       | $ST.Persisted() => ()
       | $ST.NotPersisted() => ()))
+  val () = (if $AP.is_native_platform() then () else
+    $P.finish<$ST.persist_answer>($ST.storage_persist_answer(), llam (answer) =>
+      case+ answer of
+      | ~$ST.PersistKept() => ()
+      | ~$ST.PersistNotKept() => ()
+      | ~$ST.PersistRefused(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+      | ~$ST.PersistAnswerOdd(text) => (case+ text of ~$R.some(blob) => $BD.blob_free(blob) | ~$R.none() => ())
+      | ~$ST.PersistUnexpected(_) => ()))
   val () = $AP.listen_install_prompt(2, llam (offer) =>
     case+ offer of
     | $AP.InstallOffered() => ()
