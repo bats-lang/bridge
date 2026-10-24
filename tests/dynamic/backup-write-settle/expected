@@ -1,0 +1,45 @@
+== the plugin writes the file
+write DATA backup/note: contents
+write DATA backup/note: contents
+hash: #done
+hash: #old: written
+== the plugin writes the file and answers nothing
+write DATA backup/note: contents
+write DATA backup/note: contents
+hash: #done
+hash: #old: written
+== the plugin rejects the write: its own outcome, with the error
+write DATA backup/note: contents
+write DATA backup/note: contents
+hash: #rejected
+hash: #{"name":"Error","message":"disk full"}
+hash: #old: not written
+== the plugin rejects with nothing
+write DATA backup/note: contents
+write DATA backup/note: contents
+hash: #rejected: no text
+hash: #old: not written
+== the write throws as it is called: its own outcome, with the error
+write DATA backup/note: contents
+write DATA backup/note: contents
+hash: #thrown
+hash: #{"name":"Error","message":"threw"}
+hash: #old: not written
+== the write throws nothing
+write DATA backup/note: contents
+write DATA backup/note: contents
+hash: #thrown: no text
+hash: #old: not written
+== there is no Filesystem plugin
+hash: #not here
+hash: #old: not written
+== the bytes fail to read: a thrown write
+hash: #thrown
+hash: #{"name":"Error","message":"bytes unreadable"}
+hash: #old: not written
+== a code the bridge never gives is BackupWriteUnexpected
+write DATA backup/note: contents
+write DATA backup/note: contents
+hash: #unexpected
+hash: #old: not written
+done
