@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 114240 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 114240] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 115330 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 115330] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2385,8 +2385,8 @@ fn emit_js_share {n:nat | n + 6300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_account {n:nat | n + 7590 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7590] $B.builder(m)): void = let
+fn emit_js_account {n:nat | n + 8610 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8610] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // A Google access token, in a browser, through Google's own sign-in\n")
   val () = $B.bput(b,"  // page (its Identity Services' token model, loaded when the token is\n")
@@ -2478,13 +2478,38 @@ fn emit_js_account {n:nat | n + 7590 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function batsJsBackupFileAvailable() { return ")
   val () = put_plugin_call(b, PluginFilesystem())
   val () = $B.bput(b," ? 1 : 0; }\n")
+  val () = $B.bput(b,"  // What the write rejected with or threw, as text (googleSay's form) kept\n")
+  val () = $B.bput(b,"  // for backup_file_write_answer to take; JS decides nothing. 1 written, 0 no\n")
+  val () = $B.bput(b,"  // plugin here, -2 rejected, -3 threw (the text of -2 and -3 kept by the\n")
+  val () = $B.bput(b,"  // call's number)\n")
+  val () = $B.bput(b,"  const backupWriteTexts = new Map();\n")
+  val () = $B.bput(b,"  function backupWriteSaid(id, v, code) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) backupWriteTexts.set(id, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return code;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsBackupFileWriteText(id) {\n")
+  val () = $B.bput(b,"    const h = backupWriteTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    backupWriteTexts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsBackupFileWrite(np, nl, bp, bl, id) {\n")
   val () = $B.bput(b,"    const fs = ")
   val () = put_plugin_call(b, PluginFilesystem())
   val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    if (!fs) return settle(id, 0);\n")
-  val () = $B.bput(b,"    const path = backupPath(readString(np, nl)), data = base64(readBytes(bp, bl));\n")
-  val () = $B.bput(b,"    settleBy(id, () => fs.writeFile({ path, data, directory: 'DATA', recursive: true }), () => 1, () => 0);\n")
+  val () = $B.bput(b,"    // the name and the bytes are read now (the caller lets them go when this\n")
+  val () = $B.bput(b,"    // returns); the write is called in a try of its own, so a throw is told\n")
+  val () = $B.bput(b,"    // from a rejection\n")
+  val () = $B.bput(b,"    let p;\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const path = backupPath(readString(np, nl)), data = base64(readBytes(bp, bl));\n")
+  val () = $B.bput(b,"      p = fs.writeFile({ path, data, directory: 'DATA', recursive: true });\n")
+  val () = $B.bput(b,"    } catch (x) { return settle(id, backupWriteSaid(id, x, -3)); }\n")
+  val () = $B.bput(b,"    Promise.resolve(p).then(() => 1, x => backupWriteSaid(id, x, -2))\n")
+  val () = $B.bput(b,"      .then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsBackupFileRead(np, nl, id) {\n")
   val () = $B.bput(b,"    const fs = ")
@@ -2709,8 +2734,8 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 3370 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3370] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 3440 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3440] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -2743,6 +2768,7 @@ fn emit_js_imports_platform {n:nat | n + 3370 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_google_revoke_access: batsJsGoogleRevokeAccess,\n")
   val () = $B.bput(b,"      bats_js_backup_file_available: batsJsBackupFileAvailable,\n")
   val () = $B.bput(b,"      bats_js_backup_file_write: batsJsBackupFileWrite,\n")
+  val () = $B.bput(b,"      bats_js_backup_file_write_text: batsJsBackupFileWriteText,\n")
   val () = $B.bput(b,"      bats_js_backup_file_read: batsJsBackupFileRead,\n")
   val () = $B.bput(b,"      bats_js_browser_tab_available: batsJsBrowserTabAvailable,\n")
   val () = $B.bput(b,"      bats_js_browser_tab_open: batsJsBrowserTabOpen,\n")
@@ -2835,8 +2861,8 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 31180 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 31180] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 32200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 32200] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2844,8 +2870,8 @@ fn _emit_11 {n:nat | n + 31180 <= $B.BUILDER_CAP}
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 10050 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10050] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 10120 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10120] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2859,8 +2885,8 @@ fn _emit_first_half {n:nat | n + 46373 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 67007 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 67007] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 68097 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 68097] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
