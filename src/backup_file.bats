@@ -20,10 +20,27 @@ staload "./decompress.bats"
    Public API
    ============================================================ *)
 
-(* How a write ended *)
+(* How a write ended. Deprecated (backup_file, bridge#236): it folds no
+   plugin here, a write the plugin rejected and a write that threw into
+   BackupNotWritten, and any answer of the plugin into BackupWritten;
+   backup_write_answer tells them apart. *)
 #pub datatype backup_written =
   | BackupWritten
   | BackupNotWritten  (* no plugin here, or the write failed *)
+
+(* How a write ended, each outcome its own. JS's answer is decoded here,
+   once: the plugin wrote the file, no plugin here, the plugin rejected the
+   write (what, as text), the write threw (what, as text: the call, or
+   reading the name or the bytes), and a code JS never gives. The text is
+   none when JS could not write it down. Linear (the text), so the one
+   consumer takes it apart with case+ ~; one no consumer takes is freed by
+   promise's dispose. *)
+#pub datavtype backup_write_answer =
+  | BackupWriteDone                                          (* the plugin wrote the file *)
+  | BackupWriteNotHere                                       (* no plugin here *)
+  | BackupWriteRejected of $R.option([n:nat] dblob(n))       (* the plugin rejected the write: what, as text *)
+  | BackupWriteThrown of $R.option([n:nat] dblob(n))         (* the write threw: what, as text *)
+  | BackupWriteUnexpected of Int                             (* a code JS never gives *)
 
 (* What reading a backed-up file found. None and unreadable are told
    apart: BackupNone is no such file; BackupUnreadable is one that could
@@ -38,12 +55,20 @@ staload "./decompress.bats"
 #pub fun backup_file_available(): bool
 
 (* Writes bytes[0, len) as the backed-up file name[0, name_len) (a plain
-   name: a '/' or '\' in it is made '_'), replacing it *)
+   name: a '/' or '\' in it is made '_'), replacing it.
+   Deprecated (backup_file, bridge#236): backup_file_write_answer. *)
 #pub fun backup_file_write
   {ln:agz}{nn:pos}{lb:agz}{nb:pos}
   (name: !$A.borrow(byte, ln, nn), name_len: int nn,
    bytes: !$A.borrow(byte, lb, nb), len: int nb)
   : $P.promise(backup_written, $P.Chained)
+
+(* backup_file_write with every outcome its own *)
+#pub fun backup_file_write_answer
+  {ln:agz}{nn:pos}{lb:agz}{nb:pos}
+  (name: !$A.borrow(byte, ln, nn), name_len: int nn,
+   bytes: !$A.borrow(byte, lb, nb), len: int nb)
+  : $P.promise(backup_write_answer, $P.Chained)
 
 (* Reads the backed-up file name[0, name_len) *)
 #pub fun backup_file_read
@@ -100,6 +125,7 @@ $UNSAFE begin
 %{
 extern int bats_js_backup_file_available(void);
 extern void bats_js_backup_file_write(void*, int, void*, int, int);
+extern int bats_js_backup_file_write_text(int);
 extern void bats_js_backup_file_read(void*, int, int);
 %}
 extern fun _bats_js_backup_file_available
@@ -107,6 +133,8 @@ extern fun _bats_js_backup_file_available
 extern fun _bats_js_backup_file_write
   (name: ptr, name_len: int, bytes: ptr, len: int, resolver_id: int)
   : void = "mac#bats_js_backup_file_write"
+extern fun _bats_js_backup_file_write_text
+  (resolver_id: int): int = "mac#bats_js_backup_file_write_text"
 extern fun _bats_js_backup_file_read
   (name: ptr, name_len: int, resolver_id: int)
   : void = "mac#bats_js_backup_file_read"
@@ -129,8 +157,49 @@ fn _backup_found (code: Int): backup_found =
       else let val () = blob_free(blob) in BackupUnreadable() end
     | ~$R.none() => BackupUnreadable())
 
+(* What the plugin rejected the write with, or what threw, as text: JS kept
+   it under the call's number, and none when it could not be written down *)
+fn _write_text (resolver_id: int): $R.option([n:nat] dblob(n)) = let
+  val handle = _bats_js_backup_file_write_text(resolver_id)
+in
+  if handle <= 0 then $R.none() else _claimed(handle)
+end
+
+fn _free_write_text (text: $R.option([n:nat] dblob(n))): void =
+  case+ text of ~$R.some(blob) => blob_free(blob) | ~$R.none() => ()
+
+(* JS's codes: 1 the plugin wrote the file, 0 no plugin here, -2 the plugin
+   rejected the write, -3 the write threw (the text of -2 and -3 kept by the
+   call's number); any other is a code JS never gives *)
+fn _backup_write_answer (code: Int, resolver_id: int): backup_write_answer =
+  if code = 1 then BackupWriteDone()
+  else if code = 0 then BackupWriteNotHere()
+  else if code = ~2 then BackupWriteRejected(_write_text(resolver_id))
+  else if code = ~3 then BackupWriteThrown(_write_text(resolver_id))
+  else BackupWriteUnexpected(code)
+
+(* The old outcome, as it always was: written when the plugin answered the
+   write (whatever it answered); BackupNotWritten for no plugin here, a
+   write rejected or thrown (the text freed). The one change: the name or
+   the bytes failing to read or encode threw out of the import before; it is
+   a thrown write now, so BackupNotWritten *)
+fn _written (answer: backup_write_answer): backup_written =
+  case+ answer of
+  | ~BackupWriteDone() => BackupWritten()
+  | ~BackupWriteNotHere() => BackupNotWritten()
+  | ~BackupWriteRejected(text) => let val () = _free_write_text(text) in BackupNotWritten() end
+  | ~BackupWriteThrown(text) => let val () = _free_write_text(text) in BackupNotWritten() end
+  | ~BackupWriteUnexpected(_) => BackupNotWritten()
+
 (* Answers nobody took. Before their first use. *)
 implement $P.dispose<backup_written>(_) = ()
+implement $P.dispose<backup_write_answer>(answer) =
+  case+ answer of
+  | ~BackupWriteDone() => ()
+  | ~BackupWriteNotHere() => ()
+  | ~BackupWriteRejected(text) => _free_write_text(text)
+  | ~BackupWriteThrown(text) => _free_write_text(text)
+  | ~BackupWriteUnexpected(_) => ()
 implement $P.dispose<backup_found>(found) =
   case+ found of
   | ~BackupFound(blob) => blob_free(blob)
@@ -139,14 +208,19 @@ implement $P.dispose<backup_found>(found) =
 
 implement backup_file_available() = _bats_js_backup_file_available() > 0
 
-implement backup_file_write{ln}{nn}{lb}{nb}(name, name_len, bytes, len) = let
+implement backup_file_write_answer{ln}{nn}{lb}{nb}(name, name_len, bytes, len) = let
   val @(p, r) = $P.create<Int>()
   val id = $P.stash(r)
   val () = _bats_js_backup_file_write(
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(name) end, name_len,
     $UNSAFE begin $UNSAFE.castvwtp1{ptr}(bytes) end, len, id)
-in $P.and_then<Int><backup_written>(p, llam (code) =>
-  $P.ret<backup_written>(if code = 1 then BackupWritten() else BackupNotWritten())) end
+in $P.and_then<Int><backup_write_answer>(p, llam (code) =>
+  $P.ret<backup_write_answer>(_backup_write_answer(code, id))) end
+
+implement backup_file_write{ln}{nn}{lb}{nb}(name, name_len, bytes, len) =
+  $P.and_then<backup_write_answer><backup_written>(
+    backup_file_write_answer(name, name_len, bytes, len), llam (answer) =>
+    $P.ret<backup_written>(_written(answer)))
 
 implement backup_file_read{ln}{nn}(name, name_len) = let
   val @(p, r) = $P.create<Int>()
