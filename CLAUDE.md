@@ -18,15 +18,20 @@ so a commit that passes keeps passing:
 * The package repository is fetched at the commit in
   `.github/repository-version`, so what the test packages under `tests/`
   lock (`bats lock --dev`) is pinned too.
-* `publish.yml` and `relock-pins.yml` in bats-lang/repository-prototype are
-  called by commit, never `@main`.
-* Node, which runs the dynamic tests, is the exact version `check.yml`
-  names.
-* `check.yml`'s other inputs are pinned too (bridge#154): the runner image
-  (`ubuntu-24.04`, not `ubuntu-latest`); every action by its commit, with
-  its release in a comment (`actions/checkout` and `actions/setup-node`,
-  and the bats setup action, `bats-lang/bats/.github/actions/setup`, at
-  the commit of bats main it names, #287).
+* `package-check.yml`, `publish.yml` and `relock-pins.yml` in
+  bats-lang/repository-prototype are called by commit, never `@main`:
+  `check.yml` only calls `package-check.yml` (its `uses:` line, with the
+  commit and a version comment), and the steps of the check are that shared
+  workflow's, described in repository-prototype's CLAUDE.md ("A library's
+  check.yml is a caller of package-check.yml"), not `check.yml`'s: the bats
+  setup, `bats check`, `bats test`, the static tests, and for the dynamic
+  tests valgrind, Node and `npm ci`.
+* Node, which runs the dynamic tests, is the version in `.nvmrc`, read by
+  `package-check.yml`.
+* The runner image (`ubuntu-24.04`, not `ubuntu-latest`) and every action
+  (by its commit, with its release in a comment) are pinned in
+  `package-check.yml`, at the commit `check.yml` names, so they move with that
+  commit.
 * The bats setup action (`bats-lang/bats`, `.github/actions/setup`) is
   what sets up a bats job: it installs libgmp-dev and lld, builds bats
   from the checked-in `bootstrap/c` of the commit in `.github/bats-version`,
@@ -42,12 +47,14 @@ so a commit that passes keeps passing:
   day a security update lands.
 * The dynamic tests' npm dependencies (jsdom, fake-indexeddb) are exact
   versions in `tests/dynamic/package.json`, and `tests/dynamic/package-lock.json`
-  is committed (bridge#153): `check.yml` installs them with `npm ci`, never
+  is committed: `package-check.yml` installs them with `npm ci`, never
   `npm install`. A dependency is changed by `npm install --package-lock-only`
   in `tests/dynamic`, in a pull request of its own.
 * What the relock does not move is moved by Dependabot
-  (`.github/dependabot.yml`, bridge#174): the actions' commits with their
-  release comments (`github-actions`) and the npm versions and lock
+  (`.github/dependabot.yml`): the commits of third-party actions this
+  repository's own workflows use, with their release comments
+  (`github-actions`; the check's actions are in `package-check.yml`, not
+  here) and the npm versions and lock
   (`npm`, `tests/dynamic`), checked weekly, each release proposed once it is 7
   days old. All of its updates arrive in one pull request (owner ruling on
   quire#795, bridge#202, as quire#799, pwa#160 and capacitor-plugins#28):
@@ -60,9 +67,12 @@ so a commit that passes keeps passing:
   ecosystems and one `check` run, which runs the same CI and is reviewed.
   Documentation:
   https://docs.github.com/en/code-security/concepts/supply-chain-security/multi-ecosystem-updates
-  Moved by hand, in a pull request of their own: the bats setup action's
-  commit (Dependabot ignores `bats-lang/*`), and the runner label
-  (`ubuntu-24.04`, moved when GitHub announces its successor). The ATS2
+  The actions and the runner label of the check are in `package-check.yml`,
+  moved in repository-prototype (the relock moves the commit `check.yml`
+  names). Moved by hand, in a pull request of their own: the runner label
+  (`ubuntu-24.04`) of bridge's own `review-gate.yml` and
+  `review-gate-relay.yml`, when GitHub announces its successor, since
+  Dependabot does not track a label and nothing else moves it. The ATS2
   tarball is not here: its pin is bats's, moved in bats.
 
 Pins move only through a reviewed pull request that runs the same CI. The
