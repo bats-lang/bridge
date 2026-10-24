@@ -13,8 +13,9 @@ staload AP = "wasm.bats-packages.dev/bridge/src/app.bats"
    prints each hash. The answer of install_prompt_answer is matched with
    case+, every constructor visible. The old install_prompt is called too
    (it is kept for one version, bridge#229), so an edit cannot drop it: it
-   says accepted, dismissed or unavailable, and a rejection is unavailable,
-   as it always was (bridge#186). The offer is used up by the first call,
+   says accepted, dismissed or unavailable: a rejection or a throw is unavailable
+   and an outcome that is neither accepted nor dismissed is dismissed, as they
+   always were (bridge#186). The offer is used up by the first call,
    so the old one is called when check.mjs makes the next offer, which the
    listener of the offer's coming passes. *)
 

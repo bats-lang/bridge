@@ -7,7 +7,8 @@
 // gives. Each prints the platform call made and what the app says: the
 // outcome of install_prompt_answer (every constructor) and then, on the next
 // offer of the same kind, of the old install_prompt, which says only
-// accepted, dismissed or unavailable (bridge#186, bridge#229).
+// accepted, dismissed (also for an outcome that is neither, as it always did)
+// or unavailable (bridge#186, bridge#229).
 import { JSDOM } from 'jsdom';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -96,6 +97,10 @@ await play('the outcome is neither accepted nor dismissed',
   chosen('maybe'));
 await play('the outcome is nothing',
   chosen(undefined));
+await play('the outcome throws nothing-text when it is read',
+  { prompt: () => Promise.resolve(), choice: () => Promise.resolve({ get outcome() { throw undefined; } }) });
+await play('the user\'s choice resolves with nothing',
+  { prompt: () => Promise.resolve(), choice: () => Promise.resolve(undefined) });
 await play('a code the bridge never gives is InstallAnswerUnexpected',
   { prompt: () => Promise.resolve(), choice: () => Promise.resolve({ get outcome() { throw clean(new Error('getter')); } }) }, odd);
 console.log('done');

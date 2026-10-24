@@ -2339,7 +2339,7 @@ fn emit_js_share {n:nat | n + 5300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    let shown;\n")
   val () = $B.bput(b,"    try { shown = o.prompt(); } catch (e) { shown = Promise.reject(e); }\n")
   val () = $B.bput(b,"    Promise.resolve(shown).then(() => o.userChoice)\n")
-  val () = $B.bput(b,"      .then(c => { const r = c.outcome; return r === 'accepted' ? 1 : r === 'dismissed' ? 0 : installSaid(id, r, -5); },\n")
+  val () = $B.bput(b,"      .then(c => { const r = c == null ? c : c.outcome; return r === 'accepted' ? 1 : r === 'dismissed' ? 0 : installSaid(id, r, -5); },\n")
   val () = $B.bput(b,"        e => installSaid(id, e, -3))\n")
   val () = $B.bput(b,"      .catch(x => installSaid(id, x, -4))\n")
   val () = $B.bput(b,"      .then(v => instance.exports.bats_on_permission_result(id, v));\n")

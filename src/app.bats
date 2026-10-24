@@ -153,8 +153,9 @@ implement install_prompt_answer() = let
 in $P.and_then<Int><install_answer>(p, llam (code) =>
   $P.ret<install_answer>(_install_answer(code, id))) end
 
-(* The old outcome, as it always was: accepted and dismissed, anything
-   else InstallUnavailable (the text freed) *)
+(* The old outcome, as it always was (install): accepted; dismissed, and also
+   an outcome that is neither (the old JS wrote 0 for anything but accepted);
+   InstallUnavailable for no offer and for a rejection or a throw (the text freed) *)
 fn _install_outcome (answer: install_answer): install_outcome =
   case+ answer of
   | ~InstallAnswerAccepted() => InstallAccepted()
@@ -162,7 +163,7 @@ fn _install_outcome (answer: install_answer): install_outcome =
   | ~InstallAnswerNoOffer() => InstallUnavailable()
   | ~InstallAnswerRejected(text) => let val () = _free_install_text(text) in InstallUnavailable() end
   | ~InstallAnswerThrown(text) => let val () = _free_install_text(text) in InstallUnavailable() end
-  | ~InstallAnswerOdd(text) => let val () = _free_install_text(text) in InstallUnavailable() end
+  | ~InstallAnswerOdd(text) => let val () = _free_install_text(text) in InstallDismissed() end
   | ~InstallAnswerUnexpected(_) => InstallUnavailable()
 
 implement install_prompt() =
