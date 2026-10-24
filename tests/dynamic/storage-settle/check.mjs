@@ -64,8 +64,16 @@ await play('the platform rejects with nothing',
   persisted(() => Promise.reject(undefined)));
 await play('the platform throws as it is called',
   persisted(() => { throw clean(new Error('threw')); }));
+// The one place the old storage_persisted differs from the old JS (`v ? 1 : 0`):
+// an answer the platform never gives, a truthy non-boolean. StorageManager
+// documents a Promise of a boolean only, for which the old and the new agree
+// (the first two cases). The old JS wrote 'yes' and 1 as Persisted; now they
+// are PersistAnswerOdd and the old form says NotPersisted, because JS decides
+// nothing and the truthiness is not moved to Bats (bridge#218).
 await play('the platform answers something that is no boolean',
   persisted(() => Promise.resolve('yes')));
+await play('the platform answers a number that is truthy',
+  persisted(() => Promise.resolve(1)));
 await play('the platform answers nothing',
   persisted(() => Promise.resolve(undefined)));
 await play('a code the bridge never gives is PersistUnexpected',

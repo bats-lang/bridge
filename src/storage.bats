@@ -112,8 +112,12 @@ fn _storage_ask (persist: int): $P.promise(persist_answer, $P.Chained) = let
 in $P.and_then<Int><persist_answer>(p, llam (code) =>
   $P.ret<persist_answer>(_persist_answer(code, id))) end
 
-(* The old outcome, as it always was: only a yes is Persisted, anything
-   else NotPersisted (the text freed) *)
+(* The old outcome (storage): equal to the old JS for every answer the platform
+   documents (StorageManager.persist/persisted: a Promise of a boolean): true
+   is Persisted, false NotPersisted; a rejection and a throw NotPersisted. It
+   differs only for an answer the platform never gives, a truthy non-boolean
+   (the old JS wrote `v ? 1 : 0`, so 'yes' was Persisted; now NotPersisted):
+   JS decides nothing, so the truthiness stays out of it (the text freed) *)
 fn _persist_outcome (answer: persist_answer): persist_outcome =
   case+ answer of
   | ~PersistKept() => Persisted()
