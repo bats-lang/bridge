@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 111740 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 111740] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 112790 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 112790] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2250,8 +2250,8 @@ fn emit_js_screen {n:nat | n + 7090 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 4200] $B.builder(m)): void = let
+fn emit_js_share {n:nat | n + 5200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 5200] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Sharing: navigator.share in a browser, else the app's Share (a file\n")
   val () = $B.bput(b,"  // through its Filesystem). 0 shared, 1 cancelled, 2 failed, 3 a file\n")
@@ -2303,10 +2303,33 @@ fn emit_js_share {n:nat | n + 4200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    const s = navigator.storage;\n")
   val () = $B.bput(b,"    return capNative() || (s && s.persist) ? 1 : 0;\n")
   val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // What a storage call rejected with, or answered that is no boolean, as\n")
+  val () = $B.bput(b,"  // text (googleSay's form) kept for storage_persist_answer to take; JS decides nothing\n")
+  val () = $B.bput(b,"  const storageTexts = new Map();\n")
+  val () = $B.bput(b,"  function storageSaid(id, v, code) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) storageTexts.set(id, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return code;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsStorageText(id) {\n")
+  val () = $B.bput(b,"    const h = storageTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    storageTexts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // 1 kept, 0 not kept (the platform's false), -3 the call was rejected or\n")
+  val () = $B.bput(b,"  // threw, -4 it answered something that is no boolean (the text of -3 and -4\n")
+  val () = $B.bput(b,"  // kept by the call's number)\n")
   val () = $B.bput(b,"  function batsJsStorageAsk(persist, id) {\n")
-  val () = $B.bput(b,"    const s = navigator.storage;\n")
-  val () = $B.bput(b,"    settleBy(id, () => capNative() || (persist ? s.persisted().then(p => p || s.persist()) : s.persisted()),\n")
-  val () = $B.bput(b,"      v => v ? 1 : 0, () => 0);\n")
+  val () = $B.bput(b,"    Promise.resolve().then(() => {\n")
+  val () = $B.bput(b,"      const s = navigator.storage;\n")
+  val () = $B.bput(b,"      return capNative() || (persist ? s.persisted().then(p => p || s.persist()) : s.persisted());\n")
+  val () = $B.bput(b,"    })\n")
+  val () = $B.bput(b,"      .then(v => v === true ? 1 : v === false ? 0 : storageSaid(id, v, -4),\n")
+  val () = $B.bput(b,"        e => storageSaid(id, e, -3))\n")
+  val () = $B.bput(b,"      .catch(x => storageSaid(id, x, -4))\n")
+  val () = $B.bput(b,"      .then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Installing (a browser's offer, kept from the start: batsInstall)\n")
@@ -2661,8 +2684,8 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 3200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3200] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 3250 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3250] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -2704,6 +2727,7 @@ fn emit_js_imports_platform {n:nat | n + 3200 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_app_minimize: batsJsAppMinimize,\n")
   val () = $B.bput(b,"      bats_js_storage_available: batsJsStorageAvailable,\n")
   val () = $B.bput(b,"      bats_js_storage_ask: batsJsStorageAsk,\n")
+  val () = $B.bput(b,"      bats_js_storage_text: batsJsStorageText,\n")
   val () = $B.bput(b,"      bats_js_install_prompt_available: () => batsInstall.offer ? 1 : 0,\n")
   val () = $B.bput(b,"      bats_js_install_prompt: batsJsInstallPrompt,\n")
   val () = $B.bput(b,"      bats_js_listen_install_prompt: l => { installListener = l; },\n")
@@ -2784,8 +2808,8 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 28790 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 28790] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 29790 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 29790] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2793,8 +2817,8 @@ fn _emit_11 {n:nat | n + 28790 <= $B.BUILDER_CAP}
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 9880 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9880] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 9930 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9930] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2808,8 +2832,8 @@ fn _emit_first_half {n:nat | n + 46373 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 64447 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 64447] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 65497 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 65497] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
