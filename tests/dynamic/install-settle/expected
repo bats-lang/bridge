@@ -1,0 +1,60 @@
+== the user accepts
+offer.prompt()
+hash: #accepted
+offer.prompt()
+hash: #old: accepted
+== the user dismisses
+offer.prompt()
+hash: #dismissed
+offer.prompt()
+hash: #old: dismissed
+== there is no offer
+hash: #no offer
+offer.prompt()
+hash: #old: accepted
+== prompt rejects: its own outcome, with the error
+offer.prompt()
+hash: #rejected
+hash: #{"name":"Error","message":"denied","code":"NotAllowedError"}
+offer.prompt()
+hash: #old: unavailable
+== prompt rejects with nothing
+offer.prompt()
+hash: #rejected: no text
+offer.prompt()
+hash: #old: unavailable
+== prompt throws as it is called
+offer.prompt()
+hash: #rejected
+hash: #{"name":"Error","message":"threw"}
+offer.prompt()
+hash: #old: unavailable
+== the user's choice rejects
+offer.prompt()
+hash: #rejected
+hash: #{"name":"Error","message":"no choice"}
+offer.prompt()
+hash: #old: unavailable
+== the outcome throws when it is read
+offer.prompt()
+hash: #thrown
+hash: #{"name":"Error","message":"getter"}
+offer.prompt()
+hash: #old: unavailable
+== the outcome is neither accepted nor dismissed
+offer.prompt()
+hash: #odd
+hash: #"maybe"
+offer.prompt()
+hash: #old: unavailable
+== the outcome is nothing
+offer.prompt()
+hash: #odd: no text
+offer.prompt()
+hash: #old: unavailable
+== a code the bridge never gives is InstallAnswerUnexpected
+offer.prompt()
+hash: #unexpected
+offer.prompt()
+hash: #old: unavailable
+done
