@@ -66,7 +66,8 @@ async function play(label, client, { native = false, bridge = 'real' } = {}) {
   win.addEventListener('hashchange', e => {
     const hash = new URL(e.newURL).hash.slice(1);
     let line; try { line = decodeURIComponent(hash); } catch (x) { line = `(raw) ${hash}`; }
-    console.log(`hash: #${line}`);
+    // an error the engine made carries a stack that names this machine's paths
+    console.log(`hash: #${line.replace(/"stack":"[^"]*"/, '"stack":"(stack)"')}`);
   });
   await loads[bridge](wasm, win.document.getElementById('bats-root'), {});
   await settle();
