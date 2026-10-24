@@ -1,0 +1,9 @@
+[package]
+name = "backup-write-answer-dropped"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
