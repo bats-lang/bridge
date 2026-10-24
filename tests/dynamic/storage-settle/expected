@@ -31,6 +31,12 @@ storage.persisted()
 hash: #odd
 hash: #"yes"
 hash: #old: not persisted
+== the platform answers a number that is truthy
+storage.persisted()
+storage.persisted()
+hash: #odd
+hash: #1
+hash: #old: not persisted
 == the platform answers nothing
 storage.persisted()
 storage.persisted()
