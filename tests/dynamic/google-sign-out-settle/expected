@@ -1,0 +1,61 @@
+== Google revokes the token
+revoke: token-1
+hash: #done
+revoke: token-2
+hash: #old: signed out
+== Google answers that the revoke was not successful: its own outcome, with the answer
+revoke: token-1
+hash: #revoke failed
+hash: #{"successful":false,"error":"invalid_token","error_description":"not a token"}
+revoke: token-2
+hash: #old: signed out
+== Google answers with no flag
+revoke: token-1
+hash: #odd
+hash: #{"error":"x"}
+revoke: token-2
+hash: #old: signed out
+== Google answers nothing
+revoke: token-1
+hash: #odd: no text
+revoke: token-2
+hash: #old: signed out
+== Google answers with something that is no object
+revoke: token-1
+hash: #odd
+hash: #"revoked"
+revoke: token-2
+hash: #old: signed out
+== the revoke throws as it is called
+revoke: token-1
+hash: #thrown
+hash: #{"name":"Error","message":"threw"}
+revoke: token-2
+hash: #old: failed
+== the answer has a throwing flag
+revoke: token-1
+hash: #unread
+hash: #{"name":"Error","message":"getter threw"}
+revoke: token-2
+hash: #old: signed out
+== the answer has a flag that throws nothing
+revoke: token-1
+hash: #unread: no text
+revoke: token-2
+hash: #old: signed out
+== the reader closed the window: no token, nothing to revoke
+hash: #done
+hash: #old: signed out
+== the app: no way to revoke here
+hash: #not here
+hash: #old: failed
+== the sign-in script does not load: its own outcome, with the error
+hash: #load failed
+hash: #{"name":"Error","message":"Google sign-in did not load"}
+hash: #old: failed
+== a code the bridge never gives is SignOutUnexpected
+revoke: token-1
+hash: #unexpected
+revoke: token-2
+hash: #old: failed
+done
