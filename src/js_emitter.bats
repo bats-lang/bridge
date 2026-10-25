@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 115330 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 115330] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 119271 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 119271] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2250,13 +2250,40 @@ fn emit_js_screen {n:nat | n + 7090 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_share {n:nat | n + 6300 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6300] $B.builder(m)): void = let
+fn emit_js_share {n:nat | n + 7967 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 7967] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Sharing: navigator.share in a browser, else the app's Share (a file\n")
-  val () = $B.bput(b,"  // through its Filesystem). 0 shared, 1 cancelled, 2 failed, 3 a file\n")
-  val () = $B.bput(b,"  // this platform cannot share\n")
-  val () = $B.bput(b,"  const shareEnd = e => e && (e.name === 'AbortError' || /cancel/i.test(e.message || e)) ? 1 : 2;\n")
+  val () = $B.bput(b,"  // through its Filesystem). What a share rejected with or threw is written\n")
+  val () = $B.bput(b,"  // down as text (googleSay's form) and kept for share_text_answer and\n")
+  val () = $B.bput(b,"  // share_file_answer to take; JS decides only what the platform documents.\n")
+  val () = $B.bput(b,"  // 0 shared, 1 cancelled (an AbortError, or the Share plugin's \"Share\n")
+  val () = $B.bput(b,"  // canceled\"), 2 failed as the Web Share API documents (NotAllowedError,\n")
+  val () = $B.bput(b,"  // DataError, TypeError), 3 no way to share here (a file: this platform\n")
+  val () = $B.bput(b,"  // cannot share it), -2 rejected with anything else, -3 threw (the call, or\n")
+  val () = $B.bput(b,"  // reading its arguments), -4 (a file) the write to the cache rejected (the\n")
+  val () = $B.bput(b,"  // text of 2, -2, -3 and -4 kept by the call's number)\n")
+  val () = $B.bput(b,"  const shareTexts = new Map();\n")
+  val () = $B.bput(b,"  function shareSaid(id, v, code) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) shareTexts.set(id, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return code;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsShareSaidText(id) {\n")
+  val () = $B.bput(b,"    const h = shareTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    shareTexts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function shareEnd(id, e) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const n = e && e.name;\n")
+  val () = $B.bput(b,"      return n === 'AbortError' || (e && e.message) === 'Share canceled' ? 1\n")
+  val () = $B.bput(b,"        : n === 'NotAllowedError' || n === 'DataError' || n === 'TypeError' ? shareSaid(id, e, 2)\n")
+  val () = $B.bput(b,"        : shareSaid(id, e, -2);\n")
+  val () = $B.bput(b,"    } catch (x) { return shareSaid(id, x, -3); }\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function shareFiles(f) {\n")
   val () = $B.bput(b,"    try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: f })); } catch (e) { return false; }\n")
   val () = $B.bput(b,"  }\n")
@@ -2272,11 +2299,17 @@ fn emit_js_share {n:nat | n + 6300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,") ? 1 : 0;\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsShareText(tp, tl, xp, xl, id) {\n")
-  val () = $B.bput(b,"    const d = { text: readString(xp, xl) }, c = ")
+  val () = $B.bput(b,"    let p;\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const d = { text: readString(xp, xl) }, c = ")
   val () = put_plugin_call(b, PluginShare())
   val () = $B.bput(b,";\n")
-  val () = $B.bput(b,"    if (tl > 0) d.title = readString(tp, tl);\n")
-  val () = $B.bput(b,"    settleBy(id, () => navigator.share ? navigator.share(d) : c.share(d), () => 0, shareEnd);\n")
+  val () = $B.bput(b,"      if (tl > 0) d.title = readString(tp, tl);\n")
+  val () = $B.bput(b,"      if (!navigator.share && !c) return settle(id, 3);\n")
+  val () = $B.bput(b,"      p = navigator.share ? navigator.share(d) : c.share(d);\n")
+  val () = $B.bput(b,"    } catch (x) { return settle(id, shareSaid(id, x, -3)); }\n")
+  val () = $B.bput(b,"    Promise.resolve(p).then(() => 0, e => shareEnd(id, e))\n")
+  val () = $B.bput(b,"      .then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function base64(u) {\n")
   val () = $B.bput(b,"    let s = '';\n")
@@ -2284,17 +2317,22 @@ fn emit_js_share {n:nat | n + 6300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    return btoa(s);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsShareFile(np, nl, bp, bl, mp, ml, id) {\n")
-  val () = $B.bput(b,"    const name = readString(np, nl), bytes = readBytes(bp, bl);\n")
-  val () = $B.bput(b,"    const f = [new File([bytes], name, { type: readString(mp, ml) })];\n")
-  val () = $B.bput(b,"    const c = ")
+  val () = $B.bput(b,"    let p;\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const name = readString(np, nl), bytes = readBytes(bp, bl);\n")
+  val () = $B.bput(b,"      const f = [new File([bytes], name, { type: readString(mp, ml) })];\n")
+  val () = $B.bput(b,"      const c = ")
   val () = put_plugin_call(b, PluginShare())
   val () = $B.bput(b,", fs = ")
   val () = put_plugin_call(b, PluginFilesystem())
   val () = $B.bput(b,";\n")
-  val () = $B.bput(b,"    if (shareFiles(f)) return settleBy(id, () => navigator.share({ files: f, title: name }), () => 0, shareEnd);\n")
-  val () = $B.bput(b,"    if (!c || !fs) return settle(id, 3);\n")
-  val () = $B.bput(b,"    settleBy(id, () => fs.writeFile({ path: name.replace(/[\\/\\\\]/g, '_'), data: base64(bytes), directory: 'CACHE' })\n")
-  val () = $B.bput(b,"      .then(w => c.share({ title: name, files: [w.uri] })), () => 0, shareEnd);\n")
+  val () = $B.bput(b,"      if (shareFiles(f)) p = Promise.resolve(navigator.share({ files: f, title: name })).then(() => 0, e => shareEnd(id, e));\n")
+  val () = $B.bput(b,"      else if (!c || !fs) return settle(id, 3);\n")
+  val () = $B.bput(b,"      else p = Promise.resolve(fs.writeFile({ path: name.replace(/[\\/\\\\]/g, '_'), data: base64(bytes), directory: 'CACHE' }))\n")
+  val () = $B.bput(b,"        .then(w => Promise.resolve(c.share({ title: name, files: [w.uri] })).then(() => 0, e => shareEnd(id, e)),\n")
+  val () = $B.bput(b,"          x => shareSaid(id, x, -4));\n")
+  val () = $B.bput(b,"    } catch (x) { return settle(id, shareSaid(id, x, -3)); }\n")
+  val () = $B.bput(b,"    p.catch(x => shareSaid(id, x, -3)).then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // Storage kept, not evicted under pressure: navigator.storage in a\n")
@@ -2385,8 +2423,8 @@ fn emit_js_share {n:nat | n + 6300 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_account {n:nat | n + 8610 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 8610] $B.builder(m)): void = let
+fn emit_js_account {n:nat | n + 9829 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 9829] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // A Google access token, in a browser, through Google's own sign-in\n")
   val () = $B.bput(b,"  // page (its Identity Services' token model, loaded when the token is\n")
@@ -2511,22 +2549,47 @@ fn emit_js_account {n:nat | n + 8610 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"    Promise.resolve(p).then(() => 1, x => backupWriteSaid(id, x, -2))\n")
   val () = $B.bput(b,"      .then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  // What a read rejected with or threw, as text (googleSay's form) kept for\n")
+  val () = $B.bput(b,"  // backup_file_read_answer to take; JS decides nothing. The file's blob\n")
+  val () = $B.bput(b,"  // (positive), 0 no such file, -1 no plugin here, -2 the file holds\n")
+  val () = $B.bput(b,"  // nothing, -3 the plugin rejected a call, -4 something threw: a call, or\n")
+  val () = $B.bput(b,"  // reading its answer (the text of -3 and -4 kept by the call's number)\n")
+  val () = $B.bput(b,"  const backupReadTexts = new Map();\n")
+  val () = $B.bput(b,"  function backupReadSaid(id, v, code) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) backupReadTexts.set(id, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return code;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsBackupFileReadText(id) {\n")
+  val () = $B.bput(b,"    const h = backupReadTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    backupReadTexts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsBackupFileRead(np, nl, id) {\n")
   val () = $B.bput(b,"    const fs = ")
   val () = put_plugin_call(b, PluginFilesystem())
   val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    if (!fs) return settle(id, -1);\n")
-  val () = $B.bput(b,"    const path = backupPath(readString(np, nl)), dir = backupPath('').slice(0, -1);\n")
-  val () = $B.bput(b,"    // whether it is there, from the directories' listings: a call for a\n")
-  val () = $B.bput(b,"    // file not there rejects, which the app's console logs as an error\n")
-  val () = $B.bput(b,"    const has = (p, entry) => fs.readdir({ path: p, directory: 'DATA' })\n")
-  val () = $B.bput(b,"      .then(r => (r && r.files || []).some(f => (f && typeof f === 'object' ? f.name : f) === entry));\n")
-  val () = $B.bput(b,"    settleBy(id, () => has('', dir).then(d => d && has(dir, path.slice(dir.length + 1))).then(there => !there ? 0 :\n")
-  val () = $B.bput(b,"      fs.readFile({ path, directory: 'DATA' }).then(r => {\n")
-  val () = $B.bput(b,"        const s = atob(r.data), u = new Uint8Array(s.length);\n")
-  val () = $B.bput(b,"        for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);\n")
-  val () = $B.bput(b,"        return u.length ? pendBlob(u) : -1;\n")
-  val () = $B.bput(b,"      })), v => v, () => -1);\n")
+  val () = $B.bput(b,"    // what a throw is told as: -3 while a plugin call is pending, -4 while\n")
+  val () = $B.bput(b,"    // its answer is read (a callback that throws leaves it at -4)\n")
+  val () = $B.bput(b,"    let said = -3, p;\n")
+  val () = $B.bput(b,"    const reading = f => (...a) => { said = -4; const v = f(...a); said = -3; return v; };\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const path = backupPath(readString(np, nl)), dir = backupPath('').slice(0, -1);\n")
+  val () = $B.bput(b,"      // whether it is there, from the directories' listings: a call for a\n")
+  val () = $B.bput(b,"      // file not there rejects, which the app's console logs as an error\n")
+  val () = $B.bput(b,"      const has = (q, entry) => fs.readdir({ path: q, directory: 'DATA' })\n")
+  val () = $B.bput(b,"        .then(reading(r => (r && r.files || []).some(f => (f && typeof f === 'object' ? f.name : f) === entry)));\n")
+  val () = $B.bput(b,"      p = has('', dir).then(reading(d => d && has(dir, path.slice(dir.length + 1)))).then(reading(there => !there ? 0 :\n")
+  val () = $B.bput(b,"        fs.readFile({ path, directory: 'DATA' }).then(reading(r => {\n")
+  val () = $B.bput(b,"          const s = atob(r.data), u = new Uint8Array(s.length);\n")
+  val () = $B.bput(b,"          for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);\n")
+  val () = $B.bput(b,"          return u.length ? pendBlob(u) : -2;\n")
+  val () = $B.bput(b,"        }))));\n")
+  val () = $B.bput(b,"    } catch (x) { return settle(id, backupReadSaid(id, x, -4)); }\n")
+  val () = $B.bput(b,"    p.catch(x => backupReadSaid(id, x, said)).then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
 in end
 
@@ -2600,8 +2663,8 @@ fn emit_js_google_authorize {n:nat | n + 2600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_app_link {n:nat | n + 2600 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2600] $B.builder(m)): void = let
+fn emit_js_app_link {n:nat | n + 3477 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3477] $B.builder(m)): void = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // The native app's links: an https address opened in the system\n")
   val () = $B.bput(b,"  // browser's tab over the app (Browser; browser_tab.bats checks it is\n")
@@ -2611,12 +2674,33 @@ fn emit_js_app_link {n:nat | n + 2600 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  function batsJsBrowserTabAvailable() { return ")
   val () = put_plugin_call(b, PluginBrowser())
   val () = $B.bput(b," ? 1 : 0; }\n")
+  val () = $B.bput(b,"  // What the open rejected with or threw, as text (googleSay's form) kept\n")
+  val () = $B.bput(b,"  // for browser_tab_open_answer to take; JS decides nothing. 1 opened, 0 no\n")
+  val () = $B.bput(b,"  // plugin here, -2 the plugin rejected the open, -3 the open threw (the\n")
+  val () = $B.bput(b,"  // call, or reading the address) (the text of -2 and -3 kept by the call's\n")
+  val () = $B.bput(b,"  // number)\n")
+  val () = $B.bput(b,"  const browserTabTexts = new Map();\n")
+  val () = $B.bput(b,"  function browserTabSaid(id, v, code) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) browserTabTexts.set(id, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return code;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsBrowserTabOpenText(id) {\n")
+  val () = $B.bput(b,"    const h = browserTabTexts.get(id) || 0;\n")
+  val () = $B.bput(b,"    browserTabTexts.delete(id);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsBrowserTabOpen(up, ul, id) {\n")
   val () = $B.bput(b,"    const t = ")
   val () = put_plugin_call(b, PluginBrowser())
-  val () = $B.bput(b,", url = readString(up, ul);\n")
+  val () = $B.bput(b,";\n")
   val () = $B.bput(b,"    if (!t) return settle(id, 0);\n")
-  val () = $B.bput(b,"    settleBy(id, () => t.open({ url }), () => 1, () => 0);\n")
+  val () = $B.bput(b,"    let p;\n")
+  val () = $B.bput(b,"    try { p = t.open({ url: readString(up, ul) }); } catch (x) { return settle(id, browserTabSaid(id, x, -3)); }\n")
+  val () = $B.bput(b,"    Promise.resolve(p).then(() => 1, x => browserTabSaid(id, x, -2))\n")
+  val () = $B.bput(b,"      .then(v => instance.exports.bats_on_permission_result(id, v));\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function batsJsAppLinkAvailable() { return ")
   val () = put_plugin_call(b, PluginApp())
@@ -2734,8 +2818,8 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 3440 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3440] $B.builder(m)): void = let
+fn emit_js_imports_platform {n:nat | n + 3618 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3618] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -2755,6 +2839,7 @@ fn emit_js_imports_platform {n:nat | n + 3440 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_share_file_available: batsJsShareFileAvailable,\n")
   val () = $B.bput(b,"      bats_js_share_text: batsJsShareText,\n")
   val () = $B.bput(b,"      bats_js_share_file: batsJsShareFile,\n")
+  val () = $B.bput(b,"      bats_js_share_said_text: batsJsShareSaidText,\n")
   val () = $B.bput(b,"      bats_js_google_token_available: batsJsGoogleTokenAvailable,\n")
   val () = $B.bput(b,"      bats_js_google_token: batsJsGoogleToken,\n")
   val () = $B.bput(b,"      bats_js_google_account: batsJsGoogleAccount,\n")
@@ -2770,8 +2855,10 @@ fn emit_js_imports_platform {n:nat | n + 3440 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_backup_file_write: batsJsBackupFileWrite,\n")
   val () = $B.bput(b,"      bats_js_backup_file_write_text: batsJsBackupFileWriteText,\n")
   val () = $B.bput(b,"      bats_js_backup_file_read: batsJsBackupFileRead,\n")
+  val () = $B.bput(b,"      bats_js_backup_file_read_text: batsJsBackupFileReadText,\n")
   val () = $B.bput(b,"      bats_js_browser_tab_available: batsJsBrowserTabAvailable,\n")
   val () = $B.bput(b,"      bats_js_browser_tab_open: batsJsBrowserTabOpen,\n")
+  val () = $B.bput(b,"      bats_js_browser_tab_open_text: batsJsBrowserTabOpenText,\n")
   val () = $B.bput(b,"      bats_js_app_link_available: batsJsAppLinkAvailable,\n")
   val () = $B.bput(b,"      bats_js_listen_app_link: batsJsListenAppLink,\n")
   val () = $B.bput(b,"      bats_js_back_button_available: batsJsBackButtonAvailable,\n")
@@ -2861,8 +2948,8 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 32200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 32200] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 35963 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 35963] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
@@ -2870,8 +2957,8 @@ fn _emit_11 {n:nat | n + 32200 <= $B.BUILDER_CAP}
   val () = emit_js_app_link(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 10120 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10120] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 10298 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10298] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2885,8 +2972,8 @@ fn _emit_first_half {n:nat | n + 46373 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 68097 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 68097] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 72038 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 72038] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)

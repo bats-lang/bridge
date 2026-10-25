@@ -1,0 +1,111 @@
+== the file is there
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+hash: #found
+hash: #contents
+hash: #old: found
+== no such file in the backup directory
+readdir DATA ""
+readdir DATA "backup"
+readdir DATA ""
+readdir DATA "backup"
+hash: #none
+hash: #old: none
+== no backup directory
+readdir DATA ""
+readdir DATA ""
+hash: #none
+hash: #old: none
+== there is no Filesystem plugin
+hash: #not here
+hash: #old: unreadable
+== the file holds nothing
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+hash: #empty
+hash: #old: unreadable
+== the listing rejects: its own outcome, with the error
+readdir DATA ""
+readdir DATA ""
+hash: #rejected
+hash: #{"name":"Error","message":"no listing"}
+hash: #old: unreadable
+== the listing rejects with nothing
+readdir DATA ""
+readdir DATA ""
+hash: #rejected: no text
+hash: #old: unreadable
+== the read rejects: its own outcome, with the error
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+hash: #rejected
+hash: #{"name":"Error","message":"unreadable"}
+hash: #old: unreadable
+== the listing throws as it is called: its own outcome, with the error
+readdir DATA ""
+readdir DATA ""
+hash: #thrown
+hash: #{"name":"Error","message":"threw"}
+hash: #old: unreadable
+== the listing throws nothing
+readdir DATA ""
+readdir DATA ""
+hash: #thrown: no text
+hash: #old: unreadable
+== the read answers nothing: reading the answer threw
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+hash: #thrown
+hash: #{"name":"TypeError","stack":"(stack)"}
+hash: #old: unreadable
+== the data is no base64: decoding threw
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+hash: #thrown
+hash: #{"name":"InvalidCharacterError","stack":"(stack)"}
+hash: #old: unreadable
+== the listing is no list: reading the answer threw
+readdir DATA ""
+readdir DATA ""
+hash: #thrown
+hash: #{"name":"TypeError","stack":"(stack)"}
+hash: #old: unreadable
+== a code the bridge never gives is BackupReadUnexpected
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+hash: #unexpected
+hash: #old: unreadable
+== a blob handle the bridge never gave is BackupReadUnexpected
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+readdir DATA ""
+readdir DATA "backup"
+read DATA backup/note
+hash: #unexpected
+hash: #old: unreadable
+done
