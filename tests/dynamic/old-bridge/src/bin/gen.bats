@@ -27,15 +27,19 @@ in
       val () = $BR.produce_bridge(js)
       val @(js_arr, js_len) = $B.to_arr(js)
       val @(js_fz, js_bv) = $A.freeze<byte>(js_arr)
-      val () = (if js_len > 0 then let
+    in
+      if js_len > 0 then let
           val @(left, right) = $A.borrow_split<byte>(js_fz, js_bv, js_len)
           val () = $R.discard<int><$F.io_error>((case+ $F.file_write(fd, left, js_len) of
             | ~$R.ok(w) => $R.ok(w) | ~$R.err(e) => $R.err(e)): $R.result(int, $F.io_error))
           val () = $A.drop<byte>(js_fz, $A.borrow_join<byte>(js_fz, left, right))
-        in () end
-        else $A.drop<byte>(js_fz, js_bv))
-      val () = $A.free<byte>($A.thaw<byte>(js_fz))
-    in $R.discard<int><$F.io_error>($F.file_close(fd)) end
+          val () = $A.free<byte>($A.thaw<byte>(js_fz))
+        in $R.discard<int><$F.io_error>($F.file_close(fd)) end
+      else let
+          val () = $A.drop<byte>(js_fz, js_bv)
+          val () = $A.free<byte>($A.thaw<byte>(js_fz))
+        in $R.discard<int><$F.io_error>($F.file_close(fd)) end
+    end
   | ~$R.err(_) => ()
 end
 

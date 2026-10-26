@@ -175,7 +175,10 @@ Primitives only: bridge reports, the app (quire) maps it to a look.
   `case+`, into `engine_reading` (Blink, WebKit, Gecko), `os_reading` (Android,
   Ios, IpadOs, MacOs, Windows, Linux, ChromeOs) and `shell_reading` (Browser,
   App of Ios or Android, WebView), each with an `...Unexpected` that keeps its
-  source and the fact. Tokens are searched in the first 2048 bytes of a text
+  source and the fact (`OsUnexpected` keeps all five facts that were read, and
+  its source is where the answer came from: maxTouchPoints when the count is no
+  count, else the last of navigator.platform, userAgentData.platform and the
+  user agent that gave a text; every `platform_source` is made by some input). Tokens are searched in the first 2048 bytes of a text
   (a longer user agent with its token past that is Unexpected, with its whole
   text kept); the reading is linear (the facts hold blobs), freed by `case+ ~`
   or `platform_free`.
@@ -214,6 +217,20 @@ Primitives only: bridge reports, the app (quire) maps it to a look.
     They tell what an engine implements today, change with every release, and
     the Blink-with-WebKit-tokens spoof of an e2e test would defeat them; the
     tokens are the documented, stable signal.
+* **X11 is not Linux**: only `Linux` names Linux. User agents of FreeBSD,
+  OpenBSD and SunOS say `X11` and no `Linux`, so they are `OsUnexpected` (with the
+  texts kept), never folded into `OsLinux`; `tests/dynamic/platform-read` plays them.
+* **Two forms of the bridge (the overlap rule, bridge#253)**: the JS that carries
+  the platform atom is larger than the old bound of `produce_bridge`,
+  `produce_bridge_app` and `emit_js_all`, so those keep their old bounds and emit
+  the bridge without the platform atom (deprecated, removal bridge#253), and
+  `produce_bridge_platform`, `produce_bridge_app_platform` and
+  `emit_js_all_platform` are beside them with the larger bounds. The emitters are
+  shared (the platform section and its three imports are the only difference), so
+  nothing is duplicated. An app that reads the platform generates its bridge with
+  the platform forms (pwa's `create_pwa` still calls the old one; moving it is
+  pwa's, in a pull request of its own). `tests/dynamic/old-bridge` calls the old
+  forms and `tests/static/accept/produce-bridge-old-bound` their old bounds.
 * **The desktop environment** (GNOME, KDE) is not readable from a page: no
   browser API reports it, the user agent says `X11; Linux` for all of them. So
   there is no field for it; an app that wants an Adwaita look needs a setting.

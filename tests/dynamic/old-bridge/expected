@@ -1,0 +1,9 @@
+bridge.js begins with bridge-plain.js: true
+bridge-plain.js within the old bound of produce_bridge: true
+bridge.js within the old bound of produce_bridge_app: true
+bridge.js has no platform atom: true
+bridge.js has the other atoms: true
+bridge-plain.js has no platform atom: true
+bridge-plain.js has the other atoms: true
+hash: #old form
+done

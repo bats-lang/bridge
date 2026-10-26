@@ -157,9 +157,18 @@ hash: #from the user agent
 hash: #text
 hash: #curl/8.0
 hash: #os: unexpected
-hash: #from the user agent
+hash: #from navigator.platform
+hash: #kept: user agent
 hash: #text
 hash: #curl/8.0
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #no bytes
+hash: #kept: maxTouchPoints
+hash: #text
+hash: #0
 hash: #shell: browser
 == an empty user agent
 hash: #available
@@ -168,9 +177,18 @@ hash: #from the user agent
 hash: #text
 hash: #no bytes
 hash: #os: unexpected
-hash: #from the user agent
+hash: #from navigator.platform
+hash: #kept: user agent
 hash: #text
 hash: #no bytes
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #no bytes
+hash: #kept: maxTouchPoints
+hash: #text
+hash: #0
 hash: #shell: browser
 == no user agent at all
 hash: #available
@@ -203,8 +221,15 @@ hash: #not text
 hash: #null
 hash: #os: unexpected
 hash: #from the user agent
+hash: #kept: user agent
 hash: #not text
 hash: #null
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #absent
+hash: #kept: maxTouchPoints
+hash: #absent
 hash: #shell: browser
 == a user agent that throws as it is read
 hash: #available
@@ -222,8 +247,15 @@ hash: #threw
 hash: #no text
 hash: #os: unexpected
 hash: #from the user agent
+hash: #kept: user agent
 hash: #threw
 hash: #no text
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #absent
+hash: #kept: maxTouchPoints
+hash: #absent
 hash: #shell: browser
 == a user agent that throws a thing nothing can write
 hash: #available
@@ -233,8 +265,15 @@ hash: #threw
 hash: #object
 hash: #os: unexpected
 hash: #from the user agent
+hash: #kept: user agent
 hash: #threw
 hash: #object
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #absent
+hash: #kept: maxTouchPoints
+hash: #absent
 hash: #shell: browser
 == a user agent of 3000 bytes, Firefox/ past the 2048 read
 hash: #available
@@ -256,9 +295,17 @@ hash: #from the user agent
 hash: #text
 hash: #long text
 hash: #os: unexpected
-hash: #from the user agent
+hash: #from navigator.platform
+hash: #kept: user agent
 hash: #text
 hash: #long text
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #no bytes
+hash: #kept: maxTouchPoints
+hash: #absent
 hash: #shell: browser
 == a user agent with a lone surrogate
 hash: #available
@@ -267,9 +314,17 @@ hash: #from the user agent
 hash: #text
 hash: #bot � 1.0
 hash: #os: unexpected
-hash: #from the user agent
+hash: #from navigator.platform
+hash: #kept: user agent
 hash: #text
 hash: #bot � 1.0
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #no bytes
+hash: #kept: maxTouchPoints
+hash: #absent
 hash: #shell: browser
 == a user agent with Firefox/ and a lone surrogate
 hash: #available
@@ -313,6 +368,15 @@ hash: #available
 hash: #engine: WebKit
 hash: #os: unexpected
 hash: #from maxTouchPoints
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #MacIntel
+hash: #kept: maxTouchPoints
 hash: #text
 hash: #five
 hash: #shell: browser
@@ -321,6 +385,15 @@ hash: #available
 hash: #engine: WebKit
 hash: #os: unexpected
 hash: #from maxTouchPoints
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #MacIntel
+hash: #kept: maxTouchPoints
 hash: #text
 hash: #NaN
 hash: #shell: browser
@@ -329,6 +402,15 @@ hash: #available
 hash: #engine: WebKit
 hash: #os: unexpected
 hash: #from maxTouchPoints
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #MacIntel
+hash: #kept: maxTouchPoints
 hash: #text
 hash: #-1
 hash: #shell: browser
@@ -337,6 +419,15 @@ hash: #available
 hash: #engine: WebKit
 hash: #os: unexpected
 hash: #from maxTouchPoints
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #MacIntel
+hash: #kept: maxTouchPoints
 hash: #text
 hash: #1.5
 hash: #shell: browser
@@ -345,6 +436,15 @@ hash: #available
 hash: #engine: WebKit
 hash: #os: unexpected
 hash: #from maxTouchPoints
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #MacIntel
+hash: #kept: maxTouchPoints
 hash: #text
 hash: #1234567
 hash: #shell: browser
@@ -353,6 +453,15 @@ hash: #available
 hash: #engine: WebKit
 hash: #os: unexpected
 hash: #from maxTouchPoints
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #MacIntel
+hash: #kept: maxTouchPoints
 hash: #text
 hash: #1e+21
 hash: #shell: browser
@@ -361,6 +470,15 @@ hash: #available
 hash: #engine: WebKit
 hash: #os: unexpected
 hash: #from maxTouchPoints
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #MacIntel
+hash: #kept: maxTouchPoints
 hash: #threw
 hash: #{"name":"Error","message":"no touch"}
 hash: #shell: browser
@@ -368,6 +486,175 @@ hash: #shell: browser
 hash: #available
 hash: #engine: Blink
 hash: #os: Android
+hash: #shell: browser
+== no system named, userAgentData.platform is the last text
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot
+hash: #os: unexpected
+hash: #from userAgentData.platform
+hash: #kept: user agent
+hash: #text
+hash: #bot
+hash: #kept: userAgentData.platform
+hash: #text
+hash: #Haiku
+hash: #kept: navigator.platform
+hash: #absent
+hash: #kept: maxTouchPoints
+hash: #absent
+hash: #shell: browser
+== no system named, navigator.platform is the last text
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot
+hash: #os: unexpected
+hash: #from navigator.platform
+hash: #kept: user agent
+hash: #text
+hash: #bot
+hash: #kept: userAgentData.platform
+hash: #text
+hash: #Haiku
+hash: #kept: navigator.platform
+hash: #text
+hash: #BeOS
+hash: #kept: maxTouchPoints
+hash: #text
+hash: #3
+hash: #shell: browser
+== no system named, navigator.platform only
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #absent
+hash: #os: unexpected
+hash: #from navigator.platform
+hash: #kept: user agent
+hash: #absent
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #BeOS
+hash: #kept: maxTouchPoints
+hash: #absent
+hash: #shell: browser
+== no system named, userAgentData.platform threw, nothing else a text
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #not text
+hash: #7
+hash: #os: unexpected
+hash: #from the user agent
+hash: #kept: user agent
+hash: #not text
+hash: #7
+hash: #kept: userAgentData.platform
+hash: #threw
+hash: #{"name":"Error","message":"no data"}
+hash: #kept: navigator.platform
+hash: #absent
+hash: #kept: maxTouchPoints
+hash: #absent
+hash: #shell: browser
+== no system named, only the user agent is a text
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot
+hash: #os: unexpected
+hash: #from the user agent
+hash: #kept: user agent
+hash: #text
+hash: #bot
+hash: #kept: userAgentData.platform
+hash: #threw
+hash: #{"name":"TypeError","message":"(the engine's TypeError)"}
+hash: #kept: navigator.platform
+hash: #not text
+hash: #5
+hash: #kept: maxTouchPoints
+hash: #absent
+hash: #shell: browser
+== Firefox on FreeBSD (X11, no Linux)
+hash: #available
+hash: #engine: Gecko
+hash: #os: unexpected
+hash: #from navigator.platform
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (X11; FreeBSD amd64; rv:130.0) Gecko/20100101 Firefox/130.0
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #FreeBSD amd64
+hash: #kept: maxTouchPoints
+hash: #text
+hash: #0
+hash: #shell: browser
+== Firefox on FreeBSD with no navigator.platform
+hash: #available
+hash: #engine: Gecko
+hash: #os: unexpected
+hash: #from the user agent
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (X11; FreeBSD amd64; rv:130.0) Gecko/20100101 Firefox/130.0
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #absent
+hash: #kept: maxTouchPoints
+hash: #absent
+hash: #shell: browser
+== Firefox on SunOS (X11, no Linux)
+hash: #available
+hash: #engine: Gecko
+hash: #os: unexpected
+hash: #from navigator.platform
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (X11; SunOS i86pc; rv:130.0) Gecko/20100101 Firefox/130.0
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #SunOS i86pc
+hash: #kept: maxTouchPoints
+hash: #text
+hash: #0
+hash: #shell: browser
+== Chrome on OpenBSD (X11, no Linux)
+hash: #available
+hash: #engine: Blink
+hash: #os: unexpected
+hash: #from navigator.platform
+hash: #kept: user agent
+hash: #text
+hash: #Mozilla/5.0 (X11; OpenBSD amd64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36
+hash: #kept: userAgentData.platform
+hash: #absent
+hash: #kept: navigator.platform
+hash: #text
+hash: #OpenBSD amd64
+hash: #kept: maxTouchPoints
+hash: #absent
+hash: #shell: browser
+== Linux named only by navigator.platform
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #Mozilla/5.0 (X11) bot
+hash: #os: Linux
 hash: #shell: browser
 == no navigator
 hash: #not available
@@ -377,6 +664,16 @@ hash: #threw
 hash: #{"name":"TypeError","message":"(the engine's TypeError)"}
 hash: #os: unexpected
 hash: #from the user agent
+hash: #kept: user agent
+hash: #threw
+hash: #{"name":"TypeError","message":"(the engine's TypeError)"}
+hash: #kept: userAgentData.platform
+hash: #threw
+hash: #{"name":"TypeError","message":"(the engine's TypeError)"}
+hash: #kept: navigator.platform
+hash: #threw
+hash: #{"name":"TypeError","message":"(the engine's TypeError)"}
+hash: #kept: maxTouchPoints
 hash: #threw
 hash: #{"name":"TypeError","message":"(the engine's TypeError)"}
 hash: #shell: browser
@@ -394,6 +691,13 @@ hash: #from the user agent
 hash: #code JS never gives
 hash: #os: unexpected
 hash: #from the user agent
+hash: #kept: user agent
+hash: #code JS never gives
+hash: #kept: userAgentData.platform
+hash: #code JS never gives
+hash: #kept: navigator.platform
+hash: #code JS never gives
+hash: #kept: maxTouchPoints
 hash: #code JS never gives
 hash: #shell: unexpected
 hash: #from Capacitor
@@ -405,6 +709,13 @@ hash: #from the user agent
 hash: #code JS never gives
 hash: #os: unexpected
 hash: #from the user agent
+hash: #kept: user agent
+hash: #code JS never gives
+hash: #kept: userAgentData.platform
+hash: #code JS never gives
+hash: #kept: navigator.platform
+hash: #code JS never gives
+hash: #kept: maxTouchPoints
 hash: #code JS never gives
 hash: #shell: unexpected
 hash: #from Capacitor
