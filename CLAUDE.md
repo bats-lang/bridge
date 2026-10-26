@@ -160,6 +160,72 @@ and the rule for an atom's answers:
   text or is a case that has none. Where the output would hold the
   engine's own wording (a revoked Proxy's message), it names it instead.
 
+## Platform (bats-lang/bridge#191, for quire#688)
+
+`platform_read` (platform.bats) says the engine, the operating system and the app
+shell a page runs in, and `platform_available` whether there is a `navigator`.
+Primitives only: bridge reports, the app (quire) maps it to a look.
+
+* **What JS writes down** (`batsJsPlatformFact`, one call for each fact, no
+  decision): `navigator.userAgent`, `navigator.userAgentData.platform`,
+  `navigator.platform`, `navigator.maxTouchPoints` (a number, written as its
+  digits) and `Capacitor.getPlatform()`. Each is a `platform_fact`: its text,
+  absent (undefined), a read that threw (what, as text), a value that is not a
+  string (what, as text), or a code JS never gives. Bats decodes once, with
+  `case+`, into `engine_reading` (Blink, WebKit, Gecko), `os_reading` (Android,
+  Ios, IpadOs, MacOs, Windows, Linux, ChromeOs) and `shell_reading` (Browser,
+  App of Ios or Android, WebView), each with an `...Unexpected` that keeps its
+  source and the fact. Tokens are searched in the first 2048 bytes of a text
+  (a longer user agent with its token past that is Unexpected, with its whole
+  text kept); the reading is linear (the facts hold blobs), freed by `case+ ~`
+  or `platform_free`.
+* **Reliability, by signal** (MDN's browser-detection guide; the UA-CH pages;
+  Ionic, Framework7 and Flutter decide by operating system with an override,
+  none by engine):
+  * the user agent: present in every engine; tokens `Firefox/` (Gecko),
+    `Chrome/` (Blink: Edge, Opera, Samsung and Android WebView carry it),
+    `AppleWebKit/` without `Chrome/` (WebKit); `CriOS/`, `FxiOS/` and
+    `EdgiOS/` are WebKit because every iOS browser draws with WebKit (Apple's
+    rule; in the EU an alternative engine is possible since iOS 17.4, and its
+    user agent decides then). Chrome's reduced user agent keeps the family
+    (`Android`, `Windows NT`, `Macintosh`, `X11; Linux`, `CrOS`) and freezes
+    the version. Spoofable, which is fine: we report what the platform says.
+  * `navigator.userAgentData.platform`: Blink only (Firefox and Safari have no
+    `userAgentData`), secure contexts only, experimental. Used as the second
+    word for the system when the user agent names none.
+  * `navigator.platform`: deprecated but present in every engine (`Win32`,
+    `MacIntel`, `Linux x86_64`, `iPhone`); the third word.
+  * `navigator.maxTouchPoints`: an iPad in its desktop mode sends a Macintosh
+    user agent and `MacIntel`, and reports 5; a Mac reports 0. A Macintosh with
+    more than one is `IpadOs`; none, one, or absent is `MacOs`; a value that is
+    no count of at most 6 digits is `OsUnexpected` from `SourceTouchPoints`
+    (not folded into a Mac).
+  * `Capacitor.getPlatform()`: `ios`, `android` or `web` in a Capacitor app;
+    reliable there, absent elsewhere. `window.webkit.messageHandlers` is not
+    read: it exists only if the shell registers handlers, and Capacitor, which
+    does, answers the same question through `getPlatform()`. `is_native_platform`
+    (app.bats) is Capacitor's `isNativePlatform()` and only a bool, so it is
+    not enough: this atom tells the system and a WebView apart.
+  * a WebView without Capacitor: an Android WebView's user agent has `; wv)`;
+    a WKWebView's has `AppleWebKit/` and no `Safari/` (Safari and the iOS
+    browsers all carry `Safari/`). An app can set its user agent, then the page
+    looks like a browser: that is what the platform says.
+  * feature probes (CSS `@supports`, `window.chrome`, API presence): not used.
+    They tell what an engine implements today, change with every release, and
+    the Blink-with-WebKit-tokens spoof of an e2e test would defeat them; the
+    tokens are the documented, stable signal.
+* **The desktop environment** (GNOME, KDE) is not readable from a page: no
+  browser API reports it, the user agent says `X11; Linux` for all of them. So
+  there is no field for it; an app that wants an Adwaita look needs a setting.
+* **Testing each case**: Playwright's context options set `userAgent`,
+  `isMobile` and `hasTouch` (device presets such as `iPhone 13` set all three);
+  they do not set `navigator.platform` or `userAgentData`, which an
+  `addInitScript` overrides. `tests/dynamic/platform-read` stands in for all five
+  facts in jsdom and plays every constructor, the nasty facts (none, empty, not a
+  string, a read that throws, a text over the 2048 read, a lone surrogate, a touch
+  count that is no count) and the answers JS never gives.
+* **Not decided here**: which look a platform gets (quire#688).
+
 ## Adversarial review before merge
 
 No pull request merges before an adversarial review: a comment on the

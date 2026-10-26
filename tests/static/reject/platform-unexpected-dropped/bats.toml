@@ -1,0 +1,8 @@
+[package]
+name = "platform-unexpected-dropped"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

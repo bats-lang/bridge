@@ -1,0 +1,419 @@
+== Chrome on Windows
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: browser
+== Edge on Windows
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: browser
+== Chrome on Android
+hash: #available
+hash: #engine: Blink
+hash: #os: Android
+hash: #shell: browser
+== Chrome on Linux
+hash: #available
+hash: #engine: Blink
+hash: #os: Linux
+hash: #shell: browser
+== Chrome on a Chromebook
+hash: #available
+hash: #engine: Blink
+hash: #os: ChromeOS
+hash: #shell: browser
+== Safari on a Mac
+hash: #available
+hash: #engine: WebKit
+hash: #os: macOS
+hash: #shell: browser
+== Safari on an iPhone
+hash: #available
+hash: #engine: WebKit
+hash: #os: iOS
+hash: #shell: browser
+== Safari on an iPad
+hash: #available
+hash: #engine: WebKit
+hash: #os: iPadOS
+hash: #shell: browser
+== Safari on an iPad in desktop mode (a Macintosh with touch points)
+hash: #available
+hash: #engine: WebKit
+hash: #os: iPadOS
+hash: #shell: browser
+== a Macintosh with two touch points
+hash: #available
+hash: #engine: WebKit
+hash: #os: iPadOS
+hash: #shell: browser
+== a Macintosh with one touch point
+hash: #available
+hash: #engine: WebKit
+hash: #os: macOS
+hash: #shell: browser
+== a Macintosh with no maxTouchPoints
+hash: #available
+hash: #engine: WebKit
+hash: #os: macOS
+hash: #shell: browser
+== Chrome on an iPhone (WebKit)
+hash: #available
+hash: #engine: WebKit
+hash: #os: iOS
+hash: #shell: browser
+== Firefox on an iPhone (WebKit)
+hash: #available
+hash: #engine: WebKit
+hash: #os: iOS
+hash: #shell: browser
+== Firefox on Linux
+hash: #available
+hash: #engine: Gecko
+hash: #os: Linux
+hash: #shell: browser
+== Firefox on a Mac
+hash: #available
+hash: #engine: Gecko
+hash: #os: macOS
+hash: #shell: browser
+== Firefox on Windows
+hash: #available
+hash: #engine: Gecko
+hash: #os: Windows
+hash: #shell: browser
+== Firefox on Android
+hash: #available
+hash: #engine: Gecko
+hash: #os: Android
+hash: #shell: browser
+== an Android WebView with no Capacitor
+hash: #available
+hash: #engine: Blink
+hash: #os: Android
+hash: #shell: WebView
+== a WKWebView with no Capacitor
+hash: #available
+hash: #engine: WebKit
+hash: #os: iOS
+hash: #shell: WebView
+== the Capacitor app on Android
+hash: #available
+hash: #engine: Blink
+hash: #os: Android
+hash: #shell: app on Android
+== the Capacitor app on iOS
+hash: #available
+hash: #engine: WebKit
+hash: #os: iOS
+hash: #shell: app on iOS
+== Capacitor on the web in a browser
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: browser
+== Capacitor on the web in an Android WebView
+hash: #available
+hash: #engine: Blink
+hash: #os: Android
+hash: #shell: WebView
+== Capacitor names a platform it does not have
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: unexpected
+hash: #from Capacitor
+hash: #text
+hash: #electron
+== Capacitor names no string
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: unexpected
+hash: #from Capacitor
+hash: #not text
+hash: #7
+== Capacitor throws
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: unexpected
+hash: #from Capacitor
+hash: #threw
+hash: #{"name":"Error","message":"no platform"}
+== Capacitor throws nothing
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: unexpected
+hash: #from Capacitor
+hash: #threw
+hash: #no text
+== a user agent no rule knows
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #curl/8.0
+hash: #os: unexpected
+hash: #from the user agent
+hash: #text
+hash: #curl/8.0
+hash: #shell: browser
+== an empty user agent
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #no bytes
+hash: #os: unexpected
+hash: #from the user agent
+hash: #text
+hash: #no bytes
+hash: #shell: browser
+== no user agent at all
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #absent
+hash: #os: Windows
+hash: #shell: browser
+== a user agent that is a number
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #not text
+hash: #42
+hash: #os: Windows
+hash: #shell: browser
+== a user agent that is an object with a cycle
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #not text
+hash: #[object Object]
+hash: #os: Windows
+hash: #shell: browser
+== a user agent that is null
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #not text
+hash: #null
+hash: #os: unexpected
+hash: #from the user agent
+hash: #not text
+hash: #null
+hash: #shell: browser
+== a user agent that throws as it is read
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #threw
+hash: #{"name":"Error","message":"no agent"}
+hash: #os: Windows
+hash: #shell: browser
+== a user agent that throws nothing
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #threw
+hash: #no text
+hash: #os: unexpected
+hash: #from the user agent
+hash: #threw
+hash: #no text
+hash: #shell: browser
+== a user agent that throws a thing nothing can write
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #threw
+hash: #object
+hash: #os: unexpected
+hash: #from the user agent
+hash: #threw
+hash: #object
+hash: #shell: browser
+== a user agent of 3000 bytes, Firefox/ past the 2048 read
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #x*2990 Firefox/1
+hash: #os: Windows
+hash: #shell: browser
+== a user agent of 2048 bytes, Firefox/ at its end
+hash: #available
+hash: #engine: Gecko
+hash: #os: Windows
+hash: #shell: browser
+== a user agent of 5000 bytes no rule knows
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #long text
+hash: #os: unexpected
+hash: #from the user agent
+hash: #text
+hash: #long text
+hash: #shell: browser
+== a user agent with a lone surrogate
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot � 1.0
+hash: #os: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot � 1.0
+hash: #shell: browser
+== a user agent with Firefox/ and a lone surrogate
+hash: #available
+hash: #engine: Gecko
+hash: #os: Linux
+hash: #shell: browser
+== a user agent no rule knows, userAgentData says Windows
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot
+hash: #os: Windows
+hash: #shell: browser
+== a user agent no rule knows, navigator.platform says MacIntel
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot
+hash: #os: macOS
+hash: #shell: browser
+== a user agent no rule knows, userAgentData throws, platform says Linux
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot
+hash: #os: Linux
+hash: #shell: browser
+== userAgentData is null
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #text
+hash: #bot
+hash: #os: Linux
+hash: #shell: browser
+== a Macintosh with maxTouchPoints a string
+hash: #available
+hash: #engine: WebKit
+hash: #os: unexpected
+hash: #from maxTouchPoints
+hash: #text
+hash: #five
+hash: #shell: browser
+== a Macintosh with maxTouchPoints NaN
+hash: #available
+hash: #engine: WebKit
+hash: #os: unexpected
+hash: #from maxTouchPoints
+hash: #text
+hash: #NaN
+hash: #shell: browser
+== a Macintosh with maxTouchPoints -1
+hash: #available
+hash: #engine: WebKit
+hash: #os: unexpected
+hash: #from maxTouchPoints
+hash: #text
+hash: #-1
+hash: #shell: browser
+== a Macintosh with maxTouchPoints 1.5
+hash: #available
+hash: #engine: WebKit
+hash: #os: unexpected
+hash: #from maxTouchPoints
+hash: #text
+hash: #1.5
+hash: #shell: browser
+== a Macintosh with maxTouchPoints 1234567
+hash: #available
+hash: #engine: WebKit
+hash: #os: unexpected
+hash: #from maxTouchPoints
+hash: #text
+hash: #1234567
+hash: #shell: browser
+== a Macintosh with maxTouchPoints 1e21
+hash: #available
+hash: #engine: WebKit
+hash: #os: unexpected
+hash: #from maxTouchPoints
+hash: #text
+hash: #1e+21
+hash: #shell: browser
+== a Macintosh with maxTouchPoints that throws
+hash: #available
+hash: #engine: WebKit
+hash: #os: unexpected
+hash: #from maxTouchPoints
+hash: #threw
+hash: #{"name":"Error","message":"no touch"}
+hash: #shell: browser
+== an Android with maxTouchPoints a string (not read)
+hash: #available
+hash: #engine: Blink
+hash: #os: Android
+hash: #shell: browser
+== no navigator
+hash: #not available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #threw
+hash: #{"name":"TypeError","message":"(the engine's TypeError)"}
+hash: #os: unexpected
+hash: #from the user agent
+hash: #threw
+hash: #{"name":"TypeError","message":"(the engine's TypeError)"}
+hash: #shell: browser
+== a code the bridge never gives
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: unexpected
+hash: #from Capacitor
+hash: #code JS never gives
+== no user agent, a code the bridge never gives
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #code JS never gives
+hash: #os: unexpected
+hash: #from the user agent
+hash: #code JS never gives
+hash: #shell: unexpected
+hash: #from Capacitor
+hash: #code JS never gives
+== no user agent, a handle the bridge never made
+hash: #available
+hash: #engine: unexpected
+hash: #from the user agent
+hash: #code JS never gives
+hash: #os: unexpected
+hash: #from the user agent
+hash: #code JS never gives
+hash: #shell: unexpected
+hash: #from Capacitor
+hash: #code JS never gives
+== a handle the bridge never made
+hash: #available
+hash: #engine: Blink
+hash: #os: Windows
+hash: #shell: unexpected
+hash: #from Capacitor
+hash: #code JS never gives
+done

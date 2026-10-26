@@ -12,8 +12,8 @@ staload "./backup_file.bats"
    String builder helpers (visible to lib.bats via module)
    ============================================================ *)
 
-#pub fun emit_js_all {n:nat | n + 119271 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 119271] $B.builder(m)): void
+#pub fun emit_js_all {n:nat | n + 121883 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 121883] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -2818,8 +2818,56 @@ fn emit_js_speech {n:nat | n + 3940 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"  }\n")
 in end
 
-fn emit_js_imports_platform {n:nat | n + 3618 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3618] $B.builder(m)): void = let
+(* The platform's own words: the engine, the operating system and the app
+   shell, written down as they are (platform.bats decodes them; bridge#191) *)
+fn emit_js_platform {n:nat | n + 2400 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 2400] $B.builder(m)): void = let
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // Platform (platform.bats): five facts, each as the platform has it. 0\n")
+  val () = $B.bput(b,"  // the property is not there, -1 reading it threw, -2 it is not a string\n")
+  val () = $B.bput(b,"  // (a number, for 4) (the text of -1 and -2 kept by the fact's number),\n")
+  val () = $B.bput(b,"  // else the handle of its text; JS decides nothing\n")
+  val () = $B.bput(b,"  const platformTexts = new Map();\n")
+  val () = $B.bput(b,"  function platformRead(kind) {\n")
+  val () = $B.bput(b,"    if (kind === 0) return navigator.userAgent;\n")
+  val () = $B.bput(b,"    if (kind === 1) { const d = navigator.userAgentData; return d === undefined ? undefined : d.platform; }\n")
+  val () = $B.bput(b,"    if (kind === 2) return navigator.platform;\n")
+  val () = $B.bput(b,"    if (kind === 3) { const c = globalThis.Capacitor; return c === undefined ? undefined : c.getPlatform(); }\n")
+  val () = $B.bput(b,"    if (kind === 4) return navigator.maxTouchPoints;\n")
+  val () = $B.bput(b,"    return undefined;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function platformSaid(kind, v, code) {\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      const [form, text] = googleSay(v);\n")
+  val () = $B.bput(b,"      if (text !== null) {\n")
+  val () = $B.bput(b,"        const old = platformTexts.get(kind);\n")
+  val () = $B.bput(b,"        if (old) pendingBlobs.delete(old);\n")
+  val () = $B.bput(b,"        platformTexts.set(kind, pendBlob(utf8.encode(text)));\n")
+  val () = $B.bput(b,"      }\n")
+  val () = $B.bput(b,"    } catch (e) {}\n")
+  val () = $B.bput(b,"    return code;\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsPlatformAvailable() {\n")
+  val () = $B.bput(b,"    try { return typeof navigator === 'object' && navigator !== null ? 1 : 0; } catch (e) { return 0; }\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsPlatformFact(kind) {\n")
+  val () = $B.bput(b,"    let v;\n")
+  val () = $B.bput(b,"    try { v = platformRead(kind); } catch (e) { return platformSaid(kind, e, -1); }\n")
+  val () = $B.bput(b,"    if (v === undefined) return 0;\n")
+  val () = $B.bput(b,"    try {\n")
+  val () = $B.bput(b,"      if (typeof v === 'string' || (kind === 4 && typeof v === 'number')) return pendBlob(utf8.encode(String(v)));\n")
+  val () = $B.bput(b,"    } catch (e) { return platformSaid(kind, e, -1); }\n")
+  val () = $B.bput(b,"    return platformSaid(kind, v, -2);\n")
+  val () = $B.bput(b,"  }\n")
+  val () = $B.bput(b,"  function batsJsPlatformOdd(kind) {\n")
+  val () = $B.bput(b,"    const h = platformTexts.get(kind) || 0;\n")
+  val () = $B.bput(b,"    platformTexts.delete(kind);\n")
+  val () = $B.bput(b,"    return h;\n")
+  val () = $B.bput(b,"  }\n")
+in end
+
+fn emit_js_imports_platform {n:nat | n + 3830 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 3830] $B.builder(m)): void = let
   val () = $B.bput(b,"      // Platform\n")
   val () = $B.bput(b,"      bats_js_fullscreen_available: batsJsFullscreenAvailable,\n")
   val () = $B.bput(b,"      bats_js_fullscreen_active: batsJsFullscreenActive,\n")
@@ -2873,6 +2921,9 @@ fn emit_js_imports_platform {n:nat | n + 3618 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_listen_install_prompt: l => { installListener = l; },\n")
   val () = $B.bput(b,"      bats_js_is_ios_browser: () => navigator.standalone === false ? 1 : 0,\n")
   val () = $B.bput(b,"      bats_js_is_native_platform: () => capNative() ? 1 : 0,\n")
+  val () = $B.bput(b,"      bats_js_platform_available: batsJsPlatformAvailable,\n")
+  val () = $B.bput(b,"      bats_js_platform_fact: batsJsPlatformFact,\n")
+  val () = $B.bput(b,"      bats_js_platform_odd: batsJsPlatformOdd,\n")
   val () = $B.bput(b,"      bats_js_timezone_offset: () => new Date().getTimezoneOffset(),\n")
   val () = $B.bput(b,"      bats_js_speech_available: batsJsSpeechAvailable,\n")
   val () = $B.bput(b,"      bats_js_speech_voices: batsJsSpeechVoices,\n")
@@ -2948,17 +2999,18 @@ fn _emit_10 {n:nat | n + 10357 <= $B.BUILDER_CAP}
   val () = emit_js_extra(b)
 in emit_js_gestures(b) end
 
-fn _emit_11 {n:nat | n + 35963 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 35963] $B.builder(m)): void = let
+fn _emit_11 {n:nat | n + 38363 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 38363] $B.builder(m)): void = let
   val () = emit_js_screen(b)
   val () = emit_js_share(b)
   val () = emit_js_account(b)
   val () = emit_js_google_authorize(b)
   val () = emit_js_app_link(b)
+  val () = emit_js_platform(b)
 in emit_js_speech(b) end
 
-fn _emit_9 {n:nat | n + 10298 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10298] $B.builder(m)): void = let
+fn _emit_9 {n:nat | n + 10510 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10510] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform(b)
   val () = emit_js_loadwasm_close(b)
@@ -2972,8 +3024,8 @@ fn _emit_first_half {n:nat | n + 46373 <= $B.BUILDER_CAP}
   val () = _emit_4(b)
 in end
 
-fn _emit_second_half {n:nat | n + 72038 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 72038] $B.builder(m)): void = let
+fn _emit_second_half {n:nat | n + 74650 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 74650] $B.builder(m)): void = let
   val () = _emit_5(b)
   val () = _emit_6(b)
   val () = _emit_7(b)
