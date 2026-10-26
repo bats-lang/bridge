@@ -4,6 +4,8 @@ kind = "bin"
 
 [dependencies]
 "array" = ""
+"builder" = ""
+"file" = ""
 "promise" = ""
 "result" = ""
 "pwa" = ""

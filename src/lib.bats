@@ -149,10 +149,22 @@ end (* #target wasm *)
    produce_bridge -- returns the complete JS bridge as a string
    ============================================================ *)
 
-#pub fun produce_bridge {n:nat | n + 121883 <= $B.BUILDER_CAP}
+(* Deprecated, kept for one published version: the bridge without the platform
+   atom (bridge-js, removal bridge#253); the forms with it are beside them *)
+#pub fun produce_bridge {n:nat | n + 119271 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 119271] $B.builder(m)): void
+
+#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 121271 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 121271] $B.builder(m),
+   wasm_name: string nw, root_id: string nr): void
+
+(* The bridge with the platform atom (platform.bats, bridge#191): the same JS
+   plus the platform section, so the bound is larger. An app that reads the
+   platform generates its bridge with these *)
+#pub fun produce_bridge_platform {n:nat | n + 121883 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 121883] $B.builder(m)): void
 
-#pub fun produce_bridge_app {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 123883 <= $B.BUILDER_CAP}
+#pub fun produce_bridge_app_platform {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 123883 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 123883] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
@@ -204,6 +216,8 @@ implement produce_data_extraction_rules (b) = put_data_extraction_rules(b)
 
 implement produce_bridge(b) = emit_js_all(b)
 
+implement produce_bridge_platform(b) = emit_js_all_platform(b)
+
 (* The page's loader: the wasm is fetched and run, and the service
    worker registered. Whether a new build is served, and when to load
    it, is the app's (build_watch, build_watch.bats).
@@ -248,6 +262,11 @@ in end
 
 implement produce_bridge_app (b, wasm_name, root_id) = let
   val () = emit_js_all(b)
+  val () = _produce_app_tail(b, wasm_name, root_id)
+in end
+
+implement produce_bridge_app_platform (b, wasm_name, root_id) = let
+  val () = emit_js_all_platform(b)
   val () = _produce_app_tail(b, wasm_name, root_id)
 in end
 

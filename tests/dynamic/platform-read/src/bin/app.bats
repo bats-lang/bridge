@@ -80,10 +80,17 @@ fn say_os (os: $PL.os_reading): void =
   | ~$PL.OsWindows() => say_text("os: Windows")
   | ~$PL.OsLinux() => say_text("os: Linux")
   | ~$PL.OsChromeOs() => say_text("os: ChromeOS")
-  | ~$PL.OsUnexpected(source, fact) => let
+  | ~$PL.OsUnexpected(source, agent, agent_platform, navigator_platform, touch) => let
       val () = say_text("os: unexpected")
       val () = say_source(source)
-    in say_fact(fact) end
+      val () = say_text("kept: user agent")
+      val () = say_fact(agent)
+      val () = say_text("kept: userAgentData.platform")
+      val () = say_fact(agent_platform)
+      val () = say_text("kept: navigator.platform")
+      val () = say_fact(navigator_platform)
+      val () = say_text("kept: maxTouchPoints")
+    in say_fact(touch) end
 
 fn say_shell (shell: $PL.shell_reading): void =
   case+ shell of

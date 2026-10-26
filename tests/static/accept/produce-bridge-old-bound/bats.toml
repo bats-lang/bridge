@@ -1,0 +1,9 @@
+[package]
+name = "produce-bridge-old-bound"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"builder" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

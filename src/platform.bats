@@ -56,7 +56,9 @@ staload "./decompress.bats"
 
 (* The operating system, from the user agent's tokens, else
    userAgentData.platform, else navigator.platform (the first of them that
-   names one). A Macintosh that reports more than one touch point is an iPad
+   names one). Only a token that names a system counts: "X11" alone does not
+   (FreeBSD and SunOS user agents say X11 and no Linux), so a system with no
+   rule is OsUnexpected. A Macintosh that reports more than one touch point is an iPad
    in its desktop mode (IpadOs); one that reports one or none, or no
    maxTouchPoints, is a Mac. ChromeOs is its own (it says Linux too). *)
 #pub datavtype os_reading =
@@ -67,7 +69,13 @@ staload "./decompress.bats"
   | OsWindows
   | OsLinux
   | OsChromeOs
-  | OsUnexpected of (platform_source, platform_fact)  (* no source names one, or maxTouchPoints is no count: that fact *)
+  (* No source names a system, or a Macintosh's maxTouchPoints is no count.
+     Everything that was read is kept, each as its own fact: the source is
+     where the answer came from (SourceTouchPoints when the count is no count;
+     else the last of navigator.platform, userAgentData.platform and the user
+     agent that gave a text, SourceUserAgent when none did), then the user
+     agent, userAgentData.platform, navigator.platform and maxTouchPoints *)
+  | OsUnexpected of (platform_source, platform_fact, platform_fact, platform_fact, platform_fact)
 
 (* The system an app shell runs on *)
 #pub datatype app_system =
@@ -277,7 +285,7 @@ datatype os_kind =
   | OkTouchBad
 
 (* The order matters: Android's text says Linux, an iPhone's says Mac OS X,
-   a Chromebook's says X11 *)
+   a Chromebook's says Linux too *)
 fn _os_kind (head: !head): os_kind =
   if _has(head, "Android") then OkAndroid()
   else if _has(head, "iPhone") || _has(head, "iPod") then OkIos()
@@ -285,7 +293,7 @@ fn _os_kind (head: !head): os_kind =
   else if _has(head, "CrOS") || _has(head, "Chrome OS") then OkChromeOs()
   else if _has(head, "Windows") || _has(head, "Win") then OkWindows()
   else if _has(head, "Mac") || _has(head, "macOS") then OkMac()
-  else if _has(head, "Linux") || _has(head, "X11") then OkLinux()
+  else if _has(head, "Linux") then OkLinux()
   else OkNone()
 
 fn _os_kind_of (fact: !platform_fact): os_kind = let
@@ -337,6 +345,20 @@ fn _touch_of (fact: !platform_fact): touch_kind =
   | @PlatformFactNotText(_) => let prval () = fold@(fact) in TouchBad() end
   | @PlatformFactCode(_) => let prval () = fold@(fact) in TouchBad() end
 
+fn _is_text (fact: !platform_fact): bool =
+  case+ fact of
+  | @PlatformFactText(_) => let prval () = fold@(fact) in true end
+  | PlatformFactAbsent() => false
+  | @PlatformFactThrew(_) => let prval () = fold@(fact) in false end
+  | @PlatformFactNotText(_) => let prval () = fold@(fact) in false end
+  | @PlatformFactCode(_) => let prval () = fold@(fact) in false end
+
+fn _free_four (a: platform_fact, b: platform_fact, c: platform_fact, d: platform_fact): void = let
+  val () = platform_fact_free(a)
+  val () = platform_fact_free(b)
+  val () = platform_fact_free(c)
+in platform_fact_free(d) end
+
 fn _read_os (): os_reading = let
   val agent = _user_agent()
   val agent_platform = _user_agent_platform()
@@ -357,33 +379,20 @@ fn _read_os (): os_reading = let
     | _ => named): os_kind
 in
   case+ kind of
-  | OkTouchBad() => let
-      val () = platform_fact_free(agent)
-      val () = platform_fact_free(agent_platform)
-      val () = platform_fact_free(navigator_platform)
-    in OsUnexpected(SourceTouchPoints(), touch) end
+  | OkTouchBad() => OsUnexpected(SourceTouchPoints(), agent, agent_platform, navigator_platform, touch)
   | OkNone() => let
-      val () = platform_fact_free(agent_platform)
-      val () = platform_fact_free(navigator_platform)
-      val () = platform_fact_free(touch)
-    in OsUnexpected(SourceUserAgent(), agent) end
-  | _ => let
-      val () = platform_fact_free(agent)
-      val () = platform_fact_free(agent_platform)
-      val () = platform_fact_free(navigator_platform)
-      val () = platform_fact_free(touch)
-    in
-      case+ kind of
-      | OkAndroid() => OsAndroid()
-      | OkIos() => OsIos()
-      | OkIpad() => OsIpadOs()
-      | OkMac() => OsMacOs()
-      | OkWindows() => OsWindows()
-      | OkLinux() => OsLinux()
-      | OkChromeOs() => OsChromeOs()
-      | OkNone() => OsUnexpected(SourceUserAgent(), PlatformFactAbsent())
-      | OkTouchBad() => OsUnexpected(SourceTouchPoints(), PlatformFactAbsent())
-    end
+      val source = (
+        if _is_text(navigator_platform) then SourceNavigatorPlatform()
+        else if _is_text(agent_platform) then SourceUserAgentPlatform()
+        else SourceUserAgent()): platform_source
+    in OsUnexpected(source, agent, agent_platform, navigator_platform, touch) end
+  | OkAndroid() => let val () = _free_four(agent, agent_platform, navigator_platform, touch) in OsAndroid() end
+  | OkIos() => let val () = _free_four(agent, agent_platform, navigator_platform, touch) in OsIos() end
+  | OkIpad() => let val () = _free_four(agent, agent_platform, navigator_platform, touch) in OsIpadOs() end
+  | OkMac() => let val () = _free_four(agent, agent_platform, navigator_platform, touch) in OsMacOs() end
+  | OkWindows() => let val () = _free_four(agent, agent_platform, navigator_platform, touch) in OsWindows() end
+  | OkLinux() => let val () = _free_four(agent, agent_platform, navigator_platform, touch) in OsLinux() end
+  | OkChromeOs() => let val () = _free_four(agent, agent_platform, navigator_platform, touch) in OsChromeOs() end
 end
 
 (* ---- the app shell ---- *)
@@ -457,7 +466,8 @@ implement platform_free(reading) =
         | ~OsWindows() => ()
         | ~OsLinux() => ()
         | ~OsChromeOs() => ()
-        | ~OsUnexpected(_, fact) => platform_fact_free(fact))
+        | ~OsUnexpected(_, agent, agent_platform, navigator_platform, touch) =>
+            _free_four(agent, agent_platform, navigator_platform, touch))
     in
       case+ shell of
       | ~ShellBrowser() => ()

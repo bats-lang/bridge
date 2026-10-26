@@ -1,0 +1,12 @@
+[package]
+name = "old-bridge"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"builder" = ""
+"file" = ""
+"promise" = ""
+"result" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""

@@ -14,4 +14,4 @@ fn f (os: $PL.os_reading): void =
   | ~$PL.OsMacOs() => ()
   | ~$PL.OsWindows() => ()
   | ~$PL.OsLinux() => ()
-  | ~$PL.OsUnexpected(_, fact) => $PL.platform_fact_free(fact)
+  | ~$PL.OsUnexpected(_, a, b, c, d) => let val () = $PL.platform_fact_free(a) val () = $PL.platform_fact_free(b) val () = $PL.platform_fact_free(c) in $PL.platform_fact_free(d) end

@@ -153,6 +153,18 @@ await play('a Macintosh with maxTouchPoints 1234567', { ua: SAFARI_MAC, platform
 await play('a Macintosh with maxTouchPoints 1e21', { ua: SAFARI_MAC, platform: 'MacIntel', touch: 1e21 });
 await play('a Macintosh with maxTouchPoints that throws', { ua: SAFARI_MAC, platform: 'MacIntel', touch: { get: thrower(clean(new Error('no touch'))) } });
 await play('an Android with maxTouchPoints a string (not read)', { ua: CHROME_ANDROID, touch: 'five' });
+// ---- where an unrecognised system came from, and everything read is kept
+await play('no system named, userAgentData.platform is the last text', { ua: 'bot', uaData: { platform: 'Haiku' } });
+await play('no system named, navigator.platform is the last text', { ua: 'bot', uaData: { platform: 'Haiku' }, platform: 'BeOS', touch: 3 });
+await play('no system named, navigator.platform only', { platform: 'BeOS' });
+await play('no system named, userAgentData.platform threw, nothing else a text', { ua: 7, uaData: { get platform() { throw clean(new Error('no data')); } } });
+await play('no system named, only the user agent is a text', { ua: 'bot', uaData: null, platform: 5 });
+// ---- X11 alone does not name Linux: other systems are not folded into it
+await play('Firefox on FreeBSD (X11, no Linux)', { ua: 'Mozilla/5.0 (X11; FreeBSD amd64; rv:130.0) Gecko/20100101 Firefox/130.0', platform: 'FreeBSD amd64', touch: 0 });
+await play('Firefox on FreeBSD with no navigator.platform', { ua: 'Mozilla/5.0 (X11; FreeBSD amd64; rv:130.0) Gecko/20100101 Firefox/130.0' });
+await play('Firefox on SunOS (X11, no Linux)', { ua: 'Mozilla/5.0 (X11; SunOS i86pc; rv:130.0) Gecko/20100101 Firefox/130.0', platform: 'SunOS i86pc', touch: 0 });
+await play('Chrome on OpenBSD (X11, no Linux)', { ua: 'Mozilla/5.0 (X11; OpenBSD amd64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', platform: 'OpenBSD amd64' });
+await play('Linux named only by navigator.platform', { ua: 'Mozilla/5.0 (X11) bot', platform: 'Linux x86_64' });
 // ---- no navigator, and the answers JS never gives
 await play('no navigator', {}, { noNavigator: true });
 await play('a code the bridge never gives', { ua: CHROME_WIN, platform: 'Win32' }, { bridge: 'code' });

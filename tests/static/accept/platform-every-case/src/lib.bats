@@ -32,7 +32,17 @@ fn f (): void = let
           | ~$PL.OsWindows() => ()
           | ~$PL.OsLinux() => ()
           | ~$PL.OsChromeOs() => ()
-          | ~$PL.OsUnexpected(_, f) => fact(f))
+          | ~$PL.OsUnexpected(source, agent, agent_platform, navigator_platform, touch) => let
+              val () = (case+ source of
+                | $PL.SourceUserAgent() => ()
+                | $PL.SourceUserAgentPlatform() => ()
+                | $PL.SourceNavigatorPlatform() => ()
+                | $PL.SourceTouchPoints() => ()
+                | $PL.SourceCapacitor() => ())
+              val () = fact(agent)
+              val () = fact(agent_platform)
+              val () = fact(navigator_platform)
+            in fact(touch) end)
       in
         case+ shell of
         | ~$PL.ShellBrowser() => ()
