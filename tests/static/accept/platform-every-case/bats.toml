@@ -1,0 +1,8 @@
+[package]
+name = "platform-every-case"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
