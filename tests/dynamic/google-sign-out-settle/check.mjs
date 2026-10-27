@@ -33,15 +33,15 @@ async function load(label, text) {
 // the app cannot reach this otherwise), and with a code it never gives (-9)
 // where the answer with no flag had -5, to pass SignOutLoadFailed and
 // SignOutUnexpected through the app
-const loadMissing = "Promise.resolve().then(() => googleLoad().then(";
-if (!head.includes(loadMissing)) throw new Error('bridge.js: the sign-out load not found');
-const oddCode = 'signOutSaid(id, r, -5)';
+const loadMissing = "Promise.resolve().then(() => googleLoad().then(\n      () => new Promise(ok => view.google";
+if (head.split(loadMissing).length !== 2) throw new Error('bridge.js: the sign-out load not found once');
+const oddCode = 'googleSaid(id, r, -5)';
 if (!head.includes(oddCode)) throw new Error('bridge.js: the odd answer case not found');
 const loads = {
   real: await load('real', head),
   missing: await load('missing', head.replace(loadMissing,
-    "Promise.resolve().then(() => Promise.reject((e => { delete e.stack; return e; })(new Error('Google sign-in did not load'))).then(")),
-  unexpected: await load('unexpected', head.replace(oddCode, 'signOutSaid(id, r, -9)')),
+    "Promise.resolve().then(() => Promise.reject((e => { delete e.stack; return e; })(new Error('Google sign-in did not load'))).then(\n      () => new Promise(ok => view.google")),
+  unexpected: await load('unexpected', head.replace(oddCode, 'googleSaid(id, r, -9)')),
 };
 const wasm = readFileSync('dist/pwa/app.wasm');
 const settle = () => new Promise(r => setTimeout(r, 100));

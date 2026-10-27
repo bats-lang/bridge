@@ -1,0 +1,63 @@
+== the plugin opens the tab
+open https://example.com/a
+open https://example.com/a
+hash: #opened
+hash: #old: opened
+hash: #not https
+hash: #old: not opened
+== the plugin opens the tab and answers something
+open https://example.com/a
+open https://example.com/a
+hash: #opened
+hash: #old: opened
+hash: #not https
+hash: #old: not opened
+== the plugin rejects the open: its own outcome, with the error
+open https://example.com/a
+open https://example.com/a
+hash: #rejected
+hash: #{"name":"Error","message":"no tab"}
+hash: #old: not opened
+hash: #not https
+hash: #old: not opened
+== the plugin rejects with nothing
+open https://example.com/a
+open https://example.com/a
+hash: #rejected: no text
+hash: #old: not opened
+hash: #not https
+hash: #old: not opened
+== the open throws as it is called: its own outcome, with the error
+open https://example.com/a
+open https://example.com/a
+hash: #thrown
+hash: #{"name":"Error","message":"threw"}
+hash: #old: not opened
+hash: #not https
+hash: #old: not opened
+== the open throws nothing
+open https://example.com/a
+open https://example.com/a
+hash: #thrown: no text
+hash: #old: not opened
+hash: #not https
+hash: #old: not opened
+== there is no Browser plugin
+hash: #not here
+hash: #old: not opened
+hash: #not https
+hash: #old: not opened
+== the address fails to read: a thrown open
+hash: #thrown
+hash: #{"name":"Error","message":"address unreadable"}
+hash: #old: not opened
+hash: #not https
+hash: #old: not opened
+== a code the bridge never gives is TabOpenUnexpected
+open https://example.com/a
+open https://example.com/a
+hash: #unexpected
+hash: #old: not opened
+hash: #not https
+hash: #old: not opened
+done

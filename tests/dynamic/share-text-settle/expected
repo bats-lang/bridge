@@ -1,0 +1,85 @@
+== the share sheet takes it
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #shared
+hash: #old: shared
+== the user closes the share sheet: an AbortError
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #cancelled
+hash: #old: cancelled
+== NotAllowedError: a failure the API documents
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #failed
+hash: #{"name":"NotAllowedError","message":"no activation"}
+hash: #old: failed
+== DataError: a failure the API documents
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #failed
+hash: #{"name":"DataError","message":"bad data"}
+hash: #old: failed
+== TypeError: a failure the API documents
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #failed
+hash: #{"name":"TypeError","message":"cannot share"}
+hash: #old: failed
+== a rejection the API does not document: its own outcome, with the error
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #rejected
+hash: #{"name":"Error","message":"sharing is in progress"}
+hash: #old: failed
+== a rejection whose message only says cancel is no cancel
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #rejected
+hash: #{"name":"Error","message":"Share cancelled"}
+hash: #old: failed
+== a rejection with nothing
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #rejected: no text
+hash: #old: failed
+== the share throws as it is called: its own outcome, with the error
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #thrown
+hash: #{"name":"Error","message":"threw"}
+hash: #old: failed
+== the share throws nothing
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #thrown: no text
+hash: #old: failed
+== the app: the Share plugin takes it
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #shared
+hash: #old: shared
+== the app: the Share plugin says "Share canceled"
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #cancelled
+hash: #old: cancelled
+== the app: the Share plugin rejects otherwise
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #rejected
+hash: #{"name":"Error","message":"Can't share while sharing is in progress"}
+hash: #old: failed
+== there is no way to share here
+hash: #not here
+hash: #old: failed
+== the text fails to read: a thrown share
+hash: #thrown
+hash: #{"name":"Error","message":"text unreadable"}
+hash: #old: failed
+== a code the bridge never gives is TextAnswerUnexpected
+share {"text":"Hi","title":"T"}
+share {"text":"Hi","title":"T"}
+hash: #unexpected
+hash: #old: failed
+done

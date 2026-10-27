@@ -1,0 +1,113 @@
+== the share sheet takes it
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+hash: #shared
+hash: #old: shared
+== the user closes the share sheet: an AbortError
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+hash: #cancelled
+hash: #old: cancelled
+== NotAllowedError: a failure the API documents
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+hash: #failed
+hash: #{"name":"NotAllowedError","message":"no activation"}
+hash: #old: failed
+== a rejection the API does not document: its own outcome, with the error
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+hash: #rejected
+hash: #{"name":"Error","message":"sharing is in progress"}
+hash: #old: failed
+== a rejection with nothing
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+hash: #rejected: no text
+hash: #old: failed
+== the share throws as it is called: its own outcome, with the error
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+hash: #thrown
+hash: #{"name":"Error","message":"threw"}
+hash: #old: failed
+== the share throws nothing
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+share {"files":["a/b.txt (text/plain, 4 bytes)"],"title":"a/b.txt"}
+hash: #thrown: no text
+hash: #old: failed
+== the browser cannot share the file
+hash: #not shareable
+hash: #old: not shareable
+== the app: written to the cache and shared
+write CACHE a_b.txt: data
+share {"title":"a/b.txt","files":["file:///cache/a_b.txt"]}
+write CACHE a_b.txt: data
+share {"title":"a/b.txt","files":["file:///cache/a_b.txt"]}
+hash: #shared
+hash: #old: shared
+== the app: the Share plugin says "Share canceled"
+write CACHE a_b.txt: data
+share {"title":"a/b.txt","files":["file:///cache/a_b.txt"]}
+write CACHE a_b.txt: data
+share {"title":"a/b.txt","files":["file:///cache/a_b.txt"]}
+hash: #cancelled
+hash: #old: cancelled
+== the app: the Share plugin rejects otherwise
+write CACHE a_b.txt: data
+share {"title":"a/b.txt","files":["file:///cache/a_b.txt"]}
+write CACHE a_b.txt: data
+share {"title":"a/b.txt","files":["file:///cache/a_b.txt"]}
+hash: #rejected
+hash: #{"name":"Error","message":"Can't share while sharing is in progress"}
+hash: #old: failed
+== the app: the Share plugin throws as it is called
+write CACHE a_b.txt: data
+share {"title":"a/b.txt","files":["file:///cache/a_b.txt"]}
+write CACHE a_b.txt: data
+share {"title":"a/b.txt","files":["file:///cache/a_b.txt"]}
+hash: #thrown
+hash: #{"name":"Error","message":"threw"}
+hash: #old: failed
+== the app: the write to the cache rejects: its own outcome, with the error
+write CACHE a_b.txt: data
+write CACHE a_b.txt: data
+hash: #cache rejected
+hash: #{"name":"Error","message":"disk full"}
+hash: #old: failed
+== the app: the write to the cache rejects with nothing
+write CACHE a_b.txt: data
+write CACHE a_b.txt: data
+hash: #cache rejected: no text
+hash: #old: failed
+== the app: the write to the cache throws as it is called
+write CACHE a_b.txt: data
+write CACHE a_b.txt: data
+hash: #thrown
+hash: #{"name":"Error","message":"threw"}
+hash: #old: failed
+== the app: the write to the cache answers nothing: reading the answer threw
+write CACHE a_b.txt: data
+write CACHE a_b.txt: data
+hash: #thrown
+hash: #{"name":"TypeError","stack":"(stack)"}
+hash: #old: failed
+== the app has no Share plugin
+hash: #not shareable
+hash: #old: not shareable
+== the app has no Filesystem plugin
+hash: #not shareable
+hash: #old: not shareable
+== there is no way to share here
+hash: #not shareable
+hash: #old: not shareable
+== the bytes fail to read: a thrown share
+hash: #thrown
+hash: #{"name":"Error","message":"bytes unreadable"}
+hash: #old: failed
+== a code the bridge never gives is FileAnswerUnexpected
+write CACHE a_b.txt: data
+write CACHE a_b.txt: data
+hash: #unexpected
+hash: #old: failed
+done

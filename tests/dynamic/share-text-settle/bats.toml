@@ -1,0 +1,10 @@
+[package]
+name = "share-text-settle"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"promise" = ""
+"result" = ""
+"pwa" = ""
+"wasm.bats-packages.dev/bridge" = ""
