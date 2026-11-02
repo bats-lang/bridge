@@ -280,6 +280,8 @@ App policy (which attributes, roles, defaults, when) never lives in
 bridge's JS: it is the app's, in Bats (bats-lang/pwa#49). A pull request
 that puts policy in bridge gets `Verdict: changes needed`.
 
+When the only change since the approving review is a merge of main (keyword: main-merge, bats-lang/bats#426), the review of the new head is not a new adversarial review: run `bats merge-proof <reviewed-sha> <head>` at the root of a checkout of the head and paste the command's output as the head-naming review, inside a comment of the form below (its `Reviewed:` line names the new head in full, its one `Verdict:` line is `Verdict: approved` only when the output is the line `OK: ...`, and the output is plain text, on one line of its own); any other output (`NOT OK: ...`, or hunks alone) is read by the reviewer, who reviews the head as any other change.
+
 ### Who reviews, and where
 
 Only a comment by a trusted author counts: its `author_association` is
