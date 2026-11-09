@@ -1,9 +1,11 @@
+== outside-fetch-scheme
 fetch javascript: none
 fetch data: none
 fetch redirect to data: none
 fetch with no final url none
 fetch refused none
 fetch http: body
+== outside-store
 put: stored
 get: found, 5 bytes
 delete: stored
