@@ -185,11 +185,11 @@ end (* #target wasm *)
    the book sections, so the bound is larger again. An app that renders
    outside content generates its bridge with these; the forms before them
    are kept beside them *)
-#pub fun produce_bridge_book {n:nat | n + 142176 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 142176] $B.builder(m)): void
+#pub fun produce_bridge_book {n:nat | n + 142344 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 142344] $B.builder(m)): void
 
-#pub fun produce_bridge_app_book {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 144176 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 144176] $B.builder(m),
+#pub fun produce_bridge_app_book {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 144344 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 144344] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
 (* The service worker: the shell is cached when it is installed, and

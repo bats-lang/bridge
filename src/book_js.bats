@@ -154,14 +154,14 @@ in end
    Book content (book_content.bats)
    ============================================================ *)
 
-#pub fun emit_js_book {n:nat | n + 12032 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12032] $B.builder(m)): void
+#pub fun emit_js_book {n:nat | n + 12200 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12200] $B.builder(m)): void
 
 (* The refused list, once, for both checks of a sheet and of a style. css defines
    it (book_refused, css's src/book.bats): url(, image-set(, image(, src(,
    cross-fade(, element(, paint(, env(, var(, attr(, expression(, @import,
    @font-face, !important, a backslash, a left angle bracket and a comment
-   opener, without regard to case. tests/dynamic/book-sheet plays each *)
+   opener, without regard to case. tests/dynamic/book plays each (check.mjs, one line for each) *)
 implement emit_js_book (b) = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Book content (book_content.bats, keyword: book content) ---\n")
@@ -179,7 +179,7 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"    c.style.setProperty('contain', 'layout paint style', 'important');\n")
   val () = $B.bput(b,"    c.style.setProperty('isolation', 'isolate', 'important');\n")
   val () = $B.bput(b,"  }\n")
-  val () = $B.bput(b,"  function bookTextRefused(text) { const low = text.toLowerCase(); return BOOK_REFUSED.some((s) => low.includes(s)); }\n")
+  val () = $B.bput(b,"  function bookTextRefused(text) { const low = text.toLowerCase(); return BOOK_REFUSED.find((s) => low.includes(s)) || ''; }\n")
   (* The selectors of a rule: each complex selector of the list (split at a comma
      outside parentheses, brackets and strings) starts with the container's prefix *)
   val () = $B.bput(b,"  function bookSelectorsOk(sel, prefix) {\n")
@@ -332,7 +332,7 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"      let at = 0;\n")
   val () = $B.bput(b,"      for (const piece of rec.chunks) { all.set(piece, at); at += piece.length; }\n")
   val () = $B.bput(b,"      const text = _dec.decode(all);\n")
-  val () = $B.bput(b,"      if (!bookSheetOk(text, cid)) { bookRefuse('sheet'); return; }\n")
+  val () = $B.bput(b,"      if (!bookSheetOk(text, cid)) { bookRefuse('sheet: ' + (bookTextRefused(text) || 'structure')); return; }\n")
   val () = $B.bput(b,"      if (typeof CSSStyleSheet !== 'function' || !('adoptedStyleSheets' in document)) { bookRefuse('no constructable style sheets'); return; }\n")
   val () = $B.bput(b,"      const sheet = new CSSStyleSheet();\n")
   val () = $B.bput(b,"      sheet.replaceSync('@layer book{' + text + '}');\n")
@@ -359,12 +359,14 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"    if (!e || bookContainerOf(e) !== c || !e.hasAttribute('data-book-element')) { bookRefuse('book operation on ' + el.s); return; }\n")
   val () = $B.bput(b,"    if (op === 15) {\n")
   val () = $B.bput(b,"      const text = dec(d2 + 2, u16(d2));\n")
-  val () = $B.bput(b,"      if (bookTextRefused(text) || /[{}]/.test(text)) { bookRefuse('declarations'); return; }\n")
+  val () = $B.bput(b,"      const why = bookTextRefused(text) || (text.match(/[{}]/) || [''])[0];\n")
+  val () = $B.bput(b,"      if (why) { bookRefuse('declarations: ' + why); return; }\n")
   val () = $B.bput(b,"      e.setAttribute('style', text);\n")
   val () = $B.bput(b,"      return;\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    const attr = { 1: 'data-book-class', 2: 'data-book-id', 3: 'data-book-epub-type' }[mem[base + d2]], names = dec(d2 + 3, u16(d2 + 1));\n")
-  val () = $B.bput(b,"    if (!attr || /[\"'\\\\<>\\u0000-\\u001f]/.test(names)) { bookRefuse('names'); return; }\n")
+  val () = $B.bput(b,"    const bad = attr && names.match(/[\"'\\\\<>\\u0000-\\u001f]/);\n")
+  val () = $B.bput(b,"    if (!attr || bad) { bookRefuse('names: ' + (bad ? JSON.stringify(bad[0]) : 'kind')); return; }\n")
   val () = $B.bput(b,"    e.setAttribute(attr, names);\n")
   val () = $B.bput(b,"  }\n")
   val () = $B.bput(b,"  function bookFlush(bufPtr, len, book) {\n")
