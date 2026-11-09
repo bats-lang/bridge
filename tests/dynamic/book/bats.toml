@@ -5,6 +5,7 @@ kind = "bin"
 [dependencies]
 "array" = ""
 "builder" = ""
+"css" = ""
 "file" = ""
 "promise" = ""
 "result" = ""

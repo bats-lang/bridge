@@ -5,6 +5,8 @@
 #use file as F
 #use result as R
 #use wasm.bats-packages.dev/bridge as BR
+#use css as C
+staload CB = "css/src/book.sats"
 
 (* Writes dist/bridge.js with produce_bridge_app_book, the form with the
    book container and the outside reads (pwa has no book form yet) *)
@@ -38,7 +40,24 @@ in
   | ~$R.err(_) => $B.builder_free(js)
 end
 
+(* css's refused table, one entry on each line after the count, for check.mjs to
+   compare with the BOOK_REFUSED that bridge.js holds (bridge#267): an entry is at
+   most 11 bytes and a newline follows it *)
+fun put_entries {cnt:nat | cnt <= 17}{i:nat | i <= cnt}{n:nat | n + 12 * (cnt - i) <= $B.BUILDER_CAP} .<cnt - i>.
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12 * (cnt - i)] $B.builder(m),
+   cnt: int(cnt), i: int(i)): void =
+  if i >= cnt then ()
+  else let
+    val () = $B.bput(b, $CB.book_refused_entry(i))
+    val () = $B.put_newline(b)
+  in put_entries(b, cnt, i + 1) end
+
 implement main0 () = let
   var js = $B.create()
   val () = $BR.produce_bridge_app_book(js, "app.wasm", "bats-root")
-in write_js("dist/bridge.js", js) end
+  val () = write_js("dist/bridge.js", js)
+  var table = $B.create()
+  val () = $B.put_int(table, $CB.book_refused_count ())
+  val () = $B.put_newline(table)
+  val () = put_entries(table, $CB.book_refused_count (), 0)
+in write_js("dist/refused.txt", table) end

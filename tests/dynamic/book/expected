@@ -1,3 +1,4 @@
+refused list: 17 entries, those of css's table
 == book-container-id
 <div id="chap" data-book-container="chap" data-book-layout="1" style="contain: layout paint style !important; isolation: isolate !important;">
 </div>

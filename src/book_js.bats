@@ -5,6 +5,8 @@
 #include "share/atspre_staload.hats"
 
 #use builder as B
+#use css as C
+staload CB = "css/src/book.sats"
 
 (* ============================================================
    The outside reads (outside.bats): tables of their own
@@ -154,14 +156,55 @@ in end
    Book content (book_content.bats)
    ============================================================ *)
 
-#pub fun emit_js_book {n:nat | n + 12200 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 12200] $B.builder(m)): void
+#pub fun emit_js_book {n:nat | n + 13219 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 13219] $B.builder(m)): void
 
-(* The refused list, once, for both checks of a sheet and of a style. css defines
-   it (book_refused, css's src/book.bats): url(, image-set(, image(, src(,
-   cross-fade(, element(, paint(, env(, var(, attr(, expression(, @import,
-   @font-face, !important, a backslash, a left angle bracket and a comment
-   opener, without regard to case. tests/dynamic/book plays each (check.mjs, one line for each) *)
+(* The refused list, once, for both checks of a sheet and of a style, GENERATED
+   from css's table (keyword: refused table, bats-lang/css#88, bridge#267):
+   css's book_refused_count and book_refused_entry are the one list that
+   book_refused (css's src/book.bats) reads, and BOOK_REFUSED below is written
+   from them entry by entry, so no copy of an entry is in bridge. An entry is
+   written as a JS string of single quotes: a printable ASCII character as it
+   is (a backslash or a quote after a backslash), any other as U+FFFD, which
+   no text matches; css's entries are printable ASCII (a lower case match, at
+   most 11 bytes), and tests/dynamic/book compares the emitted list with
+   css's table, so a change there is seen. The sizes are in the types: an
+   entry of at most 11 characters of at most 6 bytes each, in quotes and
+   followed by a comma and a space, is at most 70 bytes. tests/dynamic/book
+   plays each entry (check.mjs, one line for each) *)
+fn put_js_char {c:int}{n:nat | n + 6 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6] $B.builder(m), c: int(c)): void =
+  if c = 92 then let
+    val () = $B.put_char(b, 92)
+  in $B.put_char(b, 92) end
+  else if c = 39 then let
+    val () = $B.put_char(b, 92)
+  in $B.put_char(b, 39) end
+  else if c >= 32 then (if c < 127 then $B.put_char(b, c) else $B.bput(b, "\\ufffd"))
+  else $B.bput(b, "\\ufffd")
+
+fun put_js_chars {sn:nat}{at:nat | at <= sn}{n:nat | n + 6 * (sn - at) <= $B.BUILDER_CAP} .<sn - at>.
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 6 * (sn - at)] $B.builder(m),
+   s: string(sn), len: int(sn), at: int(at)): void =
+  if at >= len then ()
+  else let
+    val () = put_js_char(b, char2int1(string_get_at(s, at)))
+  in put_js_chars(b, s, len, at + 1) end
+
+(* Entries i to cnt - 1 of css's table. The getter takes an index below 17 (css's
+   type) and cnt is at most 17 and is css's count: a table of 18 entries
+   fails at the call of this function with the count, one of 16 at the getter *)
+fun put_refused_entries {cnt:nat | cnt <= 17}{i:nat | i <= cnt}{n:nat | n + 70 * (cnt - i) <= $B.BUILDER_CAP} .<cnt - i>.
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 70 * (cnt - i)] $B.builder(m),
+   cnt: int(cnt), i: int(i)): void =
+  if i >= cnt then ()
+  else let
+    val entry = $CB.book_refused_entry(i)
+    val () = $B.put_char(b, 39)
+    val () = put_js_chars(b, entry, g1u2i(string1_length(entry)), 0)
+    val () = $B.bput(b, "', ")
+  in put_refused_entries(b, cnt, i + 1) end
+
 implement emit_js_book (b) = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Book content (book_content.bats, keyword: book content) ---\n")
@@ -171,7 +214,9 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"  // need no check to the ordinary flush, in runs\n")
   val () = $B.bput(b,"  const bookPlainFlush = batsDomFlush;\n")
   val () = $B.bput(b,"  const bookSheets = new Map(), bookFaces = new Map(), bookPending = new Map(), bookLogged = new Set();\n")
-  val () = $B.bput(b,"  const BOOK_REFUSED = ['url(', 'image-set(', 'image(', 'src(', 'cross-fade(', 'element(', 'paint(', 'env(', 'var(', 'attr(', 'expression(', '@import', '@font-face', '!important', '\\\\', '<', '/*'];\n")
+  val () = $B.bput(b,"  const BOOK_REFUSED = [")
+  val () = put_refused_entries(b, $CB.book_refused_count (), 0)
+  val () = $B.bput(b,"];\n")
   val () = $B.bput(b,"  function bookRefuse(what) { if (!bookLogged.has(what)) { bookLogged.add(what); console.error('bats: book refused: ' + what); } }\n")
   val () = $B.bput(b,"  function bookContainerOf(el) { return el && el.closest ? el.closest('[data-book-container]') : null; }\n")
   val () = $B.bput(b,"  function bookGet(cid) { const c = getEl(cid); return c && c.getAttribute('data-book-container') === cid ? c : null; }\n")

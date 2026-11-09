@@ -132,6 +132,23 @@ function snap(name) {
 }
 
 const src = readFileSync('dist/bridge.js', 'utf-8');
+
+// The refused list of bridge.js is generated from css's table (bridge#267): gen
+// wrote css's count and its entries in order (dist/refused.txt); the list the
+// bridge holds must be those entries, no more, no fewer, in that order.
+{
+  const table = readFileSync('dist/refused.txt', 'utf-8').split('\n');
+  const count = Number(table.shift());
+  if (table.pop() !== '') throw new Error('refused.txt: no final newline');
+  const held = /\n  const BOOK_REFUSED = (\[[^\n]*\]);\n/.exec(src);
+  if (!held) throw new Error('bridge.js: BOOK_REFUSED not found');
+  const list = new Function(`return ${held[1]}`)();
+  if (table.length !== count) throw new Error(`refused.txt: count ${count}, ${table.length} entries`);
+  if (JSON.stringify(list) !== JSON.stringify(table)) {
+    throw new Error(`BOOK_REFUSED ${JSON.stringify(list)} differs from css's table ${JSON.stringify(table)}`);
+  }
+  emit(`refused list: ${list.length} entries, those of css's table`);
+}
 const boot = src.lastIndexOf("\nconst root = document.getElementById('bats-root');");
 if (boot < 0) throw new Error('bridge.js: boot code not found');
 const tmp = join(tmpdir(), `bridge-book-${process.pid}.mjs`);
