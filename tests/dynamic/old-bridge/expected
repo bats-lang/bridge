@@ -5,5 +5,8 @@ bridge.js has no platform atom: true
 bridge.js has the other atoms: true
 bridge-plain.js has no platform atom: true
 bridge-plain.js has the other atoms: true
+bridge-platform.js within the bound of produce_bridge_platform: true
+bridge-platform.js has the platform atom: true
+bridge-platform.js has no image error atom: true
 hash: #old form
 done

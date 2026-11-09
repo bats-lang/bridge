@@ -20,6 +20,14 @@ for (const [name, text] of [['bridge.js', src], ['bridge-plain.js', plain]]) {
   console.log(`${name} has the other atoms: ${text.includes('bats_js_is_native_platform') && text.includes('bats_js_timezone_offset')}`);
 }
 
+// produce_bridge_platform (the form with the platform atom) is kept beside
+// produce_bridge_image_error (bridge#277): it holds no image error atom and
+// fits its own bound (121883)
+const platform = readFileSync('dist/pwa/bridge-platform.js', 'utf-8');
+console.log(`bridge-platform.js within the bound of produce_bridge_platform: ${Buffer.byteLength(platform) <= 121883}`);
+console.log(`bridge-platform.js has the platform atom: ${platform.includes('bats_js_platform_fact')}`);
+console.log(`bridge-platform.js has no image error atom: ${!platform.includes('batsJsListenImageError') && !platform.includes('bats_js_image_error_') && !platform.includes('bats_js_listen_image_error')}`);
+
 const tmp = join(tmpdir(), `bridge-old-${process.pid}.mjs`);
 writeFileSync(tmp, src.slice(0, boot) + '\n');
 const { loadWASM } = await import(tmp);

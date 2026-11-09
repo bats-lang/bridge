@@ -22,3 +22,13 @@ fn new_plain {n:nat | n + 121883 <= $BU.BUILDER_CAP}
 fn new_app {n:nat | n + 123883 <= $BU.BUILDER_CAP}
   (b: !$BU.builder(n) >> [m:nat | n <= m; m <= n + 123883] $BU.builder(m)): void =
   $B.produce_bridge_app_platform(b, "app.wasm", "bats-root")
+
+(* The forms with the image error atom (bridge#277) are beside the platform
+   forms, which keep their bounds (121883, 123883) *)
+fn image_plain {n:nat | n + 122883 <= $BU.BUILDER_CAP}
+  (b: !$BU.builder(n) >> [m:nat | n <= m; m <= n + 122883] $BU.builder(m)): void =
+  $B.produce_bridge_image_error(b)
+
+fn image_app {n:nat | n + 124883 <= $BU.BUILDER_CAP}
+  (b: !$BU.builder(n) >> [m:nat | n <= m; m <= n + 124883] $BU.builder(m)): void =
+  $B.produce_bridge_app_image_error(b, "app.wasm", "bats-root")

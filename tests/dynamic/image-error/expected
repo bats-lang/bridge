@@ -1,0 +1,10 @@
+bridge.js within the bound of produce_bridge_app_image_error: true
+bridge.js has the platform atom and the image error atom: true
+app: available
+-- the image that draws
+-- the corrupt image
+app: broken
+-- an image with no id
+-- a script and a div
+a bubble-phase listener on the document heard: nothing
+done

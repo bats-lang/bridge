@@ -168,6 +168,16 @@ end (* #target wasm *)
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 123883] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
+(* The bridge with the platform atom and the image error atom (image_error.bats,
+   bridge#277): the same JS plus the image error section, so the bound is larger
+   again. The forms with the platform atom only are kept beside these *)
+#pub fun produce_bridge_image_error {n:nat | n + 122883 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 122883] $B.builder(m)): void
+
+#pub fun produce_bridge_app_image_error {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 124883 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 124883] $B.builder(m),
+   wasm_name: string nw, root_id: string nr): void
+
 (* The service worker: the shell is cached when it is installed, and
    every same-origin GET of a file directly in its scope goes to the
    network first (so a new build is used as soon as it is served), its
@@ -218,6 +228,8 @@ implement produce_bridge(b) = emit_js_all(b)
 
 implement produce_bridge_platform(b) = emit_js_all_platform(b)
 
+implement produce_bridge_image_error(b) = emit_js_all_image_error(b)
+
 (* The page's loader: the wasm is fetched and run, and the service
    worker registered. Whether a new build is served, and when to load
    it, is the app's (build_watch, build_watch.bats).
@@ -267,6 +279,11 @@ in end
 
 implement produce_bridge_app_platform (b, wasm_name, root_id) = let
   val () = emit_js_all_platform(b)
+  val () = _produce_app_tail(b, wasm_name, root_id)
+in end
+
+implement produce_bridge_app_image_error (b, wasm_name, root_id) = let
+  val () = emit_js_all_image_error(b)
   val () = _produce_app_tail(b, wasm_name, root_id)
 in end
 
