@@ -67,6 +67,7 @@ in $P.finish<$ID.stored>(d, llam (st2) => let
 in key_get("never") end) end) end
 
 fn keep {m:pos | m <= 1048576} (b: !$OU.dblob_outside(m), m: int m): void = let
+  val () = say("== outside-store")
   val a = $A.alloc<byte>(m)
   val @(pfo, pfc, pflent | ba) = $OU.blob_read_outside(b, a, m)
   val @(fz, cb) = $A.barr_freeze(ba)
@@ -92,6 +93,7 @@ in $P.finish<$OU.fetched_outside>(p, llam (got) =>
   | ~$OU.NotFetchedOutside() => say(none)) end
 
 implement main0 () = let
+  val () = say("== outside-fetch-scheme")
   val () = fetch_line("javascript:go()", "fetch javascript: body", "fetch javascript: none")
   val () = fetch_line("data:text/plain,hello", "fetch data: body", "fetch data: none")
   val () = fetch_line("http://localhost/to-data", "fetch redirect to data: body", "fetch redirect to data: none")
