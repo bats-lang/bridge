@@ -21,6 +21,12 @@ staload "./backup_file.bats"
 #pub fun emit_js_all_platform {n:nat | n + 121883 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 121883] $B.builder(m)): void
 
+(* The bridge with the platform atom and the image error atom (image_error.bats,
+   bridge#277): the forms with the platform atom only are kept beside it, as
+   the ones without it are *)
+#pub fun emit_js_all_image_error {n:nat | n + 122883 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 122883] $B.builder(m)): void
+
 (* ============================================================
    Per-concept JS emitters
    ============================================================ *)
@@ -2932,6 +2938,35 @@ fn emit_js_imports_platform_head {n:nat | n + 3032 <= $B.BUILDER_CAP}
   val () = $B.bput(b,"      bats_js_is_native_platform: () => capNative() ? 1 : 0,\n")
 in end
 
+(* A failed image, passed to the app (image_error.bats, bridge#277): an
+   image's error event does not bubble, so one capture-phase listener on the
+   document hears every image's. Only the node id is written down; whether
+   to fall back is the app's *)
+fn emit_js_image_error {n:nat | n + 1000 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 1000] $B.builder(m)): void = let
+  val () = $B.bput(b,"\n")
+  val () = $B.bput(b,"  // Image errors (image_error.bats): an <img> that failed to draw. Its id is\n")
+  val () = $B.bput(b,"  // passed to listener l as UTF-8 bytes; an image with no id (not the app's)\n")
+  val () = $B.bput(b,"  // is not passed. The error event does not bubble, hence the capture phase\n")
+  val () = $B.bput(b,"  let imageErrorListener = -1, imageErrorHeard = false;\n")
+  val () = $B.bput(b,"  function batsJsImageErrorAvailable() { return typeof document.addEventListener === 'function' ? 1 : 0; }\n")
+  val () = $B.bput(b,"  function batsJsListenImageError(l) {\n")
+  val () = $B.bput(b,"    imageErrorListener = l;\n")
+  val () = $B.bput(b,"    if (imageErrorHeard) return;\n")
+  val () = $B.bput(b,"    imageErrorHeard = true;\n")
+  val () = $B.bput(b,"    document.addEventListener('error', (e) => {\n")
+  val () = $B.bput(b,"      const t = e.target;\n")
+  val () = $B.bput(b,"      if (t && t.localName === 'img' && t.id) fireBytes(imageErrorListener, utf8.encode(t.id));\n")
+  val () = $B.bput(b,"    }, true);\n")
+  val () = $B.bput(b,"  }\n")
+in end
+
+fn emit_js_imports_image_error {n:nat | n + 150 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 150] $B.builder(m)): void = let
+  val () = $B.bput(b,"      bats_js_image_error_available: batsJsImageErrorAvailable,\n")
+  val () = $B.bput(b,"      bats_js_listen_image_error: batsJsListenImageError,\n")
+in end
+
 fn emit_js_imports_platform_atom {n:nat | n + 155 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 155] $B.builder(m)): void = let
   val () = $B.bput(b,"      bats_js_platform_available: batsJsPlatformAvailable,\n")
@@ -3048,6 +3083,13 @@ fn _emit_11_platform {n:nat | n + 38363 <= $B.BUILDER_CAP}
   val () = emit_js_platform(b)
 in emit_js_speech(b) end
 
+fn _emit_11_image_error {n:nat | n + 39363 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 39363] $B.builder(m)): void = let
+  val () = _emit_11_head(b)
+  val () = emit_js_platform(b)
+  val () = emit_js_image_error(b)
+in emit_js_speech(b) end
+
 fn _emit_9 {n:nat | n + 10298 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10298] $B.builder(m)): void = let
   val () = emit_js_imports(b)
@@ -3059,6 +3101,16 @@ fn _emit_9_platform {n:nat | n + 10510 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10510] $B.builder(m)): void = let
   val () = emit_js_imports(b)
   val () = emit_js_imports_platform_with_platform(b)
+  val () = emit_js_loadwasm_close(b)
+in end
+
+fn _emit_9_image_error {n:nat | n + 10700 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10700] $B.builder(m)): void = let
+  val () = emit_js_imports(b)
+  val () = emit_js_imports_platform_head(b)
+  val () = emit_js_imports_platform_atom(b)
+  val () = emit_js_imports_image_error(b)
+  val () = emit_js_imports_platform_tail(b)
   val () = emit_js_loadwasm_close(b)
 in end
 
@@ -3089,3 +3141,9 @@ implement emit_js_all_platform(b) = let
   val () = _emit_second_half_shared(b)
   val () = _emit_11_platform(b)
 in _emit_9_platform(b) end
+
+implement emit_js_all_image_error(b) = let
+  val () = _emit_first_half(b)
+  val () = _emit_second_half_shared(b)
+  val () = _emit_11_image_error(b)
+in _emit_9_image_error(b) end
