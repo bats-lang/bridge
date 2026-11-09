@@ -7,6 +7,7 @@
 
 staload "./plugins.bats"
 staload "./backup_file.bats"
+staload "./book_js.bats"
 
 (* ============================================================
    String builder helpers (visible to lib.bats via module)
@@ -26,6 +27,13 @@ staload "./backup_file.bats"
    the ones without it are *)
 #pub fun emit_js_all_image_error {n:nat | n + 122883 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 122883] $B.builder(m)): void
+
+(* The bridge with the outside reads and book content (book_js.bats, outside.bats,
+   book_content.bats; keyword: book content): the image error form's JS plus the
+   book sections and their imports, 122883 plus 6224, 12032 and 1037, so the bound
+   is larger again. The forms without them are kept beside it, as they are *)
+#pub fun emit_js_all_book {n:nat | n + 142176 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 142176] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -3090,6 +3098,26 @@ fn _emit_11_image_error {n:nat | n + 39363 <= $B.BUILDER_CAP}
   val () = emit_js_image_error(b)
 in emit_js_speech(b) end
 
+fn _emit_11_book {n:nat | n + 57619 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 57619] $B.builder(m)): void = let
+  val () = _emit_11_head(b)
+  val () = emit_js_platform(b)
+  val () = emit_js_image_error(b)
+  val () = emit_js_outside(b)
+  val () = emit_js_book(b)
+in emit_js_speech(b) end
+
+fn _emit_9_book {n:nat | n + 11737 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 11737] $B.builder(m)): void = let
+  val () = emit_js_imports(b)
+  val () = emit_js_imports_platform_head(b)
+  val () = emit_js_imports_platform_atom(b)
+  val () = emit_js_imports_image_error(b)
+  val () = emit_js_imports_book(b)
+  val () = emit_js_imports_platform_tail(b)
+  val () = emit_js_loadwasm_close(b)
+in end
+
 fn _emit_9 {n:nat | n + 10298 <= $B.BUILDER_CAP}
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 10298] $B.builder(m)): void = let
   val () = emit_js_imports(b)
@@ -3147,3 +3175,9 @@ implement emit_js_all_image_error(b) = let
   val () = _emit_second_half_shared(b)
   val () = _emit_11_image_error(b)
 in _emit_9_image_error(b) end
+
+implement emit_js_all_book(b) = let
+  val () = _emit_first_half(b)
+  val () = _emit_second_half_shared(b)
+  val () = _emit_11_book(b)
+in _emit_9_book(b) end

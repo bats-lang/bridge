@@ -1,0 +1,16 @@
+fetch javascript: none
+fetch data: none
+fetch redirect to data: none
+fetch with no final url none
+fetch refused none
+fetch http: body
+put: stored
+get: found, 5 bytes
+delete: stored
+get: nothing there
+get: nothing there
+asked: http://localhost/to-data http://localhost/no-url http://localhost/refused http://localhost/hello
+bats: version 1, stores kv
+bats kept: 7,8,9
+bats-outside: version 1, stores files
+databases: bats,bats-outside

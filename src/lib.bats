@@ -18,6 +18,8 @@ staload "./stash.bats"
 staload "./decompress.bats"
 staload "./event.bats"
 staload "./file.bats"
+staload "./outside.bats"
+staload "./book_content.bats"
 staload "./external.bats"
 staload "./blob.bats"
 staload "./clipboard.bats"
@@ -178,6 +180,18 @@ end (* #target wasm *)
   (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 124883] $B.builder(m),
    wasm_name: string nw, root_id: string nr): void
 
+(* The bridge with the outside reads and book content (outside.bats,
+   book_content.bats; keyword: book content): the image error form's JS plus
+   the book sections, so the bound is larger again. An app that renders
+   outside content generates its bridge with these; the forms before them
+   are kept beside them *)
+#pub fun produce_bridge_book {n:nat | n + 142176 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 142176] $B.builder(m)): void
+
+#pub fun produce_bridge_app_book {nw:nat | nw < 200}{nr:nat | nr < 100}{n:nat | n + 144176 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 144176] $B.builder(m),
+   wasm_name: string nw, root_id: string nr): void
+
 (* The service worker: the shell is cached when it is installed, and
    every same-origin GET of a file directly in its scope goes to the
    network first (so a new build is used as soon as it is served), its
@@ -229,6 +243,8 @@ implement produce_bridge(b) = emit_js_all(b)
 implement produce_bridge_platform(b) = emit_js_all_platform(b)
 
 implement produce_bridge_image_error(b) = emit_js_all_image_error(b)
+
+implement produce_bridge_book(b) = emit_js_all_book(b)
 
 (* The page's loader: the wasm is fetched and run, and the service
    worker registered. Whether a new build is served, and when to load
@@ -284,6 +300,11 @@ in end
 
 implement produce_bridge_app_image_error (b, wasm_name, root_id) = let
   val () = emit_js_all_image_error(b)
+  val () = _produce_app_tail(b, wasm_name, root_id)
+in end
+
+implement produce_bridge_app_book (b, wasm_name, root_id) = let
+  val () = emit_js_all_book(b)
   val () = _produce_app_tail(b, wasm_name, root_id)
 in end
 
