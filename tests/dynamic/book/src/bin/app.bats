@@ -390,6 +390,7 @@ fn play {l:agz}{n:nat}{cs:$A.cells}
   val () = piece_id_open(s, "chap")
   val () = $BC.dom_flush_book(s)
   val () = piece_id_close(s, "chap")
+  val () = $BC.dom_flush_book(s)
   val () = say("@snap book-sheet-id")
   val () = raw_remove("chap")
   val () = say("@snap book-removed")
