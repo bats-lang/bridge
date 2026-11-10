@@ -156,8 +156,8 @@ in end
    Book content (book_content.bats)
    ============================================================ *)
 
-#pub fun emit_js_book {n:nat | n + 13219 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 13219] $B.builder(m)): void
+#pub fun emit_js_book {n:nat | n + 14355 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 14355] $B.builder(m)): void
 
 (* The refused list, once, for both checks of a sheet and of a style, GENERATED
    from css's table (keyword: refused table, bats-lang/css#88, bridge#267):
@@ -208,12 +208,12 @@ fun put_refused_entries {cnt:nat | cnt <= 17}{i:nat | i <= cnt}{n:nat | n + 70 *
 implement emit_js_book (b) = let
   val () = $B.bput(b,"\n")
   val () = $B.bput(b,"  // --- Book content (book_content.bats, keyword: book content) ---\n")
-  val () = $B.bput(b,"  // Opcodes 13 to 18 are honoured only by batsDomFlushBook, which only the book\n")
+  val () = $B.bput(b,"  // Opcodes 13 to 20 are honoured only by batsDomFlushBook, which only the book\n")
   val () = $B.bput(b,"  // stream's dom_flush_book calls; both flushes read the stream operation by\n")
   val () = $B.bput(b,"  // operation (each one's length is known) and hand the ordinary operations that\n")
   val () = $B.bput(b,"  // need no check to the ordinary flush, in runs\n")
   val () = $B.bput(b,"  const bookPlainFlush = batsDomFlush;\n")
-  val () = $B.bput(b,"  const bookSheets = new Map(), bookFaces = new Map(), bookPending = new Map(), bookLogged = new Set();\n")
+  val () = $B.bput(b,"  const bookSheets = new Map(), bookFaces = new Map(), bookPending = new Map(), bookStylePending = new Map(), bookLogged = new Set();\n")
   val () = $B.bput(b,"  const BOOK_REFUSED = [")
   val () = put_refused_entries(b, $CB.book_refused_count (), 0)
   val () = $B.bput(b,"];\n")
@@ -302,6 +302,7 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"      bookFaces.delete(cid);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    for (const cid of [...bookPending.keys()]) if (!bookGet(cid)) bookPending.delete(cid);\n")
+  val () = $B.bput(b,"    for (const key of [...bookStylePending.keys()]) if (!bookGet(key.split('/')[0])) bookStylePending.delete(key);\n")
   val () = $B.bput(b,"  }\n")
   (* Where each operation ends (the offset after it), or -1 for one that is not
      known; ds is where its data starts, after its first id *)
@@ -318,7 +319,8 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"      case 11: case 12: return ds + 4;\n")
   val () = $B.bput(b,"      case 13: return ds + str(ds) + 1;\n")
   val () = $B.bput(b,"      case 14: { const d2 = ds + str(ds), d3 = d2 + str(d2), d4 = d3 + 1 + u8(d3); return d4 + 1 + u8(d4); }\n")
-  val () = $B.bput(b,"      case 15: { const d2 = ds + str(ds); return d2 + 2 + u16(d2); }\n")
+  val () = $B.bput(b,"      case 15: case 19: { const d2 = ds + str(ds); return d2 + 2 + u16(d2); }\n")
+  val () = $B.bput(b,"      case 20: return ds + str(ds);\n")
   val () = $B.bput(b,"      case 16: { const d2 = ds + str(ds); return d2 + 3 + u16(d2 + 1); }\n")
   val () = $B.bput(b,"      case 77: case 78: return ds + 10 + u16(ds + 8);\n")
   val () = $B.bput(b,"      default: return BOOK_CANVAS[op] === undefined ? -1 : ds + BOOK_CANVAS[op];\n")
@@ -347,7 +349,7 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"      if (copy && bookContainerOf(copy) !== from) bookStrip(copy);\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"  }\n")
-  (* Opcodes 13 to 18 *)
+  (* Opcodes 13 to 20 *)
   val () = $B.bput(b,"  function bookOp(mem, base, op, cid, ds) {\n")
   val () = $B.bput(b,"    const u16 = (o) => mem[base + o] | (mem[base + o + 1] << 8), dec = (o, k) => _dec.decode(mem.slice(base + o, base + o + k));\n")
   val () = $B.bput(b,"    if (op === 13) {\n")
@@ -401,7 +403,30 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"      return;\n")
   val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    const e = getEl(el.s);\n")
-  val () = $B.bput(b,"    if (!e || bookContainerOf(e) !== c || !e.hasAttribute('data-book-element')) { bookRefuse('book operation on ' + el.s); return; }\n")
+  val () = $B.bput(b,"    const key = cid + '/' + el.s;\n")
+  val () = $B.bput(b,"    if (!e || bookContainerOf(e) !== c || !e.hasAttribute('data-book-element')) { if (op === 19 || op === 20) bookStylePending.delete(key); bookRefuse('book operation on ' + el.s); return; }\n")
+  (* Opcodes 19 and 20: the style in pieces, whole at the end, checked as opcode
+     15 checks its declarations (keyword: book style pieces) *)
+  val () = $B.bput(b,"    if (op === 19) {\n")
+  val () = $B.bput(b,"      const k = u16(d2), rec = bookStylePending.get(key) || { chunks: [], size: 0 };\n")
+  val () = $B.bput(b,"      rec.size += k;\n")
+  val () = $B.bput(b,"      if (rec.size <= 65535) rec.chunks.push(mem.slice(base + d2 + 2, base + d2 + 2 + k));\n")
+  val () = $B.bput(b,"      bookStylePending.set(key, rec);\n")
+  val () = $B.bput(b,"      return;\n")
+  val () = $B.bput(b,"    }\n")
+  val () = $B.bput(b,"    if (op === 20) {\n")
+  val () = $B.bput(b,"      const rec = bookStylePending.get(key) || { chunks: [], size: 0 };\n")
+  val () = $B.bput(b,"      bookStylePending.delete(key);\n")
+  val () = $B.bput(b,"      if (rec.size > 65535) { bookRefuse('style over 65535'); return; }\n")
+  val () = $B.bput(b,"      const all = new Uint8Array(rec.size);\n")
+  val () = $B.bput(b,"      let at = 0;\n")
+  val () = $B.bput(b,"      for (const piece of rec.chunks) { all.set(piece, at); at += piece.length; }\n")
+  val () = $B.bput(b,"      const text = _dec.decode(all);\n")
+  val () = $B.bput(b,"      const why = bookTextRefused(text) || (text.match(/[{}]/) || [''])[0];\n")
+  val () = $B.bput(b,"      if (why) { bookRefuse('declarations: ' + why); return; }\n")
+  val () = $B.bput(b,"      e.setAttribute('style', text);\n")
+  val () = $B.bput(b,"      return;\n")
+  val () = $B.bput(b,"    }\n")
   val () = $B.bput(b,"    if (op === 15) {\n")
   val () = $B.bput(b,"      const text = dec(d2 + 2, u16(d2));\n")
   val () = $B.bput(b,"      const why = bookTextRefused(text) || (text.match(/[{}]/) || [''])[0];\n")
@@ -427,7 +452,7 @@ implement emit_js_book (b) = let
   val () = $B.bput(b,"        run(pos);\n")
   val () = $B.bput(b,"        throw new Error(`${end < 0 ? 'Unknown' : 'Truncated'} bats DOM op: ${op} at offset ${pos}`);\n")
   val () = $B.bput(b,"      }\n")
-  val () = $B.bput(b,"      if (op >= 13 && op <= 18) {\n")
+  val () = $B.bput(b,"      if (op >= 13 && op <= 20) {\n")
   val () = $B.bput(b,"        run(pos);\n")
   val () = $B.bput(b,"        if (book) bookOp(mem, bufPtr, op, nid.s, ds); else bookRefuse('opcode ' + op + ' outside a book stream');\n")
   val () = $B.bput(b,"      } else if (op === 2 || op === 4 || op === 7 || op === 8) {\n")

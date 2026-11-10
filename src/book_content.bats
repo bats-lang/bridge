@@ -1,4 +1,4 @@
-(* book_content -- the book stream, its encoders and opcodes 13 to 18 (keyword: book content) *)
+(* book_content -- the book stream, its encoders and opcodes 13 to 20 (keyword: book content) *)
 
 #include "share/atspre_staload.hats"
 staload "./outside.bats"
@@ -10,7 +10,7 @@ staload "./outside.bats"
    ============================================================ *)
 
 (* The book stream: a buffer of DOM operations that only bridge's encoders
-   below write, so a raw byte buffer cannot carry opcodes 13 to 18. Ordinary
+   below write, so a raw byte buffer cannot carry opcodes 13 to 20. Ordinary
    dom_flush refuses them. dom_flush_book applies the stream, and an encoder
    flushes it by itself when the next operation does not fit, which the
    operations being whole by themselves allows.
@@ -31,6 +31,10 @@ staload "./outside.bats"
    BOOK_SHEET_TEXT (17) [17][container][u16 length][bytes], repeated, then
    BOOK_SHEET_END (18) [18][container]: the sheet's text, checked as a whole
    at the end and adopted as @layer book{...}.
+   BOOK_STYLE_TEXT (19) [19][container][id][u16 length][bytes], repeated, then
+   BOOK_STYLE_END (20) [20][container][id]: the style of a book element in
+   pieces (as 17 and 18 are the sheet's), checked as a whole at the end as
+   opcode 15 checks its declarations and set as the style attribute.
    A container's ordinary operations: SET_ATTR and REMOVE_ATTR of style, and of
    any data-book-* name, are refused on an element inside a container other than
    the container itself, and data-book-* on every element, in both flushes; a
@@ -139,6 +143,46 @@ staload "./outside.bats"
 #pub fun book_sheet_end
   {lc:agz}{nc:pos | nc <= 64}
   (s: !book_stream, container: !$A.borrow(byte, lc, nc), container_len: int nc): void
+
+(* A style in pieces (opcodes 19 and 20, keyword: book style pieces): the style
+   attribute of the book element id of the container, written as the pieces in
+   order and then the end, checked as a whole as opcode 15 checks its
+   declarations. The run is a linear token made by book_style_begin, which
+   fixes the container and the element by their borrows: every piece and the end
+   take the same two borrows (a different container or element does not
+   type-check) and the end consumes the run, so a style that is never ended does
+   not type-check. Opcode 15 and book_style are beside them, as they were *)
+#pub datavtype book_style_run(lc: addr, li: addr) =
+  | {lc,li:addr} book_style_run_mk(lc, li)
+
+#pub fun book_style_begin
+  {lc:agz}{nc:pos | nc <= 64}{li:agz}{ni:pos | ni <= 1024}
+  (container: !$A.borrow(byte, lc, nc), id: !$A.borrow(byte, li, ni)): book_style_run(lc, li)
+
+(* Opcode 19: a piece that is a span of outside bytes *)
+#pub fun book_style_span
+  {l:agz}{n:nat}{cs:$A.cells}{lc:agz}{nc:pos | nc <= 64}{li:agz}{ni:pos | ni <= 1024}{o,k:nat | o + k <= n; k <= 65535}
+  (from: OUTSIDE_READ(cs) |
+   s: !book_stream, run: !book_style_run(lc, li),
+   container: !$A.borrow(byte, lc, nc), container_len: int nc,
+   id: !$A.borrow(byte, li, ni), id_len: int ni,
+   src: !$A.cborrow(l, n, cs), off: int o, len: int k): void
+
+(* Opcode 19: a piece that is a literal of the program (a property name from
+   css's table, ":" or ";") *)
+#pub fun book_style_lit
+  {lc:agz}{nc:pos | nc <= 64}{li:agz}{ni:pos | ni <= 1024}{m:nat | m <= 1024}
+  (s: !book_stream, run: !book_style_run(lc, li),
+   container: !$A.borrow(byte, lc, nc), container_len: int nc,
+   id: !$A.borrow(byte, li, ni), id_len: int ni,
+   lit: string m): void
+
+(* Opcode 20: the style is whole *)
+#pub fun book_style_end
+  {lc:agz}{nc:pos | nc <= 64}{li:agz}{ni:pos | ni <= 1024}
+  (s: !book_stream, run: book_style_run(lc, li),
+   container: !$A.borrow(byte, lc, nc), container_len: int nc,
+   id: !$A.borrow(byte, li, ni), id_len: int ni): void
 
 (* A book's face from the bytes src[off, off + len) of an outside file: JS
    makes the family itself, book-<container id>-<face> (no name is taken from
@@ -341,6 +385,10 @@ fn _put_span {l:agz}{n:nat}{cs:$A.cells}{o,k:nat | o + k <= n}
   (s: !book_stream, src: !$A.cborrow(l, n, cs), off: int o, len: int k): void =
   _book_bytes(s, $UNSAFE begin $UNSAFE.castvwtp1{ptr}(src) end, off, len)
 
+(* A literal of the program as the stream writes it, after its length *)
+fn _put_lit {m:nat} (s: !book_stream, lit: string m, n: int m): void =
+  _book_bytes(s, $UNSAFE begin $UNSAFE.cast{ptr}(lit) end, 0, n)
+
 implement book_container{l}{n}{cs}{lc}{nc}{csc}{lp}{np}{g}(pf, pid | s, doc, id, id_len, parent, parent_len, layout) = let
   val () = _book_reserve(s, 8192)
   val () = _book_u8(s, 13)
@@ -394,7 +442,34 @@ implement book_sheet_lit{lc}{nc}{m}(s, container, container_len, lit) = let
   val () = _book_u8(s, 17)
   val () = _put_name(s, container, container_len)
   val () = _book_u16(s, n)
-in _book_bytes(s, $UNSAFE begin $UNSAFE.cast{ptr}(lit) end, 0, n) end
+in _put_lit(s, lit, n) end
+
+implement book_style_begin{lc}{nc}{li}{ni}(container, id) = book_style_run_mk()
+
+implement book_style_span{l}{n}{cs}{lc}{nc}{li}{ni}{o,k}
+  (pf | s, run, container, container_len, id, id_len, src, off, len) = let
+  val () = _book_reserve(s, 8192 + len)
+  val () = _book_u8(s, 19)
+  val () = _put_name(s, container, container_len)
+  val () = _put_name(s, id, id_len)
+  val () = _book_u16(s, len)
+in _put_span(s, src, off, len) end
+
+implement book_style_lit{lc}{nc}{li}{ni}{m}(s, run, container, container_len, id, id_len, lit) = let
+  val n = g1u2i(string1_length(lit))
+  val () = _book_reserve(s, 8192 + n)
+  val () = _book_u8(s, 19)
+  val () = _put_name(s, container, container_len)
+  val () = _put_name(s, id, id_len)
+  val () = _book_u16(s, n)
+in _put_lit(s, lit, n) end
+
+implement book_style_end{lc}{nc}{li}{ni}(s, run, container, container_len, id, id_len) = let
+  val ~book_style_run_mk() = run
+  val () = _book_reserve(s, 8192)
+  val () = _book_u8(s, 20)
+  val () = _put_name(s, container, container_len)
+in _put_name(s, id, id_len) end
 
 implement book_sheet_id{lc}{nc}(s, container, container_len) = let
   val () = _book_reserve(s, 8192)
