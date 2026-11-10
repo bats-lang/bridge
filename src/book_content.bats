@@ -400,8 +400,7 @@ implement book_sheet_id{lc}{nc}(s, container, container_len) = let
   val () = _book_reserve(s, 8192)
   val () = _book_u8(s, 17)
   val () = _put_name(s, container, container_len)
-  val () = _book_u16(s, container_len)
-in _book_bytes(s, $UNSAFE begin $UNSAFE.castvwtp1{ptr}(container) end, 0, container_len) end
+in _put_name(s, container, container_len) end
 
 implement book_sheet_end{lc}{nc}(s, container, container_len) = let
   val () = _book_reserve(s, 8192)
