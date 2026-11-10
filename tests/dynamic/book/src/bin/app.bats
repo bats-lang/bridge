@@ -162,6 +162,39 @@ fn sheet {l:agz}{n:nat}{cs:$A.cells}{nc:pos | nc < 64}
   val () = piece(pf | s, doc, n, c, ln)
 in sheet_end(s, c) end
 
+(* A style in pieces (opcodes 19 and 20): two literals, with a flush between
+   them when flush is true, then the end *)
+fn style_two {nc,ni:pos | nc < 64; ni < 64}{m1,m2:nat | m1 <= 1024; m2 <= 1024}
+  (s: !$BC.book_stream, c: string nc, id: string ni, a: string m1, b: string m2, flush: bool): void = let
+  val @(cz, cb) = lit(c)
+  val @(iz, ib) = lit(id)
+  val cn = g1u2i(string1_length(c))
+  val idn = g1u2i(string1_length(id))
+  val run = $BC.book_style_begin(cb, ib)
+  val () = $BC.book_style_lit(s, run, cb, cn, ib, idn, a)
+  val () = (if flush then $BC.dom_flush_book(s) else ())
+  val () = $BC.book_style_lit(s, run, cb, cn, ib, idn, b)
+  val () = $BC.book_style_end(s, run, cb, cn, ib, idn)
+  val () = rel(iz, ib)
+in rel(cz, cb) end
+
+(* A literal, line ln of the file as a span, a literal, then the end *)
+fn style_span {l:agz}{n:nat}{cs:$A.cells}{nc,ni:pos | nc < 64; ni < 64}{m1,m2:nat | m1 <= 1024; m2 <= 1024}
+  (pf: $OU.OUTSIDE_READ(cs) | s: !$BC.book_stream, doc: !$A.cborrow(l, n, cs), n: int n,
+   c: string nc, id: string ni, head: string m1, ln: int, tail: string m2): void = let
+  val @(o, k) = line_at(doc, n, 0, ln)
+  val @(cz, cb) = lit(c)
+  val @(iz, ib) = lit(id)
+  val cn = g1u2i(string1_length(c))
+  val idn = g1u2i(string1_length(id))
+  val run = $BC.book_style_begin(cb, ib)
+  val () = $BC.book_style_lit(s, run, cb, cn, ib, idn, head)
+  val () = (if k <= 65535 then $BC.book_style_span(pf | s, run, cb, cn, ib, idn, doc, o, k) else ())
+  val () = $BC.book_style_lit(s, run, cb, cn, ib, idn, tail)
+  val () = $BC.book_style_end(s, run, cb, cn, ib, idn)
+  val () = rel(iz, ib)
+in rel(cz, cb) end
+
 (* An app element in a container: the ordinary operations, written into the
    book stream *)
 fn app_element {ni,np:pos | ni < 64; np < 64}
@@ -392,6 +425,21 @@ fn play {l:agz}{n:nat}{cs:$A.cells}
   val () = piece_id_close(s, "chap")
   val () = $BC.dom_flush_book(s)
   val () = say("@snap book-sheet-id")
+  (* book-style-pieces: the style of a book element from literals and a span
+     (opcode 15's book_style, called above, is unchanged beside them), one run
+     across a flush, and the runs the bridge refuses as a whole *)
+  val () = style_span(pf | s, doc, n, "chap", "c1", "color:", 68, ";")
+  val () = style_two(s, "chap", "c2", "margin:", "0;", true)
+  val () = $BC.dom_flush_book(s)
+  val () = say("@snap book-style-pieces")
+  val () = style_two(s, "chap", "c1", "background:ima", "ge-set(a 1x)", false)
+  val () = style_span(pf | s, doc, n, "chap", "c1", "background:", 69, ";")
+  val () = style_two(s, "chap", "c1", "color:red;", "}", false)
+  val () = style_two(s, "chap", "ghost", "color:red", ";", false)
+  val () = style_two(s, "chap", "app1", "color:red", ";", false)
+  val () = style_two(s, "nowhere", "c1", "color:red", ";", false)
+  val () = $BC.dom_flush_book(s)
+  val () = say("@snap book-style-pieces-refused")
   val () = raw_remove("chap")
   val () = say("@snap book-removed")
 in end
