@@ -1,0 +1,10 @@
+[package]
+name = "book-sheet-id-other"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"builder" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

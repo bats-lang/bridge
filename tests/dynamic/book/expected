@@ -155,6 +155,16 @@ sheets: 4
 faces: 2
   book-chap-0 9 bytes weight 400 normal
   book-chap-1 9 bytes weight 400 normal
+== book-sheet-id
+sheets: 5
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+  @layer book{[data-book-container="chap"] .a{color:red}[data-book-container="chap"] .b{color:blue}}
+  @layer book{[data-book-container="chap"] h1{margin:0}}
+  @layer book{@media (min-width:10px){[data-book-container="chap"] p{margin:0}}}
+  @layer book{[data-book-container="chap"] h2{margin:0}}
+faces: 2
+  book-chap-0 9 bytes weight 400 normal
+  book-chap-1 9 bytes weight 400 normal
 == book-removed
 <p id="clone1">
 <em>

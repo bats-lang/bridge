@@ -136,6 +136,20 @@ fn piece_lit {nc:pos | nc < 64}{m:nat | m <= 1024}
   val () = $BC.book_sheet_lit(s, cb, g1u2i(string1_length(c)), text)
 in rel(cz, cb) end
 
+(* The sheet [data-book-container="<id>"] h2{margin:0}, the id written by
+   book_sheet_id, split in two pieces: up to the id, and after it *)
+fn piece_id_open {nc:pos | nc < 64} (s: !$BC.book_stream, c: string nc): void = let
+  val @(cz, cb) = lit(c)
+  val () = $BC.book_sheet_lit(s, cb, g1u2i(string1_length(c)), "[data-book-container=\"")
+  val () = $BC.book_sheet_id(s, cb, g1u2i(string1_length(c)))
+in rel(cz, cb) end
+
+fn piece_id_close {nc:pos | nc < 64} (s: !$BC.book_stream, c: string nc): void = let
+  val @(cz, cb) = lit(c)
+  val () = $BC.book_sheet_lit(s, cb, g1u2i(string1_length(c)), "\"] h2{margin:0}")
+  val () = $BC.book_sheet_end(s, cb, g1u2i(string1_length(c)))
+in rel(cz, cb) end
+
 fn sheet_end {nc:pos | nc < 64} (s: !$BC.book_stream, c: string nc): void = let
   val @(cz, cb) = lit(c)
   val () = $BC.book_sheet_end(s, cb, g1u2i(string1_length(c)))
@@ -371,6 +385,13 @@ fn play {l:agz}{n:nat}{cs:$A.cells}
   val () = face(pf | doc, n, "nowhere", 26, 2)
   val () = say("@snap book-font")
   val () = say("@snap book-font-name")
+  (* book-sheet-id: the container's id written by book_sheet_id, in two pieces
+     across a flush, beside the literal pieces *)
+  val () = piece_id_open(s, "chap")
+  val () = $BC.dom_flush_book(s)
+  val () = piece_id_close(s, "chap")
+  val () = $BC.dom_flush_book(s)
+  val () = say("@snap book-sheet-id")
   val () = raw_remove("chap")
   val () = say("@snap book-removed")
 in end
