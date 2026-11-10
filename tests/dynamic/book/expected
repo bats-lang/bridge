@@ -165,6 +165,69 @@ sheets: 5
 faces: 2
   book-chap-0 9 bytes weight 400 normal
   book-chap-1 9 bytes weight 400 normal
+== book-style-pieces
+<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout paint style !important; isolation: isolate !important;">
+<p id="c1" data-book-element="chapter-one" style="color:red;" data-book-class="intro lead">
+<em id="c2" data-book-element="chapter-one" style="margin:0;">
+</em>
+<span id="app1" title="mine">
+</span>
+</p>
+<p id="clone2" data-book-element="chapter-one" style="color: red; margin: 0" data-book-class="intro lead">
+<em data-book-element="chapter-one">
+</em>
+<span title="mine">
+</span>
+</p>
+</div>
+<p id="clone1">
+<em>
+</em>
+<span title="mine">
+</span>
+</p>
+sheets: 5
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+  @layer book{[data-book-container="chap"] .a{color:red}[data-book-container="chap"] .b{color:blue}}
+  @layer book{[data-book-container="chap"] h1{margin:0}}
+  @layer book{@media (min-width:10px){[data-book-container="chap"] p{margin:0}}}
+  @layer book{[data-book-container="chap"] h2{margin:0}}
+faces: 2
+  book-chap-0 9 bytes weight 400 normal
+  book-chap-1 9 bytes weight 400 normal
+== book-style-pieces-refused
+<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout paint style !important; isolation: isolate !important;">
+<p id="c1" data-book-element="chapter-one" style="color:red;" data-book-class="intro lead">
+<em id="c2" data-book-element="chapter-one" style="margin:0;">
+</em>
+<span id="app1" title="mine">
+</span>
+</p>
+<p id="clone2" data-book-element="chapter-one" style="color: red; margin: 0" data-book-class="intro lead">
+<em data-book-element="chapter-one">
+</em>
+<span title="mine">
+</span>
+</p>
+</div>
+<p id="clone1">
+<em>
+</em>
+<span title="mine">
+</span>
+</p>
+sheets: 5
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+  @layer book{[data-book-container="chap"] .a{color:red}[data-book-container="chap"] .b{color:blue}}
+  @layer book{[data-book-container="chap"] h1{margin:0}}
+  @layer book{@media (min-width:10px){[data-book-container="chap"] p{margin:0}}}
+  @layer book{[data-book-container="chap"] h2{margin:0}}
+faces: 2
+  book-chap-0 9 bytes weight 400 normal
+  book-chap-1 9 bytes weight 400 normal
+! bats: book refused: book operation on ghost
+! bats: book refused: book operation on app1
+! bats: book refused: operation on container nowhere, which is not there
 == book-removed
 <p id="clone1">
 <em>
@@ -174,4 +237,5 @@ faces: 2
 </p>
 sheets: 0
 faces: 0
+style pieces: 80 and 26 bytes, as written
 log: id refused by the proof

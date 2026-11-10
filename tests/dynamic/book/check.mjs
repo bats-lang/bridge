@@ -87,6 +87,9 @@ const script = [
   /* 65 refused-name-empty */ '',
   /* 66 refused-name-digit-first */ '9lives',
   /* 67 refused-name-space */ 'a b',
+  // pieces of a style (opcodes 19 and 20)
+  /* 68 style-piece */ 'red',
+  /* 69 refused-style-piece-image-set */ 'image-set(a 1x)',
 ].join('\n');
 
 const dom = new JSDOM(
@@ -152,7 +155,16 @@ const src = readFileSync('dist/bridge.js', 'utf-8');
 const boot = src.lastIndexOf("\nconst root = document.getElementById('bats-root');");
 if (boot < 0) throw new Error('bridge.js: boot code not found');
 const tmp = join(tmpdir(), `bridge-book-${process.pid}.mjs`);
-writeFileSync(tmp, src.slice(0, boot) + '\n');
+// The bytes of each book flush are kept, to compare the style pieces' with a
+// written expectation (below): the flush function is wrapped, nothing else changes
+const flushLine = '  function batsDomFlushBook(bufPtr, len) { bookFlush(bufPtr, len, true); }\n';
+if (!src.includes(flushLine)) throw new Error('bridge.js: batsDomFlushBook not found');
+const flushes = [];
+globalThis.__bookFlushes = flushes;
+const recording = '  function batsDomFlushBook(bufPtr, len) {\n' +
+  '    globalThis.__bookFlushes.push(Array.from(new Uint8Array(instance.exports.memory.buffer, bufPtr, len)));\n' +
+  '    bookFlush(bufPtr, len, true);\n  }\n';
+writeFileSync(tmp, src.slice(0, boot).replace(flushLine, recording) + '\n');
 const { loadWASM } = await import(tmp);
 unlinkSync(tmp);
 
@@ -168,5 +180,28 @@ await loadWASM(readFileSync('dist/debug/app.wasm'), document.getElementById('bat
 await new Promise((r) => setTimeout(r, 200));
 const log = console.log;
 console.log = globalThis.__realLog ?? log;
+// BOOK_STYLE_TEXT 19 [19][container][id][u16 length][bytes] and BOOK_STYLE_END 20
+// [20][container][id], a name being [u16 length][bytes] (opcodes 17 and 18 with
+// the element id after the container). The app's flushes that start with 19 are
+// the two runs of the first style case (cut by the flush inside the second run)
+// and then the refused runs
+{
+  const name = (s) => [s.length & 255, s.length >> 8, ...Buffer.from(s)];
+  const text = (c, id, t) => [19, ...name(c), ...name(id), ...name(t)];
+  const done = (c, id) => [20, ...name(c), ...name(id)];
+  const expected = [
+    [...text('chap', 'c1', 'color:'), ...text('chap', 'c1', 'red'), ...text('chap', 'c1', ';'), ...done('chap', 'c1'),
+      ...text('chap', 'c2', 'margin:')],
+    [...text('chap', 'c2', '0;'), ...done('chap', 'c2')],
+  ];
+  const styled = flushes.filter((f) => f[0] === 19);
+  if (styled.length !== 3) throw new Error(`style pieces: ${styled.length} flushes, expected 3`);
+  expected.forEach((e, i) => {
+    if (JSON.stringify(styled[i]) !== JSON.stringify(e)) {
+      throw new Error(`style pieces: flush ${i} is ${JSON.stringify(styled[i])}, expected ${JSON.stringify(e)}`);
+    }
+  });
+  emit(`style pieces: ${expected.map((e) => e.length).join(' and ')} bytes, as written`);
+}
 process.stdout.write(out.join('\n') + '\n');
 for (const l of shown) process.stdout.write(`log: ${l}\n`);

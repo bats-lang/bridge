@@ -1,0 +1,10 @@
+[package]
+name = "book-style-pieces"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"builder" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

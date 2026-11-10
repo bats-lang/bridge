@@ -30,10 +30,10 @@ staload "./book_js.bats"
 
 (* The bridge with the outside reads and book content (book_js.bats, outside.bats,
    book_content.bats; keyword: book content): the image error form's JS plus the
-   book sections and their imports, 122883 plus 6224, 13219 and 1037, so the bound
+   book sections and their imports, 122883 plus 6224, 14355 and 1037, so the bound
    is larger again. The forms without them are kept beside it, as they are *)
-#pub fun emit_js_all_book {n:nat | n + 143363 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 143363] $B.builder(m)): void
+#pub fun emit_js_all_book {n:nat | n + 144499 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 144499] $B.builder(m)): void
 
 (* ============================================================
    Per-concept JS emitters
@@ -3098,8 +3098,8 @@ fn _emit_11_image_error {n:nat | n + 39363 <= $B.BUILDER_CAP}
   val () = emit_js_image_error(b)
 in emit_js_speech(b) end
 
-fn _emit_11_book {n:nat | n + 58806 <= $B.BUILDER_CAP}
-  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 58806] $B.builder(m)): void = let
+fn _emit_11_book {n:nat | n + 59942 <= $B.BUILDER_CAP}
+  (b: !$B.builder(n) >> [m:nat | n <= m; m <= n + 59942] $B.builder(m)): void = let
   val () = _emit_11_head(b)
   val () = emit_js_platform(b)
   val () = emit_js_image_error(b)
