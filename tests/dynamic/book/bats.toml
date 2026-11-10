@@ -1,0 +1,12 @@
+[package]
+name = "book"
+kind = "bin"
+
+[dependencies]
+"array" = ""
+"builder" = ""
+"css" = ""
+"file" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

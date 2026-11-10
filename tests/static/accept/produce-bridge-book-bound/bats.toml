@@ -1,0 +1,10 @@
+[package]
+name = "produce-bridge-book-bound"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"builder" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""

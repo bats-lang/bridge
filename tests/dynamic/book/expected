@@ -1,0 +1,167 @@
+refused list: 17 entries, those of css's table
+== book-container-id
+<div id="chap" data-book-container="chap" data-book-layout="1" style="contain: layout paint style !important; isolation: isolate !important;">
+</div>
+sheets: 0
+faces: 0
+! bats: book refused: container chap
+! bats: book refused: container orphan
+== book-container
+<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout paint style !important; isolation: isolate !important;">
+<p id="c1" data-book-element="chapter-one" style="color: red; margin: 0" data-book-class="intro lead">
+<em id="c2" data-book-element="chapter-one">
+</em>
+<span id="app1" title="mine">
+</span>
+</p>
+<p id="clone2" data-book-element="chapter-one" style="color: red; margin: 0" data-book-class="intro lead">
+<em data-book-element="chapter-one">
+</em>
+<span title="mine">
+</span>
+</p>
+</div>
+<div id="other" data-book-container="other" data-book-layout="1" style="contain: layout paint style !important; isolation: isolate !important;">
+<p id="o1" data-book-element="chapter-one">
+</p>
+</div>
+<p id="clone1">
+<em>
+</em>
+<span title="mine">
+</span>
+</p>
+sheets: 1
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+faces: 0
+! bats: book refused: element c3
+! bats: book refused: element c4
+! bats: element refused: script
+! bats: book refused: element c5
+! bats: book refused: book operation on stage
+! bats: book refused: style inside a container
+! bats: book refused: data-book-* attribute
+! bats: book refused: container inner
+! bats: book refused: element c6
+! bats: book refused: element c7
+! bats: book refused: element c8
+! bats: book refused: element c9
+! bats: book refused: names: "\""
+! bats: book refused: names: "'"
+! bats: book refused: names: "\\"
+! bats: book refused: names: "<"
+! bats: book refused: names: ">"
+! bats: book refused: names: "\t"
+! bats: book refused: opcode 13 outside a book stream
+== book-container-removed
+<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout paint style !important; isolation: isolate !important;">
+<p id="c1" data-book-element="chapter-one" style="color: red; margin: 0" data-book-class="intro lead">
+<em id="c2" data-book-element="chapter-one">
+</em>
+<span id="app1" title="mine">
+</span>
+</p>
+<p id="clone2" data-book-element="chapter-one" style="color: red; margin: 0" data-book-class="intro lead">
+<em data-book-element="chapter-one">
+</em>
+<span title="mine">
+</span>
+</p>
+</div>
+<p id="clone1">
+<em>
+</em>
+<span title="mine">
+</span>
+</p>
+sheets: 1
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+faces: 0
+== book-sheet
+sheets: 3
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+  @layer book{[data-book-container="chap"] .a{color:red}[data-book-container="chap"] .b{color:blue}}
+  @layer book{[data-book-container="chap"] h1{margin:0}}
+faces: 0
+! bats: book refused: sheet: structure
+! bats: book refused: sheet: url(
+! bats: book refused: declarations: url(
+! bats: book refused: sheet: image-set(
+! bats: book refused: sheet: image(
+! bats: book refused: sheet: src(
+! bats: book refused: sheet: cross-fade(
+! bats: book refused: sheet: element(
+! bats: book refused: sheet: paint(
+! bats: book refused: sheet: env(
+! bats: book refused: sheet: var(
+! bats: book refused: sheet: attr(
+! bats: book refused: sheet: expression(
+! bats: book refused: sheet: !important
+! bats: book refused: sheet: \
+! bats: book refused: sheet: <
+! bats: book refused: declarations: image-set(
+! bats: book refused: declarations: image(
+! bats: book refused: declarations: src(
+! bats: book refused: declarations: cross-fade(
+! bats: book refused: declarations: element(
+! bats: book refused: declarations: paint(
+! bats: book refused: declarations: env(
+! bats: book refused: declarations: var(
+! bats: book refused: declarations: attr(
+! bats: book refused: declarations: expression(
+! bats: book refused: declarations: @import
+! bats: book refused: declarations: @font-face
+! bats: book refused: declarations: !important
+! bats: book refused: declarations: \
+! bats: book refused: declarations: <
+! bats: book refused: declarations: /*
+! bats: book refused: declarations: {
+! bats: book refused: declarations: }
+== book-sheet-at-rule
+sheets: 4
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+  @layer book{[data-book-container="chap"] .a{color:red}[data-book-container="chap"] .b{color:blue}}
+  @layer book{[data-book-container="chap"] h1{margin:0}}
+  @layer book{@media (min-width:10px){[data-book-container="chap"] p{margin:0}}}
+faces: 0
+! bats: book refused: sheet: @import
+! bats: book refused: sheet: @font-face
+== book-sheet-comment
+sheets: 4
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+  @layer book{[data-book-container="chap"] .a{color:red}[data-book-container="chap"] .b{color:blue}}
+  @layer book{[data-book-container="chap"] h1{margin:0}}
+  @layer book{@media (min-width:10px){[data-book-container="chap"] p{margin:0}}}
+faces: 0
+! bats: book refused: sheet: /*
+== book-font
+sheets: 4
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+  @layer book{[data-book-container="chap"] .a{color:red}[data-book-container="chap"] .b{color:blue}}
+  @layer book{[data-book-container="chap"] h1{margin:0}}
+  @layer book{@media (min-width:10px){[data-book-container="chap"] p{margin:0}}}
+faces: 2
+  book-chap-0 9 bytes weight 400 normal
+  book-chap-1 9 bytes weight 400 normal
+! bats: book refused: font 1
+! bats: book refused: font 32
+! bats: book refused: font 2
+== book-font-name
+sheets: 4
+  @layer book{[data-book-container="chap"] .intro{color:#333}}
+  @layer book{[data-book-container="chap"] .a{color:red}[data-book-container="chap"] .b{color:blue}}
+  @layer book{[data-book-container="chap"] h1{margin:0}}
+  @layer book{@media (min-width:10px){[data-book-container="chap"] p{margin:0}}}
+faces: 2
+  book-chap-0 9 bytes weight 400 normal
+  book-chap-1 9 bytes weight 400 normal
+== book-removed
+<p id="clone1">
+<em>
+</em>
+<span title="mine">
+</span>
+</p>
+sheets: 0
+faces: 0
+log: id refused by the proof

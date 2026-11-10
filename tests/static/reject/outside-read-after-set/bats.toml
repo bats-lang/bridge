@@ -1,0 +1,10 @@
+[package]
+name = "outside-read-after-set"
+kind = "lib"
+
+[dependencies]
+"array" = ""
+"builder" = ""
+"promise" = ""
+"result" = ""
+"wasm.bats-packages.dev/bridge" = ""
