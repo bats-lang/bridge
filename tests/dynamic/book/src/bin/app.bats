@@ -141,7 +141,7 @@ in rel(cz, cb) end
 fn piece_id_open {nc:pos | nc < 64} (s: !$BC.book_stream, c: string nc): void = let
   val @(cz, cb) = lit(c)
   val () = $BC.book_sheet_lit(s, cb, g1u2i(string1_length(c)), "[data-book-container=\"")
-  val () = $BC.book_sheet_id(s, cb, g1u2i(string1_length(c)), cb, g1u2i(string1_length(c)))
+  val () = $BC.book_sheet_id(s, cb, g1u2i(string1_length(c)))
 in rel(cz, cb) end
 
 fn piece_id_close {nc:pos | nc < 64} (s: !$BC.book_stream, c: string nc): void = let

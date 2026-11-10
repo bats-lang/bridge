@@ -10,6 +10,6 @@ staload BC = "wasm.bats-packages.dev/bridge/src/book_content.bats"
 fn f {lc:agz}{nc:pos | nc <= 64}
   (s: !$BC.book_stream, container: !$A.borrow(byte, lc, nc), n: int nc): void = let
   val () = $BC.book_sheet_lit(s, container, n, "[data-book-container=\"")
-  val () = $BC.book_sheet_id(s, container, n, container, n)
+  val () = $BC.book_sheet_id(s, container, n)
   val () = $BC.book_sheet_lit(s, container, n, "\"] p{margin:0}")
 in $BC.book_sheet_end(s, container, n) end

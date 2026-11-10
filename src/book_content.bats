@@ -125,15 +125,15 @@ staload "./outside.bats"
   (s: !book_stream, container: !$A.borrow(byte, lc, nc), container_len: int nc,
    lit: string m): void
 
-(* Opcode 17: a piece that is the container's own id, the bytes of the id the
-   container operand names (the prefix [data-book-container="<id>"] that the
-   sheet's selectors start with). id has the container operand's location and
-   length in its type, so the id of another container is refused by the type;
-   the proposition about outside bytes is not used (keyword: book sheet id) *)
+(* Opcode 17: a piece that is the container's own id: the bytes of the container
+   operand, written as the sheet's text as well as the name of the sheet's
+   container (the prefix [data-book-container="<id>"] that the sheet's selectors
+   start with). The id is the operand itself (a borrow is linear: it cannot be
+   passed twice), so the id of another container cannot be given, and the
+   proposition about outside bytes is not used (keyword: book sheet id) *)
 #pub fun book_sheet_id
   {lc:agz}{nc:pos | nc <= 64}
-  (s: !book_stream, container: !$A.borrow(byte, lc, nc), container_len: int nc,
-   id: !$A.borrow(byte, lc, nc), id_len: int nc): void
+  (s: !book_stream, container: !$A.borrow(byte, lc, nc), container_len: int nc): void
 
 (* Opcode 18: the sheet is whole *)
 #pub fun book_sheet_end
@@ -396,12 +396,12 @@ implement book_sheet_lit{lc}{nc}{m}(s, container, container_len, lit) = let
   val () = _book_u16(s, n)
 in _book_bytes(s, $UNSAFE begin $UNSAFE.cast{ptr}(lit) end, 0, n) end
 
-implement book_sheet_id{lc}{nc}(s, container, container_len, id, id_len) = let
+implement book_sheet_id{lc}{nc}(s, container, container_len) = let
   val () = _book_reserve(s, 8192)
   val () = _book_u8(s, 17)
   val () = _put_name(s, container, container_len)
-  val () = _book_u16(s, id_len)
-in _book_bytes(s, $UNSAFE begin $UNSAFE.castvwtp1{ptr}(id) end, 0, id_len) end
+  val () = _book_u16(s, container_len)
+in _book_bytes(s, $UNSAFE begin $UNSAFE.castvwtp1{ptr}(container) end, 0, container_len) end
 
 implement book_sheet_end{lc}{nc}(s, container, container_len) = let
   val () = _book_reserve(s, 8192)
