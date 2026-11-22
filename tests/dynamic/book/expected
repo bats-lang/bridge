@@ -1,13 +1,13 @@
 refused list: 17 entries, those of css's table
 == book-container-id
-<div id="chap" data-book-container="chap" data-book-layout="1" style="contain: layout paint style !important; isolation: isolate !important;">
+<div id="chap" data-book-container="chap" data-book-layout="1" style="contain: layout style paint !important; isolation: isolate !important;">
 </div>
 sheets: 0
 faces: 0
 ! bats: book refused: container chap
 ! bats: book refused: container orphan
 == book-container
-<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout paint style !important; isolation: isolate !important;">
+<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout style paint !important; isolation: isolate !important;">
 <p id="c1" data-book-element="chapter-one" style="color: red; margin: 0" data-book-class="intro lead">
 <em id="c2" data-book-element="chapter-one">
 </em>
@@ -21,7 +21,7 @@ faces: 0
 </span>
 </p>
 </div>
-<div id="other" data-book-container="other" data-book-layout="1" style="contain: layout paint style !important; isolation: isolate !important;">
+<div id="other" data-book-container="other" data-book-layout="1" style="contain: layout style paint !important; isolation: isolate !important;">
 <p id="o1" data-book-element="chapter-one">
 </p>
 </div>
@@ -54,7 +54,7 @@ faces: 0
 ! bats: book refused: names: "\t"
 ! bats: book refused: opcode 13 outside a book stream
 == book-container-removed
-<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout paint style !important; isolation: isolate !important;">
+<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout style paint !important; isolation: isolate !important;">
 <p id="c1" data-book-element="chapter-one" style="color: red; margin: 0" data-book-class="intro lead">
 <em id="c2" data-book-element="chapter-one">
 </em>
@@ -166,7 +166,7 @@ faces: 2
   book-chap-0 9 bytes weight 400 normal
   book-chap-1 9 bytes weight 400 normal
 == book-style-pieces
-<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout paint style !important; isolation: isolate !important;">
+<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout style paint !important; isolation: isolate !important;">
 <p id="c1" data-book-element="chapter-one" style="color:red;" data-book-class="intro lead">
 <em id="c2" data-book-element="chapter-one" style="margin:0;">
 </em>
@@ -196,7 +196,7 @@ faces: 2
   book-chap-0 9 bytes weight 400 normal
   book-chap-1 9 bytes weight 400 normal
 == book-style-pieces-refused
-<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout paint style !important; isolation: isolate !important;">
+<div id="chap" data-book-container="chap" data-book-layout="1" style="height: 7px; contain: layout style paint !important; isolation: isolate !important;">
 <p id="c1" data-book-element="chapter-one" style="color:red;" data-book-class="intro lead">
 <em id="c2" data-book-element="chapter-one" style="margin:0;">
 </em>
