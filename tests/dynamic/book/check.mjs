@@ -3,8 +3,8 @@
 // (an input whose first file is the script below, one case on each line) and
 // plays book content over it: containers, elements, styles, class names,
 // sheets in pieces, faces and the writes the ordinary operations may not make.
-// jsdom has no constructable style sheets, FontFace or document.fonts, so they
-// are stood in for by records of what was adopted and added; the stand-ins show
+// jsdom's adopted style sheets take only its own CSSStyleSheet (31.0.0), and it
+// has no FontFace or document.fonts, so they are stood in for by records of what was adopted and added; the stand-ins show
 // what the bridge asks the browser for, not what a browser does with it. After
 // each "@snap <name>" the app logs, this prints the stage, the document, the
 // adopted sheets, the faces and what the bridge refused since the last one.
@@ -105,7 +105,7 @@ Object.defineProperty(document.getElementById('script'), 'files', { value: [file
 // Stand-ins: adopted sheets and faces
 class Sheet { replaceSync(text) { this.text = text; } }
 global.CSSStyleSheet = Sheet;
-document.adoptedStyleSheets = [];
+Object.defineProperty(document, 'adoptedStyleSheets', { value: [], writable: true, configurable: true });
 class Face {
   constructor(family, source, descriptors) {
     this.family = family; this.size = source.length; this.weight = descriptors.weight; this.style = descriptors.style;
